@@ -1,0 +1,21 @@
+<package>
+  <description brief="hector_gazebo_plugins">
+
+     hector_gazebo_plugins provides gazebo plugins. Currently containes only a 6wd differential drive plugin.
+
+  </description>
+  <author>Stefan Kohlbrecher</author>
+  <license>BSD</license>
+  <review status="unreviewed" notes=""/>
+  <url>http://ros.org/wiki/hector_gazebo_plugins</url>
+  <depend package="roscpp"/>
+  <depend package="gazebo"/>
+
+  <export>
+    <cpp cflags="-I${prefix}/include" lflags="-Wl,-rpath,${prefix}/lib -L${prefix}/lib" />
+    <gazebo plugin_path="${prefix}/lib" />
+  </export>
+
+</package>
+
+

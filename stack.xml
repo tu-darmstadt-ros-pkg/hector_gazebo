@@ -1,0 +1,9 @@
+<stack>
+  <description brief="hector_gazebo">hector_gazebo</description>
+  <author>Maintained by stefan</author>
+  <license>BSD</license>  
+  <review status="unreviewed" notes=""/>
+  <url>http://ros.org/wiki/hector_gazebo</url>
+  <depend stack="ros" />
+
+</stack>
