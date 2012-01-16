@@ -1,15 +1,21 @@
 <package>
   <description brief="hector_gazebo_plugins">
 
-     hector_gazebo_plugins provides gazebo plugins. Currently containes only a 6wd differential drive plugin.
+     hector_gazebo_plugins provides gazebo plugins from Team Hector.
+     Currently it contains a 6wd differential drive plugin, an IMU sensor plugin,
+     a barometric sensor plugin, an earth magnetic field sensor plugin, a GPS sensor plugin and a
+     sonar ranger plugin.
 
   </description>
-  <author>Stefan Kohlbrecher</author>
+  <author>Stefan Kohlbrecher and Johannes Meyer</author>
   <license>BSD</license>
   <review status="unreviewed" notes=""/>
   <url>http://ros.org/wiki/hector_gazebo_plugins</url>
   <depend package="roscpp"/>
   <depend package="gazebo"/>
+
+  <depend package="std_msgs"/>
+  <depend package="geometry_msgs"/>
   <depend package="nav_msgs"/>
 
   <export>

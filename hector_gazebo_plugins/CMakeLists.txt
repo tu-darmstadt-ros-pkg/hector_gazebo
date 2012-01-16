@@ -21,6 +21,18 @@ rosbuild_add_boost_directories()
 rosbuild_add_library(diffdrive_plugin_6w src/diffdrive_plugin_6w.cpp)
 rosbuild_link_boost(diffdrive_plugin_6w thread)
 
+rosbuild_add_library(hector_gazebo_ros_imu src/gazebo_ros_imu.cpp)
+rosbuild_link_boost(hector_gazebo_ros_imu thread)
+rosbuild_add_library(hector_gazebo_ros_baro src/gazebo_ros_baro.cpp)
+rosbuild_link_boost(hector_gazebo_ros_baro thread)
+rosbuild_add_library(hector_gazebo_ros_magnetic src/gazebo_ros_magnetic.cpp)
+rosbuild_link_boost(hector_gazebo_ros_magnetic thread)
+rosbuild_add_library(hector_gazebo_ros_gps src/gazebo_ros_gps.cpp)
+rosbuild_link_boost(hector_gazebo_ros_gps thread)
+rosbuild_add_library(hector_gazebo_ros_sonar src/gazebo_ros_sonar.cpp)
+rosbuild_link_boost(hector_gazebo_ros_sonar thread)
+
+
 #uncomment if you have defined messages
 #rosbuild_genmsg()
 #uncomment if you have defined services
