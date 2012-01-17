@@ -25,6 +25,34 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //=================================================================================================
+// This code is based on the original gazebo_ros_imu plugin by Sachin Chitta and John Hsu:
+/*
+ *  Gazebo - Outdoor Multi-Robot Simulator
+ *  Copyright (C) 2003
+ *     Nate Koenig & Andrew Howard
+ *
+ *  This program is free software; you can redistribute it and/or modify
+ *  it under the terms of the GNU General Public License as published by
+ *  the Free Software Foundation; either version 2 of the License, or
+ *  (at your option) any later version.
+ *
+ *  This program is distributed in the hope that it will be useful,
+ *  but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ *  GNU General Public License for more details.
+ *
+ *  You should have received a copy of the GNU General Public License
+ *  along with this program; if not, write to the Free Software
+ *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+ *
+ */
+/*
+ * Desc: 3D position interface.
+ * Author: Sachin Chitta and John Hsu
+ * Date: 10 June 2008
+ * SVN: $Id$
+ */
+//=================================================================================================
 
 #include <hector_gazebo_plugins/gazebo_ros_imu.h>
 
@@ -64,15 +92,15 @@ GazeboRosIMU::GazeboRosIMU(Entity *parent)
   this->topicNameP = new ParamT<std::string>("topicName", "", 1);
   this->accelOffsetP = new ParamT<Vector3>("accelOffset", Vector3(0,0,0), 0);
   this->accelDriftP = new ParamT<Vector3>("accelDrift", Vector3(0,0,0), 0);
-  this->accelTimeConstantP = new ParamT<Vector3>("accelTimeConstant", Vector3(3600.0,3600.0,3600.0), 0);
+  this->accelDriftFrequencyP = new ParamT<Vector3>("accelDriftFrequency", Vector3(0.0003,0.0003,0.0003), 0);
   this->accelGaussianNoiseP = new ParamT<Vector3>("accelGaussianNoise", Vector3(0.0,0.0,0.0), 0);
   this->rateOffsetP = new ParamT<Vector3>("rateOffset", Vector3(0,0,0), 0);
   this->rateDriftP = new ParamT<Vector3>("rateDriftP", Vector3(0,0,0), 0);
-  this->rateTimeConstantP = new ParamT<Vector3>("rateTimeConstant", Vector3(3600.0,3600.0,3600.0), 0);
+  this->rateDriftFrequencyP = new ParamT<Vector3>("rateDriftFrequency", Vector3(0.0003,0.0003,0.0003), 0);
   this->rateGaussianNoiseP = new ParamT<Vector3>("rateGaussianNoise", Vector3(0.0,0.0,0.0), 0);
   this->headingOffsetP = new ParamT<double>("headingOffset", 0.0, 0);
   this->headingDriftP = new ParamT<double>("headingDrift", 0.0, 0);
-  this->headingTimeConstantP = new ParamT<double>("headingTimeConstant", 3600.0, 0);
+  this->headingDriftFrequencyP = new ParamT<double>("headingDriftFrequency", 0.0003, 0);
   this->headingGaussianNoiseP = new ParamT<double>("headingGaussianNoise", 0.0, 0);
   this->rpyOffsetsP    = new ParamT<Vector3>("rpyOffsets", Vector3(0,0,0),0);
   this->gaussianNoiseP = new ParamT<double>("gaussianNoise",0.0,0);
@@ -89,15 +117,15 @@ GazeboRosIMU::~GazeboRosIMU()
   delete this->topicNameP;
   delete this->accelOffsetP;
   delete this->accelDriftP;
-  delete this->accelTimeConstantP;
+  delete this->accelDriftFrequencyP;
   delete this->accelGaussianNoiseP;
   delete this->rateOffsetP;
   delete this->rateDriftP;
-  delete this->rateTimeConstantP;
+  delete this->rateDriftFrequencyP;
   delete this->rateGaussianNoiseP;
   delete this->headingOffsetP;
   delete this->headingDriftP;
-  delete this->headingTimeConstantP;
+  delete this->headingDriftFrequencyP;
   delete this->headingGaussianNoiseP;
   delete this->rpyOffsetsP;
   delete this->gaussianNoiseP;
@@ -136,24 +164,24 @@ void GazeboRosIMU::LoadChild(XMLConfigNode *node)
   this->accelOffset = this->accelOffsetP->GetValue();
   this->accelDriftP->Load(node);
   this->accelDrift = this->accelDriftP->GetValue();
-  this->accelTimeConstantP->Load(node);
-  this->accelTimeConstant = this->accelTimeConstantP->GetValue();
+  this->accelDriftFrequencyP->Load(node);
+  this->accelDriftFrequency = this->accelDriftFrequencyP->GetValue();
   this->accelGaussianNoiseP->Load(node);
   this->accelGaussianNoise = this->accelGaussianNoiseP->GetValue();
   this->rateOffsetP->Load(node);
   this->rateOffset = this->rateOffsetP->GetValue();
   this->rateDriftP->Load(node);
   this->rateDrift = this->rateDriftP->GetValue();
-  this->rateTimeConstantP->Load(node);
-  this->rateTimeConstant = this->rateTimeConstantP->GetValue();
+  this->rateDriftFrequencyP->Load(node);
+  this->rateDriftFrequency = this->rateDriftFrequencyP->GetValue();
   this->rateGaussianNoiseP->Load(node);
   this->rateGaussianNoise = this->rateGaussianNoiseP->GetValue();
   this->headingOffsetP->Load(node);
   this->headingOffset = this->headingOffsetP->GetValue();
   this->headingDriftP->Load(node);
   this->headingDrift = this->headingDriftP->GetValue();
-  this->headingTimeConstantP->Load(node);
-  this->headingTimeConstant = this->headingTimeConstantP->GetValue();
+  this->headingDriftFrequencyP->Load(node);
+  this->headingDriftFrequency = this->headingDriftFrequencyP->GetValue();
   this->headingGaussianNoiseP->Load(node);
   this->headingGaussianNoise = this->headingGaussianNoiseP->GetValue();
 
@@ -206,6 +234,13 @@ void GazeboRosIMU::LoadChild(XMLConfigNode *node)
   ros::AdvertiseServiceOptions aso = ros::AdvertiseServiceOptions::create<std_srvs::Empty>(
       this->serviceName,boost::bind( &GazeboRosIMU::ServiceCallback, this, _1, _2 ), ros::VoidPtr(), &this->imu_queue_);
   this->srv_ = this->rosnode_->advertiseService(aso);
+
+  aso = ros::AdvertiseServiceOptions::create<hector_gazebo_plugins::SetBias>(
+        this->topicName+"/set_accel_bias", boost::bind( &GazeboRosIMU::SetAccelBiasCallback, this, _1, _2 ), ros::VoidPtr(), &this->imu_queue_);
+  this->accelBiasService = this->rosnode_->advertiseService(aso);
+  aso = ros::AdvertiseServiceOptions::create<hector_gazebo_plugins::SetBias>(
+        this->topicName+"/set_rate_bias", boost::bind( &GazeboRosIMU::SetRateBiasCallback, this, _1, _2 ), ros::VoidPtr(), &this->imu_queue_);
+  this->rateBiasService  = this->rosnode_->advertiseService(aso);
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -213,11 +248,30 @@ void GazeboRosIMU::LoadChild(XMLConfigNode *node)
 bool GazeboRosIMU::ServiceCallback(std_srvs::Empty::Request &req,
                                         std_srvs::Empty::Response &res)
 {
-  rateOffset = Vector3(0.0, 0.0, 0.0);
-  rateCurrentDrift = Vector3(0.0, 0.0, 0.0);
+  this->lock.lock();
+  this->rateOffset = Vector3(0.0, 0.0, 0.0);
+  this->rateCurrentDrift = Vector3(0.0, 0.0, 0.0);
+  this->lock.unlock();
   return true;
 }
 
+bool GazeboRosIMU::SetAccelBiasCallback(hector_gazebo_plugins::SetBias::Request &req, hector_gazebo_plugins::SetBias::Response &res)
+{
+  this->lock.lock();
+  this->accelOffset = Vector3(req.bias.x, req.bias.y, req.bias.z);
+  this->accelCurrentDrift = Vector3(0.0, 0.0, 0.0);
+  this->lock.unlock();
+  return true;
+}
+
+bool GazeboRosIMU::SetRateBiasCallback(hector_gazebo_plugins::SetBias::Request &req, hector_gazebo_plugins::SetBias::Response &res)
+{
+  this->lock.lock();
+  this->rateOffset = Vector3(req.bias.x, req.bias.y, req.bias.z);
+  this->rateCurrentDrift = Vector3(0.0, 0.0, 0.0);
+  this->lock.unlock();
+  return true;
+}
 
 ////////////////////////////////////////////////////////////////////////////////
 // Initialize the controller
@@ -251,38 +305,40 @@ void GazeboRosIMU::UpdateChild()
   // get Acceleration, Rates and Gravity
   this->accel = this->myBody->GetRelativeLinearAccel(); // get acceleration in body frame
   this->rate  = this->myBody->GetRelativeAngularVel(); // get angular rate in body frame
-  this->gravity = World::Instance()->GetPhysicsEngine()->GetGravity();
+  this->gravity       = World::Instance()->GetPhysicsEngine()->GetGravity();
+  this->gravity_body  = rot.RotateVector(this->gravity);
   double temp = 1.0/std::max(this->gravity.GetLength(), 1.0);
   double gravity_correction = (this->gravity.z > 0.0) ? -temp : temp;
 
   // add gravity vector
-  ROS_DEBUG_NAMED("hector_gazebo_ros_imu", "gravity_world = [%g %g %g]",
-                  this->gravity.x, this->gravity.y, this->gravity.z);
-  accel = accel - rot.RotateVector(this->gravity);
+  ROS_DEBUG_NAMED("hector_gazebo_ros_imu", "gravity_world = [%g %g %g]", this->gravity.x, this->gravity.y, this->gravity.z);
+  this->accel = this->accel - this->gravity_body;
+
+  this->lock.lock();
 
   // calculate offsets and drift
-  this->accelCurrentError.x = updateCurrentError(this->accelCurrentDrift.x, dt, this->accelTimeConstant.x, this->accelDrift.x, this->accelOffset.x, this->accelGaussianNoise.x);
-  this->accelCurrentError.y = updateCurrentError(this->accelCurrentDrift.y, dt, this->accelTimeConstant.y, this->accelDrift.y, this->accelOffset.y, this->accelGaussianNoise.y);
-  this->accelCurrentError.z = updateCurrentError(this->accelCurrentDrift.z, dt, this->accelTimeConstant.z, this->accelDrift.z, this->accelOffset.z, this->accelGaussianNoise.z);
-  this->rateCurrentError.x  = updateCurrentError(this->rateCurrentDrift.x,  dt, this->rateTimeConstant.x,  this->rateDrift.x,  this->rateOffset.x,  this->rateGaussianNoise.x);
-  this->rateCurrentError.y  = updateCurrentError(this->rateCurrentDrift.y,  dt, this->rateTimeConstant.y,  this->rateDrift.y,  this->rateOffset.y,  this->rateGaussianNoise.y);
-  this->rateCurrentError.z  = updateCurrentError(this->rateCurrentDrift.z,  dt, this->rateTimeConstant.z,  this->rateDrift.z,  this->rateOffset.z,  this->rateGaussianNoise.z);
-  this->headingCurrentError = updateCurrentError(this->headingCurrentDrift, dt, this->headingTimeConstant, this->headingDrift, this->headingOffset, this->headingGaussianNoise);
-  this->accel = this->accel + this->accelCurrentError;
-  this->rate  = this->rate  + this->accelCurrentError;
+  this->accelCurrentError.x = updateCurrentError(this->accelCurrentDrift.x, dt, this->accelDriftFrequency.x, this->accelDrift.x, this->accelOffset.x, this->accelGaussianNoise.x);
+  this->accelCurrentError.y = updateCurrentError(this->accelCurrentDrift.y, dt, this->accelDriftFrequency.y, this->accelDrift.y, this->accelOffset.y, this->accelGaussianNoise.y);
+  this->accelCurrentError.z = updateCurrentError(this->accelCurrentDrift.z, dt, this->accelDriftFrequency.z, this->accelDrift.z, this->accelOffset.z, this->accelGaussianNoise.z);
+  this->rateCurrentError.x  = updateCurrentError(this->rateCurrentDrift.x,  dt, this->rateDriftFrequency.x,  this->rateDrift.x,  this->rateOffset.x,  this->rateGaussianNoise.x);
+  this->rateCurrentError.y  = updateCurrentError(this->rateCurrentDrift.y,  dt, this->rateDriftFrequency.y,  this->rateDrift.y,  this->rateOffset.y,  this->rateGaussianNoise.y);
+  this->rateCurrentError.z  = updateCurrentError(this->rateCurrentDrift.z,  dt, this->rateDriftFrequency.z,  this->rateDrift.z,  this->rateOffset.z,  this->rateGaussianNoise.z);
+  this->headingCurrentError = updateCurrentError(this->headingCurrentDrift, dt, this->headingDriftFrequency, this->headingDrift, this->headingOffset, this->headingGaussianNoise);
   ROS_DEBUG_NAMED("hector_gazebo_ros_imu", "Current errors: accel = [%g %g %g], rate = [%g %g %g], heading = %g, gravity_correction = %g",
                  this->accelCurrentError.x, this->accelCurrentError.y, this->accelCurrentError.z,
                  this->rateCurrentError.x, this->rateCurrentError.y, this->rateCurrentError.z,
                  this->headingCurrentError, 1.0/gravity_correction);
 
-  // apply offset error (approximation)
-  Vector3 euler(rot.GetAsEuler());
-  euler.x += -this->accelCurrentError.y * gravity_correction;
-  euler.y +=  this->accelCurrentError.x * gravity_correction;
-  euler.z +=  this->headingCurrentError;
-  rot.SetFromEuler(euler);
-
-  this->lock.lock();
+  // apply offset error
+  this->accel = this->accel + this->accelCurrentError;
+  this->rate  = this->rate  + this->rateCurrentError;
+  double normalization_constant = (this->gravity_body + this->accelCurrentError).GetLength() * this->gravity_body.GetLength();
+  double cos_alpha = (this->gravity_body + this->accelCurrentError).GetDotProd(this->gravity_body)/normalization_constant;
+  Vector3 normal_vector(this->gravity_body.GetCrossProd(this->accelCurrentError));
+  normal_vector *= sqrt((1 - cos_alpha)/2)/normalization_constant;
+  Quatern attitudeError(sqrt((1 + cos_alpha)/2), normal_vector.x, normal_vector.y, normal_vector.z);
+  Quatern headingError(cos(this->headingCurrentError/2),0,0,sin(this->headingCurrentError/2));
+  rot = attitudeError * rot * headingError;
 
   // copy data into pose message
   this->imuMsg.header.frame_id = this->bodyName;
@@ -363,9 +419,9 @@ double GazeboRosIMU::GaussianKernel(double mu, double sigma)
 
 //////////////////////////////////////////////////////////////////////////////
 // Drift model
-double GazeboRosIMU::updateCurrentError(double &currentDrift, double dt, double driftTimeConstant,  double drift,  double offset, double noise)
+double GazeboRosIMU::updateCurrentError(double &currentDrift, double dt, double driftFrequency,  double drift,  double offset, double noise)
 {
-  if (driftTimeConstant > 0.0) currentDrift += dt * (-currentDrift / driftTimeConstant + this->GaussianKernel(0, drift));
+  currentDrift += dt * (-currentDrift * driftFrequency + this->GaussianKernel(0, sqrt(2*driftFrequency)*drift));
   return offset + currentDrift +  this->GaussianKernel(0, noise);
 }
 

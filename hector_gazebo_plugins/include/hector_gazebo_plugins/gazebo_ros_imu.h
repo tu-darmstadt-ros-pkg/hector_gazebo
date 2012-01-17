@@ -25,8 +25,6 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //=================================================================================================
-
-//=================================================================================================
 // This code is based on the original gazebo_ros_imu plugin by Sachin Chitta and John Hsu:
 /*
  *  Gazebo - Outdoor Multi-Robot Simulator
@@ -77,6 +75,7 @@
 #include "boost/thread/mutex.hpp"
 #include <sensor_msgs/Imu.h>
 #include <std_srvs/Empty.h>
+#include <hector_gazebo_plugins/SetBias.h>
 
 
 namespace gazebo
@@ -128,24 +127,24 @@ namespace gazebo
       private: Vector3 accelOffset;
       private: ParamT<Vector3> *accelDriftP;
       private: Vector3 accelDrift;
-      private: ParamT<Vector3> *accelTimeConstantP;
-      private: Vector3 accelTimeConstant;
+      private: ParamT<Vector3> *accelDriftFrequencyP;
+      private: Vector3 accelDriftFrequency;
       private: ParamT<Vector3> *accelGaussianNoiseP;
       private: Vector3 accelGaussianNoise;
       private: ParamT<Vector3> *rateOffsetP;
       private: Vector3 rateOffset;
       private: ParamT<Vector3> *rateDriftP;
       private: Vector3 rateDrift;
-      private: ParamT<Vector3> *rateTimeConstantP;
-      private: Vector3 rateTimeConstant;
+      private: ParamT<Vector3> *rateDriftFrequencyP;
+      private: Vector3 rateDriftFrequency;
       private: ParamT<Vector3> *rateGaussianNoiseP;
       private: Vector3 rateGaussianNoise;
       private: ParamT<double> *headingOffsetP;
       private: double headingOffset;
       private: ParamT<double> *headingDriftP;
       private: double headingDrift;
-      private: ParamT<double> *headingTimeConstantP;
-      private: double headingTimeConstant;
+      private: ParamT<double> *headingDriftFrequencyP;
+      private: double headingDriftFrequency;
       private: ParamT<double> *headingGaussianNoiseP;
       private: double headingGaussianNoise;
       private: ParamT<Vector3> *rpyOffsetsP;
@@ -160,7 +159,7 @@ namespace gazebo
       private: double headingCurrentError;
 
       /// \brief Update drift model
-      private: double updateCurrentError(double &currentDrift, double dt, double driftTimeConstant,  double drift,  double offset, double noise);
+      private: double updateCurrentError(double &currentDrift, double dt, double driftFrequency,  double drift,  double offset, double noise);
 
       /// \brief A mutex to lock access to fields that are used in message callbacks
       private: boost::mutex lock;
@@ -170,6 +169,7 @@ namespace gazebo
       private: Vector3 accel;
       private: Vector3 rate;
       private: Vector3 gravity;
+      private: Vector3 gravity_body;
 
       /// \brief Gaussian noise generator
       private: double GaussianKernel(double mu,double sigma);
@@ -184,6 +184,12 @@ namespace gazebo
       private: ros::ServiceServer srv_;
       private: ParamT<std::string> *serviceNameP;
       private: std::string serviceName;
+
+      /// \brief Bias service callbacks
+      private: bool SetAccelBiasCallback(hector_gazebo_plugins::SetBias::Request &req, hector_gazebo_plugins::SetBias::Response &res);
+      private: bool SetRateBiasCallback(hector_gazebo_plugins::SetBias::Request &req, hector_gazebo_plugins::SetBias::Response &res);
+      private: ros::ServiceServer accelBiasService;
+      private: ros::ServiceServer rateBiasService;
 
 #ifdef USE_CBQ
       private: ros::CallbackQueue imu_queue_;
