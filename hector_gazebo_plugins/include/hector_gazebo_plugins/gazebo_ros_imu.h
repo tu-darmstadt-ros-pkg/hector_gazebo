@@ -1,5 +1,5 @@
 //=================================================================================================
-// Copyright (c) 2011, Johannes Meyer, TU Darmstadt
+// Copyright (c) 2012, Johannes Meyer, TU Darmstadt
 // All rights reserved.
 
 // Redistribution and use in source and binary forms, with or without
@@ -192,8 +192,8 @@ namespace gazebo
       private: ros::ServiceServer rateBiasService;
 
 #ifdef USE_CBQ
-      private: ros::CallbackQueue imu_queue_;
-      private: void IMUQueueThread();
+      private: ros::CallbackQueue callback_queue_;
+      private: void CallbackQueueThread();
       private: boost::thread callback_queue_thread_;
 #endif
    };

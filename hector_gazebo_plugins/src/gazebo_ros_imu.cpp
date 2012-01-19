@@ -1,5 +1,5 @@
 //=================================================================================================
-// Copyright (c) 2011, Johannes Meyer, TU Darmstadt
+// Copyright (c) 2012, Johannes Meyer, TU Darmstadt
 // All rights reserved.
 
 // Redistribution and use in source and binary forms, with or without
@@ -216,7 +216,7 @@ void GazeboRosIMU::LoadChild(XMLConfigNode *node)
     ros::AdvertiseOptions ao = ros::AdvertiseOptions::create<sensor_msgs::Imu>(
       this->topicName, 1,
       ros::SubscriberStatusCallback(), ros::SubscriberStatusCallback(),
-      ros::VoidPtr(), &this->imu_queue_);
+      ros::VoidPtr(), &this->callback_queue_);
     this->pub_ = this->rosnode_->advertise(ao);
 #else
     this->pub_ = this->rosnode_->advertise<sensor_msgs::Imu>(this->topicName,10);
@@ -232,14 +232,14 @@ void GazeboRosIMU::LoadChild(XMLConfigNode *node)
   this->serviceName = this->serviceNameP->GetValue();
   // advertise services on the custom queue
   ros::AdvertiseServiceOptions aso = ros::AdvertiseServiceOptions::create<std_srvs::Empty>(
-      this->serviceName,boost::bind( &GazeboRosIMU::ServiceCallback, this, _1, _2 ), ros::VoidPtr(), &this->imu_queue_);
+      this->serviceName,boost::bind( &GazeboRosIMU::ServiceCallback, this, _1, _2 ), ros::VoidPtr(), &this->callback_queue_);
   this->srv_ = this->rosnode_->advertiseService(aso);
 
   aso = ros::AdvertiseServiceOptions::create<hector_gazebo_plugins::SetBias>(
-        this->topicName+"/set_accel_bias", boost::bind( &GazeboRosIMU::SetAccelBiasCallback, this, _1, _2 ), ros::VoidPtr(), &this->imu_queue_);
+        this->topicName+"/set_accel_bias", boost::bind( &GazeboRosIMU::SetAccelBiasCallback, this, _1, _2 ), ros::VoidPtr(), &this->callback_queue_);
   this->accelBiasService = this->rosnode_->advertiseService(aso);
   aso = ros::AdvertiseServiceOptions::create<hector_gazebo_plugins::SetBias>(
-        this->topicName+"/set_rate_bias", boost::bind( &GazeboRosIMU::SetRateBiasCallback, this, _1, _2 ), ros::VoidPtr(), &this->imu_queue_);
+        this->topicName+"/set_rate_bias", boost::bind( &GazeboRosIMU::SetRateBiasCallback, this, _1, _2 ), ros::VoidPtr(), &this->callback_queue_);
   this->rateBiasService  = this->rosnode_->advertiseService(aso);
 }
 
@@ -280,7 +280,7 @@ void GazeboRosIMU::InitChild()
   this->last_time = Simulator::Instance()->GetSimTime();
 #ifdef USE_CBQ
   // start custom queue for imu
-  this->callback_queue_thread_ = boost::thread( boost::bind( &GazeboRosIMU::IMUQueueThread,this ) );
+  this->callback_queue_thread_ = boost::thread( boost::bind( &GazeboRosIMU::CallbackQueueThread,this ) );
 #endif
 }
 
@@ -426,15 +426,13 @@ double GazeboRosIMU::updateCurrentError(double &currentDrift, double dt, double 
 }
 
 #ifdef USE_CBQ
-////////////////////////////////////////////////////////////////////////////////
-// Put laser data to the interface
-void GazeboRosIMU::IMUQueueThread()
+void GazeboRosIMU::CallbackQueueThread()
 {
   static const double timeout = 0.01;
 
   while (this->rosnode_->ok())
   {
-    this->imu_queue_.callAvailable(ros::WallDuration(timeout));
+    this->callback_queue_.callAvailable(ros::WallDuration(timeout));
   }
 }
 #endif
