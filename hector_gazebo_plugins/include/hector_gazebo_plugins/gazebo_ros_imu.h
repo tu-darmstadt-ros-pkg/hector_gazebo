@@ -76,7 +76,7 @@
 #include <sensor_msgs/Imu.h>
 #include <std_srvs/Empty.h>
 #include <hector_gazebo_plugins/SetBias.h>
-
+#include <hector_gazebo_plugins/sensor_model.h>
 
 namespace gazebo
 {
@@ -122,44 +122,14 @@ namespace gazebo
       private: ParamT<std::string> *topicNameP;
       private: std::string topicName;
 
-      /// \brief allow specifying constant offsets, drift and noise
-      private: ParamT<Vector3> *accelOffsetP;
-      private: Vector3 accelOffset;
-      private: ParamT<Vector3> *accelDriftP;
-      private: Vector3 accelDrift;
-      private: ParamT<Vector3> *accelDriftFrequencyP;
-      private: Vector3 accelDriftFrequency;
-      private: ParamT<Vector3> *accelGaussianNoiseP;
-      private: Vector3 accelGaussianNoise;
-      private: ParamT<Vector3> *rateOffsetP;
-      private: Vector3 rateOffset;
-      private: ParamT<Vector3> *rateDriftP;
-      private: Vector3 rateDrift;
-      private: ParamT<Vector3> *rateDriftFrequencyP;
-      private: Vector3 rateDriftFrequency;
-      private: ParamT<Vector3> *rateGaussianNoiseP;
-      private: Vector3 rateGaussianNoise;
-      private: ParamT<double> *headingOffsetP;
-      private: double headingOffset;
-      private: ParamT<double> *headingDriftP;
-      private: double headingDrift;
-      private: ParamT<double> *headingDriftFrequencyP;
-      private: double headingDriftFrequency;
-      private: ParamT<double> *headingGaussianNoiseP;
-      private: double headingGaussianNoise;
+      /// \brief allow specifying constant offsets and noise
       private: ParamT<Vector3> *rpyOffsetsP;
       private: ParamT<double> *gaussianNoiseP;
 
-      /// \brief Some working variables
-      private: Vector3 accelCurrentDrift;
-      private: Vector3 accelCurrentError;
-      private: Vector3 rateCurrentDrift;
-      private: Vector3 rateCurrentError;
-      private: double headingCurrentDrift;
-      private: double headingCurrentError;
-
-      /// \brief Update drift model
-      private: double updateCurrentError(double &currentDrift, double dt, double driftFrequency,  double drift,  double offset, double noise);
+      /// \brief Sensor models
+      private: SensorModel3 accelModel;
+      private: SensorModel3 rateModel;
+      private: SensorModel headingModel;
 
       /// \brief A mutex to lock access to fields that are used in message callbacks
       private: boost::mutex lock;

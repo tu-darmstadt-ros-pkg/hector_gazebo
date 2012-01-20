@@ -33,53 +33,61 @@
 
 namespace gazebo {
 
-class SensorModel {
+template <typename T>
+class SensorModel_ {
 public:
-  SensorModel(std::vector<Param*> &parameters, const std::string& prefix = "");
-  virtual ~SensorModel();
+  SensorModel_(std::vector<Param*> &parameters, const std::string& prefix = "");
+  virtual ~SensorModel_();
 
-  virtual void LoadChild(XMLConfigNode *node);
+  virtual void Load(XMLConfigNode *node);
 
-  virtual double operator()(double value) const { return value + current_error_; }
-  virtual double operator()(double value, double dt) { return value + update(dt); }
+  virtual T operator()(const T& value) const { return value + current_error_; }
+  virtual T operator()(const T& value, double dt) { return value + update(dt); }
 
-  virtual double update(double dt);
-  virtual void reset(double value = 0.0);
+  virtual T update(double dt);
+  virtual void reset(const T& value = T());
 
-  virtual double getCurrentError() const { return current_error_; }
-  virtual double getCurrentDrift() const { return current_drift_; }
+  virtual const T& getCurrentError() const { return current_error_; }
+  virtual const T& getCurrentDrift() const { return current_drift_; }
 
 public:
-  double offset;
-  double drift;
-  double drift_frequency;
-  double gaussian_noise;
+  T offset;
+  T drift;
+  T drift_frequency;
+  T gaussian_noise;
 
 private:
-  ParamT<double> *offset_param_;
-  ParamT<double> *drift_param_;
-  ParamT<double> *drift_frequency_param_;
-  ParamT<double> *gaussian_noise_param_;
+  ParamT<T> *offset_param_;
+  ParamT<T> *drift_param_;
+  ParamT<T> *drift_frequency_param_;
+  ParamT<T> *gaussian_noise_param_;
 
-  double current_drift_;
-  double current_error_;
-
-  static double gaussianKernel(double mu, double sigma);
+  T current_drift_;
+  T current_error_;
 };
 
-SensorModel::SensorModel(std::vector<Param*> &parameters, const std::string &prefix)
+template <typename T>
+SensorModel_<T>::SensorModel_(std::vector<Param*> &parameters, const std::string &prefix)
 {
   Param::Begin(&parameters);
-  offset_param_          = new ParamT<double>(prefix + "offset", 0.0, 0);
-  drift_param_           = new ParamT<double>(prefix + "drift", 0.0, 0);
-  drift_frequency_param_ = new ParamT<double>(prefix + "driftFrequency", 0.0003, 0);
-  gaussian_noise_param_  = new ParamT<double>(prefix + "gaussianNoise", 0.0, 0);
+  if (prefix.empty()) {
+    offset_param_          = new ParamT<T>("offset", T(), 0);
+    drift_param_           = new ParamT<T>("drift", T(), 0);
+    drift_frequency_param_ = new ParamT<T>("driftFrequency", T(), 0);
+    gaussian_noise_param_  = new ParamT<T>("gaussianNoise", T(), 0);
+  } else {
+    offset_param_          = new ParamT<T>(prefix + "Offset", T(), 0);
+    drift_param_           = new ParamT<T>(prefix + "Drift", T(), 0);
+    drift_frequency_param_ = new ParamT<T>(prefix + "DriftFrequency", T(), 0);
+    gaussian_noise_param_  = new ParamT<T>(prefix + "GaussianNoise", T(), 0);
+  }
   Param::End();
 
   reset();
 }
 
-SensorModel::~SensorModel()
+template <typename T>
+SensorModel_<T>::~SensorModel_()
 {
   delete offset_param_;
   delete drift_param_;
@@ -87,7 +95,8 @@ SensorModel::~SensorModel()
   delete gaussian_noise_param_;
 }
 
-void SensorModel::LoadChild(XMLConfigNode *node)
+template <typename T>
+void SensorModel_<T>::Load(XMLConfigNode *node)
 {
   offset_param_->Load(node);
   offset = offset_param_->GetValue();
@@ -99,32 +108,59 @@ void SensorModel::LoadChild(XMLConfigNode *node)
   gaussian_noise = gaussian_noise_param_->GetValue();
 }
 
-double SensorModel::update(double dt)
+namespace {
+  template <typename T>
+  static inline T SensorModelGaussianKernel(T mu, T sigma)
+  {
+    // using Box-Muller transform to generate two independent standard normally disbributed normal variables
+    // see wikipedia
+    T U = (T)rand()/(T)RAND_MAX; // normalized uniform random variable
+    T V = (T)rand()/(T)RAND_MAX; // normalized uniform random variable
+    T X = sqrt(-2.0 * ::log(U)) * cos( 2.0*M_PI * V);
+    X = sigma * X + mu;
+    return X;
+  }
+
+  template <typename T>
+  static inline T SensorModelInternalUpdate(T& current_drift, T drift, T drift_frequency, T offset, T gaussian_noise, double dt)
+  {
+    current_drift = current_drift - dt * (current_drift * drift_frequency + SensorModelGaussianKernel(T(), sqrt(2*drift_frequency)*drift));
+    return offset + current_drift + SensorModelGaussianKernel(T(), gaussian_noise);
+  }
+}
+
+template <typename T>
+T SensorModel_<T>::update(double dt)
 {
-  current_drift_ += dt * (-current_drift_ * drift_frequency + this->gaussianKernel(0, sqrt(2*drift_frequency)*drift));
-  current_error_ = offset + current_drift_ + gaussianKernel(0, gaussian_noise);
+  for(std::size_t i = 0; i < current_error_.size(); ++i) current_error_[i] = current_error_ = SensorModelInternalUpdate(current_drift_[i], drift[i], drift_frequency[i], offset[i], gaussian_noise[i], dt);
   return current_error_;
 }
 
-double SensorModel::gaussianKernel(double mu, double sigma)
+template <>
+double SensorModel_<double>::update(double dt)
 {
-  // using Box-Muller transform to generate two independent standard normally disbributed normal variables
-  // see wikipedia
-  double U = (double)rand()/(double)RAND_MAX; // normalized uniform random variable
-  double V = (double)rand()/(double)RAND_MAX; // normalized uniform random variable
-  double X = sqrt(-2.0 * ::log(U)) * cos( 2.0*M_PI * V);
-  //double Y = sqrt(-2.0 * ::log(U)) * sin( 2.0*M_PI * V); // the other indep. normal variable
-  // we'll just use X
-  // scale to our mu and sigma
-  X = sigma * X + mu;
-  return X;
+  current_error_ = SensorModelInternalUpdate(current_drift_, drift, drift_frequency, offset, gaussian_noise, dt);
+  return current_error_;
 }
 
-void SensorModel::reset(double value)
+template <>
+Vector3 SensorModel_<Vector3>::update(double dt)
 {
-  current_drift_ = 0.0;
+  current_error_.x = SensorModelInternalUpdate(current_drift_.x, drift.x, drift_frequency.x, offset.x, gaussian_noise.x, dt);
+  current_error_.y = SensorModelInternalUpdate(current_drift_.y, drift.y, drift_frequency.y, offset.y, gaussian_noise.y, dt);
+  current_error_.z = SensorModelInternalUpdate(current_drift_.z, drift.z, drift_frequency.z, offset.z, gaussian_noise.z, dt);
+  return current_error_;
+}
+
+template <typename T>
+void SensorModel_<T>::reset(const T& value)
+{
+  current_drift_ = T();
   current_error_ = value;
 }
+
+typedef SensorModel_<double> SensorModel;
+typedef SensorModel_<Vector3> SensorModel3;
 
 }
 
