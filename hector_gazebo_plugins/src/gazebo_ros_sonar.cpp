@@ -1,5 +1,5 @@
 //=================================================================================================
-// Copyright (c) 2011, Johannes Meyer, TU Darmstadt
+// Copyright (c) 2012, Johannes Meyer, TU Darmstadt
 // All rights reserved.
 
 // Redistribution and use in source and binary forms, with or without
@@ -26,4 +26,106 @@
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //=================================================================================================
 
+#include <hector_gazebo_plugins/gazebo_ros_sonar.h>
+
+#include <gazebo/Sensor.hh>
+#include <gazebo/Global.hh>
+#include <gazebo/XMLConfig.hh>
+#include <gazebo/Simulator.hh>
+#include <gazebo/gazebo.h>
+#include <gazebo/GazeboError.hh>
+#include <gazebo/ControllerFactory.hh>
+
+#include <limits>
+
+using namespace gazebo;
+
+GZ_REGISTER_DYNAMIC_CONTROLLER("hector_gazebo_ros_sonar", GazeboRosSonar)
+
+GazeboRosSonar::GazeboRosSonar(Entity *parent)
+   : Controller(parent)
+   , sensor_model_(parameters)
+{
+  sensor_ = dynamic_cast<RaySensor*>(parent);
+  if (!sensor_) gzthrow("GazeboRosSonar controller requires a RaySensor as its parent");
+
+  if (!ros::isInitialized())
+  {
+    int argc = 0;
+    char** argv = NULL;
+    ros::init(argc,argv, "gazebo", ros::init_options::NoSigintHandler|ros::init_options::AnonymousName);
+  }
+
+  Param::Begin(&parameters);
+  namespace_param_ = new ParamT<std::string>("robotNamespace", "", false);
+  topic_param_ = new ParamT<std::string>("topicName", "", true);
+  frame_id_param_ = new ParamT<std::string>("frameName", "", true);
+  Param::End();
+}
+
+////////////////////////////////////////////////////////////////////////////////
+// Destructor
+GazeboRosSonar::~GazeboRosSonar()
+{
+  delete namespace_param_;
+  delete topic_param_;
+  delete frame_id_param_;
+}
+
+////////////////////////////////////////////////////////////////////////////////
+// Load the controller
+void GazeboRosSonar::LoadChild(XMLConfigNode *node)
+{
+  namespace_param_->Load(node);
+  topic_param_->Load(node);
+  frame_id_param_->Load(node);
+
+  sensor_model_.Load(node);
+}
+
+///////////////////////////////////////////////////////
+// Initialize the controller
+void GazeboRosSonar::InitChild()
+{
+  range_.header.frame_id = **frame_id_param_;
+  range_.radiation_type = sensor_msgs::Range::ULTRASOUND;
+  range_.field_of_view = std::min(fabs((sensor_->GetMaxAngle() - sensor_->GetMinAngle()).GetAsRadian()), fabs((sensor_->GetVerticalMaxAngle() - sensor_->GetVerticalMinAngle().GetAsRadian()).GetAsRadian()));
+  range_.max_range = sensor_->GetMaxRange();
+  range_.min_range = sensor_->GetMinRange();
+
+  sensor_->SetActive(false);
+  node_handle_ = new ros::NodeHandle(**namespace_param_);
+  publisher_ = node_handle_->advertise<sensor_msgs::Range>(**topic_param_, 10);
+}
+
+////////////////////////////////////////////////////////////////////////////////
+// Update the controller
+void GazeboRosSonar::UpdateChild()
+{
+  Time sim_time = Simulator::Instance()->GetSimTime();
+  double dt = (sim_time - lastUpdate).Double();
+
+  if (!sensor_->IsActive()) sensor_->SetActive(true);
+
+  range_.header.stamp.sec  = (Simulator::Instance()->GetSimTime()).sec;
+  range_.header.stamp.nsec = (Simulator::Instance()->GetSimTime()).nsec;
+
+  range_.range = std::numeric_limits<sensor_msgs::Range::_range_type>::max();
+  for(int i = 0; i < sensor_->GetRangeCount(); ++i) {
+    double ray = sensor_->GetRange(i);
+    if (ray < range_.range) range_.range = ray;
+  }
+  range_.range += sensor_model_.update(dt);
+
+  publisher_.publish(range_);
+}
+
+////////////////////////////////////////////////////////////////////////////////
+// Finalize the controller
+void GazeboRosSonar::FiniChild()
+{
+  sensor_->SetActive(false);
+  node_handle_->shutdown();
+  delete node_handle_;
+}
 
