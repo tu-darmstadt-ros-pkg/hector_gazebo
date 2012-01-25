@@ -60,7 +60,7 @@
 
 
   <rendering:ogre>
-    <ambient>0.5 0.5 0.5 0.5</ambient>
+    <ambient>0.05 0.05 0.05 0.05</ambient>
     <sky>
       <material>Gazebo/CloudySky</material>
     </sky>
@@ -77,12 +77,13 @@
    <body:trimesh name="landscape_body">
      <geom:trimesh name="landscape_geom">
        <scale>1.0 1.0 1.0</scale>
-       <mesh>rolling_landscape_120m.stl</mesh>
+       <mesh>rolling_landscape_blender_export_meshlab_resave.dae</mesh>
        <visual>
          <scale>1.0 1.0 1.0</scale>
-         <mesh>rolling_landscape_120m.stl</mesh>
+         <mesh>rolling_landscape_blender_export_meshlab_resave.dae</mesh>
 	 <genTexCoord>true</genTexCoord>
-	 <material>PR2/Grey1</material>
+	 <!--<material>Hector/BlueBrushedAluminum</material>-->
+         <material>Gazebo/GrassFloor</material>
        </visual>
      </geom:trimesh>
    </body:trimesh>
@@ -138,16 +139,29 @@
 -->
 
   <!-- White Point light -->
-  <model:renderable name="point_white">
-    <xyz>0 0 20</xyz>
+<!--  <model:renderable name="point_white">
+    <xyz>1 0 2</xyz>
     <enableGravity>false</enableGravity>
     <light>
       <type>point</type>
-      <diffuseColor>0.5 0.5 0.5</diffuseColor>
+      <diffuseColor>0.8 0.8 0.8</diffuseColor>
       <specularColor>.1 .1 .1</specularColor>
       <attenuation>0.2 0.1 0</attenuation>
       <range>500</range>
     </light>
-  </model:renderable>
+  -->
+  
+      <model:renderable name="directional_white">
+    <xyz>0 0 0</xyz>
+    <rpy>0 20 20</rpy>
+    <enableGravity>false</enableGravity>
+    <light>
+      <type>directional</type>
+      <diffuseColor>0.5 0.5 0.5</diffuseColor>
+      <specularColor>.1 .1 .1</specularColor>
+      <attenuation>0.2 0.1 0</attenuation>
+      <range>50</range>
+    </light>
+    </model:renderable>
 
 </gazebo:world>
