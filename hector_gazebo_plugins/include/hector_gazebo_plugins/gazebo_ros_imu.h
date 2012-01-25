@@ -135,7 +135,7 @@ namespace gazebo
       private: boost::mutex lock;
 
       /// \brief save current body/physics state
-      private: Quatern quatern;
+      private: Quatern orientation;
       private: Vector3 velocity;
       private: Vector3 accel;
       private: Vector3 rate;
