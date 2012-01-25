@@ -134,8 +134,9 @@ namespace gazebo
       /// \brief A mutex to lock access to fields that are used in message callbacks
       private: boost::mutex lock;
 
-      /// \brief save last_time
-      private: Time last_time;
+      /// \brief save current body/physics state
+      private: Quatern quatern;
+      private: Vector3 velocity;
       private: Vector3 accel;
       private: Vector3 rate;
       private: Vector3 gravity;

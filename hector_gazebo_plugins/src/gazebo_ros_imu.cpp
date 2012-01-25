@@ -126,6 +126,9 @@ void GazeboRosIMU::LoadChild(XMLConfigNode *node)
   }
 
   this->rosnode_ = new ros::NodeHandle(this->robotNamespace);
+#ifdef USE_CBQ
+  this->rosnode_->setCallbackQueue(&this->callback_queue_);
+#endif
 
   this->bodyNameP->Load(node);
   this->bodyName = this->bodyNameP->GetValue();
@@ -166,15 +169,7 @@ void GazeboRosIMU::LoadChild(XMLConfigNode *node)
 
   if (this->topicName != "")
   {
-#ifdef USE_CBQ
-    ros::AdvertiseOptions ao = ros::AdvertiseOptions::create<sensor_msgs::Imu>(
-      this->topicName, 1,
-      ros::SubscriberStatusCallback(), ros::SubscriberStatusCallback(),
-      ros::VoidPtr(), &this->callback_queue_);
-    this->pub_ = this->rosnode_->advertise(ao);
-#else
     this->pub_ = this->rosnode_->advertise<sensor_msgs::Imu>(this->topicName,10);
-#endif
   }
 
 #ifdef DEBUG_OUTPUT
@@ -185,16 +180,9 @@ void GazeboRosIMU::LoadChild(XMLConfigNode *node)
   this->serviceNameP->Load(node);
   this->serviceName = this->serviceNameP->GetValue();
   // advertise services on the custom queue
-  ros::AdvertiseServiceOptions aso = ros::AdvertiseServiceOptions::create<std_srvs::Empty>(
-      this->serviceName,boost::bind( &GazeboRosIMU::ServiceCallback, this, _1, _2 ), ros::VoidPtr(), &this->callback_queue_);
-  this->srv_ = this->rosnode_->advertiseService(aso);
-
-  aso = ros::AdvertiseServiceOptions::create<hector_gazebo_plugins::SetBias>(
-        this->topicName+"/set_accel_bias", boost::bind( &GazeboRosIMU::SetAccelBiasCallback, this, _1, _2 ), ros::VoidPtr(), &this->callback_queue_);
-  this->accelBiasService = this->rosnode_->advertiseService(aso);
-  aso = ros::AdvertiseServiceOptions::create<hector_gazebo_plugins::SetBias>(
-        this->topicName+"/set_rate_bias", boost::bind( &GazeboRosIMU::SetRateBiasCallback, this, _1, _2 ), ros::VoidPtr(), &this->callback_queue_);
-  this->rateBiasService  = this->rosnode_->advertiseService(aso);
+  this->srv_ = this->rosnode_->advertiseService(this->serviceName, &GazeboRosIMU::ServiceCallback, this);
+  this->accelBiasService = this->rosnode_->advertiseService(this->topicName+"/set_accel_bias", &GazeboRosIMU::SetAccelBiasCallback, this);
+  this->rateBiasService  = this->rosnode_->advertiseService(this->topicName+"/set_rate_bias", &GazeboRosIMU::SetRateBiasCallback, this);
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -228,7 +216,10 @@ bool GazeboRosIMU::SetRateBiasCallback(hector_gazebo_plugins::SetBias::Request &
 // Initialize the controller
 void GazeboRosIMU::InitChild()
 {
-  this->last_time = Simulator::Instance()->GetSimTime();
+  this->quatern = Quatern();
+  this->velocity = 0.0;
+  this->accel = 0.0;
+
 #ifdef USE_CBQ
   // start custom queue for imu
   this->callback_queue_thread_ = boost::thread( boost::bind( &GazeboRosIMU::CallbackQueueThread,this ) );
@@ -251,15 +242,26 @@ void GazeboRosIMU::UpdateChild()
   // std::cout << " --------- GazeboRosIMU rot " << rot.x << ", " << rot.y << ", " << rot.z << ", " << rot.u << std::endl;
 
   gazebo::Time cur_time = Simulator::Instance()->GetSimTime();
-  double dt = cur_time - this->last_time;
+  double dt = cur_time - this->lastUpdate;
 
   this->lock.lock();
 
   // get Acceleration, Rates and Gravity
-  this->accel = this->myBody->GetRelativeLinearAccel(); // get acceleration in body frame
-  this->rate  = this->myBody->GetRelativeAngularVel(); // get angular rate in body frame
+  // the result of GetRelativeLinearAccel() seems to be unpredictable (sum of all forces added during the current simulation step
+  Vector3 current_velocity = this->myBody->GetRelativeLinearVel(); // get velocity in body frame
+  this->accel = (current_velocity - this->velocity) / dt;
+  this->velocity = current_velocity;
+
+  Quatern temp = rot - quatern;
+  this->rate.x = (-rot.x * temp.u + rot.u * temp.x + rot.z * temp.y - rot.y * temp.z) / dt;
+  this->rate.y = (-rot.y * temp.u - rot.z * temp.x + rot.u * temp.y + rot.x * temp.z) / dt;
+  this->rate.z = (-rot.z * temp.u + rot.y * temp.x - rot.x * temp.y + rot.u * temp.z) / dt;
+  this->quatern = rot;
+
+  //this->accel = this->myBody->GetRelativeLinearAccel(); // get acceleration in body frame
+  //this->rate  = this->myBody->GetRelativeAngularVel(); // get angular rate in body frame
   this->gravity       = World::Instance()->GetPhysicsEngine()->GetGravity();
-  this->gravity_body  = rot.RotateVector(this->gravity);
+  this->gravity_body  = rot.RotateVectorReverse(this->gravity);
   double gravity_length = this->gravity.GetLength();
   ROS_DEBUG_NAMED("hector_gazebo_ros_imu", "gravity_world = [%g %g %g]", this->gravity.x, this->gravity.y, this->gravity.z);
 
@@ -337,9 +339,6 @@ void GazeboRosIMU::UpdateChild()
 #endif // DEBUG_OUTPUT
 
   this->lock.unlock();
-
-  // save last time stamp
-  this->last_time = cur_time;
 }
 
 ////////////////////////////////////////////////////////////////////////////////
