@@ -131,4 +131,10 @@
     </light>
   </model:renderable>
 
+
+  <!-- Reset controller -->
+  <model:empty name="reset">
+    <controller:reset_plugin name="reset_plugin" plugin="libreset_plugin.so"/>
+  </model:empty>
+
 </gazebo:world>
