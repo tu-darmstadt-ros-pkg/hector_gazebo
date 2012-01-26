@@ -78,12 +78,13 @@
      <geom:trimesh name="landscape_geom">
        <scale>1.0 1.0 1.0</scale>
        <mesh>rolling_landscape_blender_export_meshlab_resave.dae</mesh>
+       <genTexCoord>true</genTexCoord>
        <visual>
          <scale>1.0 1.0 1.0</scale>
          <mesh>rolling_landscape_blender_export_meshlab_resave.dae</mesh>
-	 <genTexCoord>true</genTexCoord>
+	 
 	 <!--<material>Hector/BlueBrushedAluminum</material>-->
-         <material>Gazebo/GrassFloor</material>
+         <material>Hector/Gouraud</material>
        </visual>
      </geom:trimesh>
    </body:trimesh>
