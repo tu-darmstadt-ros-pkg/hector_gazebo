@@ -77,14 +77,14 @@
    <body:trimesh name="landscape_body">
      <geom:trimesh name="landscape_geom">
        <scale>1.0 1.0 1.0</scale>
-       <mesh>rolling_landscape_blender_export_meshlab_resave.dae</mesh>
+       <mesh>120m_landscape_smooth_tri.dae</mesh>
        <genTexCoord>true</genTexCoord>
        <visual>
          <scale>1.0 1.0 1.0</scale>
-         <mesh>rolling_landscape_blender_export_meshlab_resave.dae</mesh>
+         <mesh>120m_landscape_smooth_tri.dae</mesh>
 	 
 	 <!--<material>Hector/BlueBrushedAluminum</material>-->
-         <material>Hector/Gouraud</material>
+         <!--<material>Hector/Gouraud</material>-->
        </visual>
      </geom:trimesh>
    </body:trimesh>
@@ -158,10 +158,10 @@
     <enableGravity>false</enableGravity>
     <light>
       <type>directional</type>
-      <diffuseColor>0.5 0.5 0.5</diffuseColor>
-      <specularColor>.1 .1 .1</specularColor>
+      <diffuseColor>1 1 1</diffuseColor>
+      <specularColor>1 1 1</specularColor>
       <attenuation>0.2 0.1 0</attenuation>
-      <range>50</range>
+      <range>500</range>
     </light>
     </model:renderable>
 
