@@ -50,6 +50,8 @@ public:
   virtual const T& getCurrentError() const { return current_error_; }
   virtual const T& getCurrentDrift() const { return current_drift_; }
 
+  virtual void setCurrentDrift(const T& new_drift) { current_drift_ = new_drift; }
+
 public:
   T offset;
   T drift;

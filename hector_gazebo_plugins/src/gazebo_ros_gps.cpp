@@ -1,5 +1,5 @@
 //=================================================================================================
-// Copyright (c) 2011, Johannes Meyer, TU Darmstadt
+// Copyright (c) 2012, Johannes Meyer, TU Darmstadt
 // All rights reserved.
 
 // Redistribution and use in source and binary forms, with or without
@@ -26,4 +26,143 @@
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //=================================================================================================
 
+#include <hector_gazebo_plugins/gazebo_ros_gps.h>
+
+#include <gazebo/Sensor.hh>
+#include <gazebo/Global.hh>
+#include <gazebo/XMLConfig.hh>
+#include <gazebo/Simulator.hh>
+#include <gazebo/gazebo.h>
+#include <gazebo/World.hh>
+#include <gazebo/PhysicsEngine.hh>
+#include <gazebo/GazeboError.hh>
+#include <gazebo/ControllerFactory.hh>
+
+using namespace gazebo;
+
+GZ_REGISTER_DYNAMIC_CONTROLLER("hector_gazebo_ros_gps", GazeboRosGps)
+
+GazeboRosGps::GazeboRosGps(Entity *parent)
+   : Controller(parent)
+   , position_error_model_(parameters)
+   , velocity_error_model_(parameters, "velocity")
+{
+  parent_ = dynamic_cast<Model*>(parent);
+  if (!parent_) gzthrow("GazeboRosGps controller requires a Model as its parent");
+
+  if (!ros::isInitialized())
+  {
+    int argc = 0;
+    char** argv = NULL;
+    ros::init(argc,argv, "gazebo", ros::init_options::NoSigintHandler|ros::init_options::AnonymousName);
+  }
+
+  Param::Begin(&parameters);
+  namespace_ = new ParamT<std::string>("robotNamespace", "", false);
+  body_name_ = new ParamT<std::string>("bodyName", "", true);
+  frame_id_ = new ParamT<std::string>("frameId", "", false);
+  fix_topic_ = new ParamT<std::string>("topicName", "fix", false);
+  velocity_topic_ = new ParamT<std::string>("velocityTopicName", "fix_velocity", false);
+
+  reference_latitude_ = new ParamT<double>("referenceLatitude", 49.9, false);
+  reference_longitude_ = new ParamT<double>("referenceLongitude", 8.9, false);
+  reference_heading_ = new ParamT<double>("referenceHeading", 0.0, false);
+  reference_altitude_ = new ParamT<double>("referenceAltitude", 0.0, false);
+  status_ = new ParamT<sensor_msgs::NavSatStatus::_status_type>("gpsStatus", sensor_msgs::NavSatStatus::STATUS_FIX, false);
+  service_ = new ParamT<sensor_msgs::NavSatStatus::_service_type>("gpsService", sensor_msgs::NavSatStatus::SERVICE_GPS, false);
+  Param::End();
+}
+
+////////////////////////////////////////////////////////////////////////////////
+// Destructor
+GazeboRosGps::~GazeboRosGps()
+{
+  delete namespace_;
+  delete body_name_;
+  delete frame_id_;
+  delete fix_topic_;
+  delete velocity_topic_;
+  delete reference_latitude_;
+  delete reference_longitude_;
+  delete reference_heading_;
+  delete reference_altitude_;
+  delete status_;
+  delete service_;
+}
+
+////////////////////////////////////////////////////////////////////////////////
+// Load the controller
+void GazeboRosGps::LoadChild(XMLConfigNode *node)
+{
+  namespace_->Load(node);
+  body_name_->Load(node);
+  frame_id_->Load(node);
+  fix_topic_->Load(node);
+  velocity_topic_->Load(node);
+
+  // assert that the body by body_name_ exists
+  body_ = dynamic_cast<Body*>(parent_->GetBody(**body_name_));
+  if (!body_) gzthrow("gazebo_quadrotor_simple_controller plugin error: body_name_: " << **body_name_ << "does not exist\n");
+
+  reference_latitude_->Load(node);
+  reference_longitude_->Load(node);
+  reference_heading_->Load(node);
+  reference_altitude_->Load(node);
+  status_->Load(node);
+  service_->Load(node);
+
+  fix_.status.status  = **status_;
+  fix_.status.service = **service_;
+
+  position_error_model_.Load(node);
+  velocity_error_model_.Load(node);
+
+  fix_.header.frame_id = **frame_id_;
+  velocity_.header.frame_id = **frame_id_;
+}
+
+///////////////////////////////////////////////////////
+// Initialize the controller
+void GazeboRosGps::InitChild()
+{
+  node_handle_ = new ros::NodeHandle(**namespace_);
+  fix_publisher_ = node_handle_->advertise<sensor_msgs::NavSatFix>(**fix_topic_, 10);
+  velocity_publisher_ = node_handle_->advertise<geometry_msgs::Vector3Stamped>(**velocity_topic_, 10);
+}
+
+////////////////////////////////////////////////////////////////////////////////
+// Update the controller
+void GazeboRosGps::UpdateChild()
+{
+  Time sim_time = Simulator::Instance()->GetSimTime();
+  double dt = (sim_time - lastUpdate).Double();
+
+  Pose3d pose = body_->GetWorldPose();
+
+  gazebo::Vector3 velocity = velocity_error_model_(body_->GetWorldLinearVel(), dt);
+  position_error_model_.setCurrentDrift(position_error_model_.getCurrentDrift() + velocity_error_model_.getCurrentError() * dt);
+  gazebo::Vector3 position = position_error_model_(pose.pos, dt);
+
+  fix_.header.stamp = ros::Time(sim_time.sec, sim_time.nsec);
+  velocity_.header.stamp = fix_.header.stamp;
+
+  fix_.latitude  = **reference_latitude_  + ( cos(**reference_heading_) * position.x + sin(**reference_heading_) * position.y) / 6371e3 * 180.0/M_PI;
+  fix_.longitude = **reference_longitude_ - (-sin(**reference_heading_) * position.x + cos(**reference_heading_) * position.y) / 6371e3 * 180.0/M_PI * cos(fix_.latitude);
+  fix_.altitude  = **reference_altitude_  + position.z;
+  fix_.position_covariance_type = sensor_msgs::NavSatFix::COVARIANCE_TYPE_UNKNOWN;
+  velocity_.vector.x = velocity.x;
+  velocity_.vector.y = velocity.y;
+  velocity_.vector.z = velocity.z;
+
+  fix_publisher_.publish(fix_);
+  velocity_publisher_.publish(velocity_);
+}
+
+////////////////////////////////////////////////////////////////////////////////
+// Finalize the controller
+void GazeboRosGps::FiniChild()
+{
+  node_handle_->shutdown();
+  delete node_handle_;
+}
 
