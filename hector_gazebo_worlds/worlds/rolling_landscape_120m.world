@@ -45,7 +45,7 @@
 
   <rendering:gui>
     <type>fltk</type>
-    <size>480 320</size>
+    <size>1300 740</size>
     <pos>0 0</pos>
     
     <frames>

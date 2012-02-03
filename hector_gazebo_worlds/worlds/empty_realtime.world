@@ -45,7 +45,7 @@
 
   <rendering:gui>
     <type>fltk</type>
-    <size>480 320</size>
+    <size>1300 740</size>
     <pos>0 0</pos>
     
     <frames>
@@ -66,8 +66,8 @@
     </sky>
     <grid>false</grid>
     <maxUpdateRate>10.</maxUpdateRate>
-    <!--<shadowTechnique>stencilAdditive</shadowTechnique>-->
-    <shadows>true</shadows>
+    <!--<shadowTechnique>texture</shadowTechnique>-->
+    <shadows>false</shadows>
   </rendering:ogre>
 
   <!-- ground plane -->
