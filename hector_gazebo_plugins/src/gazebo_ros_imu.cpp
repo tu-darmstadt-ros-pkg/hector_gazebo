@@ -250,9 +250,9 @@ void GazeboRosIMU::UpdateChild()
   //rate  = myBody->GetRelativeAngularVel(); // get angular rate in body frame
   Quatern delta = pose.rot - orientation;
   orientation = pose.rot;
-  rate.x = (-orientation.x * delta.u + orientation.u * delta.x + orientation.z * delta.y - orientation.y * delta.z) / dt;
-  rate.y = (-orientation.y * delta.u - orientation.z * delta.x + orientation.u * delta.y + orientation.x * delta.z) / dt;
-  rate.z = (-orientation.z * delta.u + orientation.y * delta.x - orientation.x * delta.y + orientation.u * delta.z) / dt;
+  rate.x = 2.0 * (-orientation.x * delta.u + orientation.u * delta.x + orientation.z * delta.y - orientation.y * delta.z) / dt;
+  rate.y = 2.0 * (-orientation.y * delta.u - orientation.z * delta.x + orientation.u * delta.y + orientation.x * delta.z) / dt;
+  rate.z = 2.0 * (-orientation.z * delta.u + orientation.y * delta.x - orientation.x * delta.y + orientation.u * delta.z) / dt;
 
   // get Gravity
   gravity       = World::Instance()->GetPhysicsEngine()->GetGravity();
