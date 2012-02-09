@@ -1,0 +1,18 @@
+<package>
+  <description brief="hector_sensors_gazebo">
+
+     hector_sensors_gazebo depends on the necessary plugins for using the sensors from the <a href="http://www.ros.org/wiki/hector_sensors_description">hector_sensors_description</a> package inside gazebo simulation.
+
+  </description>
+  <author>Stefan Kohlbrecher</author>
+  <license>BSD</license>
+  <review status="unreviewed" notes=""/>
+  <url>http://ros.org/wiki/hector_sensors_gazebo</url>
+  
+  <depend package="hector_sensors_description"/>
+  <depend package="gazebo_plugins" />
+  <depend package="hector_gazebo_plugins"/>
+
+</package>
+
+
