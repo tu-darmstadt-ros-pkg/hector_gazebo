@@ -497,12 +497,37 @@ void GazeboRosThermalCamera::PutCameraData()
         //convertImageFormat(dst,src);
 
         // copy from src to imageMsg
+        /*
         fillImage(this->imageMsg,
                   this->type,
                   this->height,
                   this->width,
                   this->skip*this->width,
                   (void*)src );
+                  */
+
+        this->imageMsg.encoding = sensor_msgs::image_encodings::MONO8;
+        this->imageMsg.width = this->width;
+        this->imageMsg.height = this->height;
+
+        size_t size = this->width * this->height;
+
+        std::vector<uint8_t>& data (this->imageMsg.data);
+        data.resize(size);
+
+        size_t img_index = 0;
+
+        for (size_t i = 0; i < size; ++i){
+          if (src[img_index] >254 && src[img_index+1] < 1 && src[img_index+2 < 1]){
+            //RGB [255,0,0] translates to white (white hot)
+            data[i]= 255;
+          }else{
+            //Everything else is written to the MONO8 output image much darker
+            data[i]= (src[img_index] + src[img_index+1] + src[img_index+2]) /8 ;
+          }
+          img_index += 3;
+        }
+
 
         //tmpT2 = Simulator::Instance()->GetWallTime();
 
