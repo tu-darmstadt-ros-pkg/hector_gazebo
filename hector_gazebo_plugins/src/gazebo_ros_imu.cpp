@@ -70,7 +70,7 @@ using namespace gazebo;
 
 GZ_REGISTER_DYNAMIC_CONTROLLER("hector_gazebo_ros_imu", GazeboRosIMU);
 
-#define DEBUG_OUTPUT
+// #define DEBUG_OUTPUT
 #ifdef DEBUG_OUTPUT
   #include <geometry_msgs/PoseStamped.h>
   static ros::Publisher debugPublisher;
