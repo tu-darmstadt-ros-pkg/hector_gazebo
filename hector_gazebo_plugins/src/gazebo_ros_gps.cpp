@@ -116,7 +116,7 @@ void GazeboRosGps::LoadChild(XMLConfigNode *node)
   position_error_model_.Load(node);
   velocity_error_model_.Load(node);
 
-  **reference_heading_ *= M_PI/180.0; // convert to radians
+  reference_heading_->SetValue(**reference_heading_ * M_PI/180.0); // convert to radians
 
   fix_.header.frame_id = **frame_id_;
   fix_.status.status  = **status_;

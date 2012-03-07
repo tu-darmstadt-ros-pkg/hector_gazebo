@@ -64,6 +64,8 @@ private:
   ParamT<T> *drift_frequency_param_;
   ParamT<T> *gaussian_noise_param_;
 
+  static T Value(double value);
+
   T current_drift_;
   T current_error_;
 };
@@ -73,15 +75,15 @@ SensorModel_<T>::SensorModel_(std::vector<Param*> &parameters, const std::string
 {
   Param::Begin(&parameters);
   if (prefix.empty()) {
-    offset_param_          = new ParamT<T>("offset", T(), 0);
-    drift_param_           = new ParamT<T>("drift", T(), 0);
-    drift_frequency_param_ = new ParamT<T>("driftFrequency", T(), 0);
-    gaussian_noise_param_  = new ParamT<T>("gaussianNoise", T(), 0);
+    offset_param_          = new ParamT<T>("offset", Value(0.0), 0);
+    drift_param_           = new ParamT<T>("drift", Value(0.0), 0);
+    drift_frequency_param_ = new ParamT<T>("driftFrequency", Value(1.0/3600.0), 0);
+    gaussian_noise_param_  = new ParamT<T>("gaussianNoise", Value(0.0), 0);
   } else {
-    offset_param_          = new ParamT<T>(prefix + "Offset", T(), 0);
-    drift_param_           = new ParamT<T>(prefix + "Drift", T(), 0);
-    drift_frequency_param_ = new ParamT<T>(prefix + "DriftFrequency", T(), 0);
-    gaussian_noise_param_  = new ParamT<T>(prefix + "GaussianNoise", T(), 0);
+    offset_param_          = new ParamT<T>(prefix + "Offset", Value(0.0), 0);
+    drift_param_           = new ParamT<T>(prefix + "Drift", Value(0.0), 0);
+    drift_frequency_param_ = new ParamT<T>(prefix + "DriftFrequency", Value(1.0/3600.0), 0);
+    gaussian_noise_param_  = new ParamT<T>(prefix + "GaussianNoise", Value(0.0), 0);
   }
   Param::End();
 
@@ -160,6 +162,9 @@ void SensorModel_<T>::reset(const T& value)
   current_drift_ = T();
   current_error_ = value;
 }
+
+template <typename T> T SensorModel_<T>::Value(double value) { return T(value); }
+template <> Vector3 SensorModel_<Vector3>::Value(double value) { return Vector3(value, value, value); }
 
 typedef SensorModel_<double> SensorModel;
 typedef SensorModel_<Vector3> SensorModel3;

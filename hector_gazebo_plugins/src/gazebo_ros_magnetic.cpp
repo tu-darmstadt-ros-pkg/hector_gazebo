@@ -101,9 +101,9 @@ void GazeboRosMagnetic::LoadChild(XMLConfigNode *node)
   declination_->Load(node);
   inclination_->Load(node);
 
-  **reference_heading_ *= M_PI/180.0; // convert to radians
-  **declination_ *= M_PI/180.0; // convert to radians
-  **inclination_ *= M_PI/180.0; // convert to radians
+  reference_heading_->SetValue(**reference_heading_ * M_PI/180.0); // convert to radians
+  declination_->SetValue(**declination_ * M_PI/180.0); // convert to radians
+  inclination_->SetValue(**inclination_ * M_PI/180.0); // convert to radians
 
   // Note: Gazebo uses NorthWestUp coordinate system, heading and declination are compass headings
   magnetic_field_world_.x = **magnitude_ *  cos(**inclination_) * cos(**reference_heading_ - **declination_);
