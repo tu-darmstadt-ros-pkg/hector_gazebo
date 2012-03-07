@@ -38,6 +38,8 @@
 #include <gazebo/GazeboError.hh>
 #include <gazebo/ControllerFactory.hh>
 
+static const double EARTH_RADIUS = 6371000.0;
+
 using namespace gazebo;
 
 GZ_REGISTER_DYNAMIC_CONTROLLER("hector_gazebo_ros_gps", GazeboRosGps)
@@ -146,12 +148,12 @@ void GazeboRosGps::UpdateChild()
   fix_.header.stamp = ros::Time(sim_time.sec, sim_time.nsec);
   velocity_.header.stamp = fix_.header.stamp;
 
-  fix_.latitude  = **reference_latitude_  + ( cos(**reference_heading_) * position.x + sin(**reference_heading_) * position.y) / 6371e3 * 180.0/M_PI;
-  fix_.longitude = **reference_longitude_ - (-sin(**reference_heading_) * position.x + cos(**reference_heading_) * position.y) / 6371e3 * 180.0/M_PI * cos(fix_.latitude);
+  fix_.latitude  = **reference_latitude_  + ( cos(**reference_heading_) * position.x + sin(**reference_heading_) * position.y) / EARTH_RADIUS * 180.0/M_PI;
+  fix_.longitude = **reference_longitude_ - (-sin(**reference_heading_) * position.x + cos(**reference_heading_) * position.y) / EARTH_RADIUS * 180.0/M_PI * cos(fix_.latitude);
   fix_.altitude  = **reference_altitude_  + position.z;
   fix_.position_covariance_type = sensor_msgs::NavSatFix::COVARIANCE_TYPE_UNKNOWN;
-  velocity_.vector.x = velocity.x;
-  velocity_.vector.y = velocity.y;
+  velocity_.vector.x =  cos(**reference_heading_) * velocity.x + sin(**reference_heading_) * velocity.y;
+  velocity_.vector.y = -sin(**reference_heading_) * velocity.x + cos(**reference_heading_) * velocity.y;
   velocity_.vector.z = velocity.z;
 
   fix_publisher_.publish(fix_);
