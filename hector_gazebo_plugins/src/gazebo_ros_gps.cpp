@@ -113,6 +113,8 @@ void GazeboRosGps::LoadChild(XMLConfigNode *node)
   status_->Load(node);
   service_->Load(node);
 
+  **reference_heading_ *= M_PI/180.0; // convert to radians
+
   fix_.status.status  = **status_;
   fix_.status.service = **service_;
 

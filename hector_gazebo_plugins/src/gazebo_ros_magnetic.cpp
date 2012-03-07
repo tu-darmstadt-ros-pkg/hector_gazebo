@@ -64,7 +64,7 @@ GazeboRosMagnetic::GazeboRosMagnetic(Entity *parent)
   magnitude_ = new ParamT<double>("magnitude", 20.0, false);
   reference_heading_ = new ParamT<double>("referenceHeading", 0.0, false);
   declination_ = new ParamT<double>("declination", 0.0, false);
-  inclination_ = new ParamT<double>("inclination", 60.0 * M_PI/180.0, false);
+  inclination_ = new ParamT<double>("inclination", 60.0, false);
   Param::End();
 }
 
@@ -101,10 +101,14 @@ void GazeboRosMagnetic::LoadChild(XMLConfigNode *node)
   declination_->Load(node);
   inclination_->Load(node);
 
-  // Gazebo uses NorthWestUp coordinate system (heading and yaw have inversed signs)
-  magnetic_field_world_.x = **magnitude_ *  cos(**inclination_) * cos(**reference_heading_ + **declination_);
-  magnetic_field_world_.y = **magnitude_ * -sin(**reference_heading_ + **declination_);
-  magnetic_field_world_.z = **magnitude_ * -sin(**inclination_) * cos(**reference_heading_ + **declination_);
+  **reference_heading_ *= M_PI/180.0; // convert to radians
+  **declination_ *= M_PI/180.0; // convert to radians
+  **inclination_ *= M_PI/180.0; // convert to radians
+
+  // Note: Gazebo uses NorthWestUp coordinate system, heading and declination are compass headings
+  magnetic_field_world_.x = **magnitude_ *  cos(**inclination_) * cos(**reference_heading_ - **declination_);
+  magnetic_field_world_.y = **magnitude_ *  sin(**reference_heading_ - **declination_);
+  magnetic_field_world_.z = **magnitude_ * -sin(**inclination_) * cos(**reference_heading_ - **declination_);
 
   sensor_model_.Load(node);
 }
