@@ -97,7 +97,7 @@ DiffDrivePlugin6W::DiffDrivePlugin6W(Entity *parent) :
   wheelSepP = new ParamT<float> ("wheelSeparation", 0.34, 1);
   wheelDiamP = new ParamT<float> ("wheelDiameter", 0.15, 1);
   torqueP = new ParamT<float> ("torque", 10.0, 1);
-  robotNamespaceP = new ParamT<std::string> ("robotNamespace", "/", 0);
+  robotNamespaceP = new ParamT<std::string> ("robotNamespace", "", 0);
   topicNameP = new ParamT<std::string> ("topicName", "", 1);
   Param::End();
 

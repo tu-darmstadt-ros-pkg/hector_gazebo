@@ -58,8 +58,8 @@ GazeboRosSonar::GazeboRosSonar(Entity *parent)
 
   Param::Begin(&parameters);
   namespace_param_ = new ParamT<std::string>("robotNamespace", "", false);
-  topic_param_ = new ParamT<std::string>("topicName", "", true);
-  frame_id_param_ = new ParamT<std::string>("frameName", "", true);
+  topic_param_ = new ParamT<std::string>("topicName", "sonar", false);
+  frame_id_param_ = new ParamT<std::string>("frameId", "", false);
   Param::End();
 }
 

@@ -90,12 +90,12 @@ GazeboRosIMU::GazeboRosIMU(Entity *parent)
       gzthrow("GazeboRosIMU controller requires a Model as its parent");
 
   Param::Begin(&parameters);
-  robotNamespaceP = new ParamT<std::string>("robotNamespace", "/", 0);
-  bodyNameP = new ParamT<std::string>("bodyName", "", 0);
-  topicNameP = new ParamT<std::string>("topicName", "", 1);
-  rpyOffsetsP    = new ParamT<Vector3>("rpyOffsets", Vector3(0,0,0),0);
-  gaussianNoiseP = new ParamT<double>("gaussianNoise",0.0,0);
-  serviceNameP = new ParamT<std::string>("serviceName", "imu/calibrate", 0);
+  robotNamespaceP = new ParamT<std::string>("robotNamespace", "", false);
+  bodyNameP = new ParamT<std::string>("bodyName", "", true);
+  topicNameP = new ParamT<std::string>("topicName", "imu", false);
+  rpyOffsetsP    = new ParamT<Vector3>("rpyOffsets", Vector3(0,0,0), false);
+  gaussianNoiseP = new ParamT<double>("gaussianNoise",0.0, false);
+  serviceNameP = new ParamT<std::string>("serviceName", "", false);
   Param::End();
 }
 
@@ -176,10 +176,10 @@ void GazeboRosIMU::LoadChild(XMLConfigNode *node)
   debugPublisher = rosnode_->advertise<geometry_msgs::PoseStamped>(topicName+"/pose", 10);
 #endif // DEBUG_OUTPUT
 
-  // add service call version for position change
+  // advertise services for calibration and bias setting
   serviceNameP->Load(node);
   serviceName = serviceNameP->GetValue();
-  // advertise services on the custom queue
+  if (serviceName.empty()) serviceName = topicName+"/calibrate";
   srv_ = rosnode_->advertiseService(serviceName, &GazeboRosIMU::ServiceCallback, this);
   accelBiasService = rosnode_->advertiseService(topicName+"/set_accel_bias", &GazeboRosIMU::SetAccelBiasCallback, this);
   rateBiasService  = rosnode_->advertiseService(topicName+"/set_rate_bias", &GazeboRosIMU::SetRateBiasCallback, this);

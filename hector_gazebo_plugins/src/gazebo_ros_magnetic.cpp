@@ -59,9 +59,9 @@ GazeboRosMagnetic::GazeboRosMagnetic(Entity *parent)
   Param::Begin(&parameters);
   namespace_ = new ParamT<std::string>("robotNamespace", "", false);
   body_name_ = new ParamT<std::string>("bodyName", "", true);
-  topic_ = new ParamT<std::string>("topicName", "", true);
+  topic_ = new ParamT<std::string>("topicName", "magnetic", false);
 
-  magnitude_ = new ParamT<double>("magnitude", 20.0, false);
+  magnitude_ = new ParamT<double>("magnitude", 1.0, false);
   reference_heading_ = new ParamT<double>("referenceHeading", 0.0, false);
   declination_ = new ParamT<double>("declination", 0.0, false);
   inclination_ = new ParamT<double>("inclination", 60.0, false);
