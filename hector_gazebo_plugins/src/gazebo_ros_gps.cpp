@@ -70,8 +70,8 @@ GazeboRosGps::GazeboRosGps(Entity *parent)
   reference_longitude_ = new ParamT<double>("referenceLongitude", 8.9, false);
   reference_heading_ = new ParamT<double>("referenceHeading", 0.0, false);
   reference_altitude_ = new ParamT<double>("referenceAltitude", 0.0, false);
-  status_ = new ParamT<sensor_msgs::NavSatStatus::_status_type>("gpsStatus", sensor_msgs::NavSatStatus::STATUS_FIX, false);
-  service_ = new ParamT<sensor_msgs::NavSatStatus::_service_type>("gpsService", sensor_msgs::NavSatStatus::SERVICE_GPS, false);
+  status_ = new ParamT<sensor_msgs::NavSatStatus::_status_type>("status", sensor_msgs::NavSatStatus::STATUS_FIX, false);
+  service_ = new ParamT<sensor_msgs::NavSatStatus::_service_type>("service", sensor_msgs::NavSatStatus::SERVICE_GPS, false);
   Param::End();
 }
 
@@ -113,15 +113,14 @@ void GazeboRosGps::LoadChild(XMLConfigNode *node)
   status_->Load(node);
   service_->Load(node);
 
-  **reference_heading_ *= M_PI/180.0; // convert to radians
-
-  fix_.status.status  = **status_;
-  fix_.status.service = **service_;
-
   position_error_model_.Load(node);
   velocity_error_model_.Load(node);
 
+  **reference_heading_ *= M_PI/180.0; // convert to radians
+
   fix_.header.frame_id = **frame_id_;
+  fix_.status.status  = **status_;
+  fix_.status.service = **service_;
   velocity_.header.frame_id = **frame_id_;
 }
 
