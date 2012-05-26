@@ -1,0 +1,10 @@
+<?xml version="1.0"?>
+
+<launch>
+
+  <!-- start gazebo with an empty plane -->
+  <param name="/use_sim_time" value="true" />
+
+  <node name="gazebo" pkg="gazebo" type="gazebo" args="$(find hector_gazebo_worlds)/worlds/empty_realtime.world" respawn="false" output="screen" required="true" />
+
+</launch>
