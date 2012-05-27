@@ -80,9 +80,18 @@ void GazeboRosMagnetic::Load(physics::ModelPtr _model, sdf::ElementPtr _sdf)
 
   if (!link)
   {
-    ROS_FATAL("gazebo_ros_magnetic plugin error: bodyName: %s does not exist\n", link_name_.c_str());
+    ROS_FATAL("GazeboRosMagnetic plugin error: bodyName: %s does not exist\n", link_name_.c_str());
     return;
   }
+
+  double update_rate = 0.0;
+  if (_sdf->HasElement("updateRate")) update_rate = _sdf->GetElement("updateRate")->GetValueDouble();
+  update_period = update_rate > 0.0 ? 1.0/update_rate : 0.0;
+
+  if (!_sdf->HasElement("frameId"))
+    frame_id_ = link_name_;
+  else
+    frame_id_ = _sdf->GetElement("frameId")->GetValueString();
 
   if (!_sdf->HasElement("magnitude"))
     magnitude_ = DEFAULT_MAGNITUDE;
@@ -105,7 +114,7 @@ void GazeboRosMagnetic::Load(physics::ModelPtr _model, sdf::ElementPtr _sdf)
     inclination_ = _sdf->GetElement("inclination")->GetValueDouble() * M_PI/180.0;
 
   // Note: Gazebo uses NorthWestUp coordinate system, heading and declination are compass headings
-  magnetic_field_.header.frame_id = link->GetName();
+  magnetic_field_.header.frame_id = frame_id_;
   magnetic_field_world_.x = magnitude_ *  cos(inclination_) * cos(reference_heading_ - declination_);
   magnetic_field_world_.y = magnitude_ *  sin(reference_heading_ - declination_);
   magnetic_field_world_.z = magnitude_ * -sin(inclination_) * cos(reference_heading_ - declination_);
@@ -143,6 +152,7 @@ void GazeboRosMagnetic::Update()
 {
   common::Time sim_time = world->GetSimTime();
   double dt = (sim_time - last_time).Double();
+  if (last_time + update_period > sim_time) return;
 
   math::Pose pose = link->GetWorldPose();
   math::Vector3 field = sensor_model_(pose.rot.RotateVectorReverse(magnetic_field_world_), dt);

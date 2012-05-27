@@ -60,18 +60,18 @@ public:
   T gaussian_noise;
 
 private:
-  static T Value(double value);
   T current_drift_;
   T current_error_;
 };
 
 template <typename T>
 SensorModel_<T>::SensorModel_()
-  : offset(Value(0.0))
-  , drift(Value(0.0))
-  , drift_frequency(Value(1.0/3600.0))
-  , gaussian_noise(Value(0.0))
+  : offset()
+  , drift()
+  , drift_frequency()
+  , gaussian_noise()
 {
+  drift_frequency = 1.0/3600.0;
   reset();
 }
 
@@ -83,17 +83,24 @@ SensorModel_<T>::~SensorModel_()
 template <typename T>
 void SensorModel_<T>::Load(sdf::ElementPtr _sdf, const std::string& prefix)
 {
+  sdf::ElementPtr _offset, _drift, _drift_frequency, _gaussian_noise;
+
   if (prefix.empty()) {
-    if (_sdf->HasElement("offset"))         offset = _sdf->GetValueDouble("offset");
-    if (_sdf->HasElement("drift"))          drift = _sdf->GetValueDouble("drift");
-    if (_sdf->HasElement("driftFrequency")) drift_frequency = _sdf->GetValueDouble("driftFrequency");
-    if (_sdf->HasElement("gaussianNoise"))  gaussian_noise = _sdf->GetValueDouble("gaussianNoise");
+    _offset          = _sdf->GetElement("offset");
+    _drift           = _sdf->GetElement("drift");
+    _drift_frequency = _sdf->GetElement("driftFrequency");
+    _gaussian_noise  = _sdf->GetElement("gaussianNoise");
   } else {
-    if (_sdf->HasElement(prefix + "Offset"))         offset = _sdf->GetValueDouble(prefix + "Offset");
-    if (_sdf->HasElement(prefix + "Drift"))          drift = _sdf->GetValueDouble(prefix + "Drift");
-    if (_sdf->HasElement(prefix + "DriftFrequency")) drift_frequency = _sdf->GetValueDouble(prefix + "DriftFrequency");
-    if (_sdf->HasElement(prefix + "GaussianNoise"))  gaussian_noise = _sdf->GetValueDouble(prefix + "GaussianNoise");
+    _offset          = _sdf->GetElement(prefix + "Offset");
+    _drift           = _sdf->GetElement(prefix + "Drift");
+    _drift_frequency = _sdf->GetElement(prefix + "DriftFrequency");
+    _gaussian_noise  = _sdf->GetElement(prefix + "GaussianNoise");
   }
+
+  if (_offset          && !_offset->GetValue()->Get(offset))                   offset = _offset->GetValueDouble();
+  if (_drift           && !_drift->GetValue()->Get(drift))                     drift = _drift->GetValueDouble();
+  if (_drift_frequency && !_drift_frequency->GetValue()->Get(drift_frequency)) drift_frequency = _drift_frequency->GetValueDouble();
+  if (_gaussian_noise  && !_gaussian_noise->GetValue()->Get(gaussian_noise))   gaussian_noise = _gaussian_noise->GetValueDouble();
 }
 
 namespace {
@@ -146,9 +153,6 @@ void SensorModel_<T>::reset(const T& value)
   current_drift_ = T();
   current_error_ = value;
 }
-
-template <typename T> T SensorModel_<T>::Value(double value) { return T(value); }
-template <> math::Vector3 SensorModel_<math::Vector3>::Value(double value) { return math::Vector3(value, value, value); }
 
 typedef SensorModel_<double> SensorModel;
 typedef SensorModel_<math::Vector3> SensorModel3;

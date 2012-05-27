@@ -99,16 +99,6 @@ void GazeboRosIMU::Load(physics::ModelPtr _model, sdf::ElementPtr _sdf)
   else
     robotNamespace = _sdf->GetElement("robotNamespace")->GetValueString() + "/";
 
-  if (!_sdf->HasElement("serviceName"))
-    serviceName = topicName + "/calibrate";
-  else
-    serviceName = _sdf->GetElement("serviceName")->GetValueString();
-
-  if (!_sdf->HasElement("topicName"))
-    topicName = "imu";
-  else
-    topicName = _sdf->GetElement("topicName")->GetValueString();
-
   if (!_sdf->HasElement("bodyName"))
   {
     link = _model->GetLink();
@@ -122,9 +112,28 @@ void GazeboRosIMU::Load(physics::ModelPtr _model, sdf::ElementPtr _sdf)
   // assert that the body by linkName exists
   if (!link)
   {
-    ROS_FATAL("gazebo_ros_imu plugin error: bodyName: %s does not exist\n", linkName.c_str());
+    ROS_FATAL("GazeboRosIMU plugin error: bodyName: %s does not exist\n", linkName.c_str());
     return;
   }
+
+  double update_rate = 0.0;
+  if (_sdf->HasElement("updateRate")) update_rate = _sdf->GetElement("updateRate")->GetValueDouble();
+  update_period = update_rate > 0.0 ? 1.0/update_rate : 0.0;
+
+  if (!_sdf->HasElement("frameId"))
+    frameId = linkName;
+  else
+    frameId = _sdf->GetElement("frameId")->GetValueString();
+
+  if (!_sdf->HasElement("serviceName"))
+    serviceName = topicName + "/calibrate";
+  else
+    serviceName = _sdf->GetElement("serviceName")->GetValueString();
+
+  if (!_sdf->HasElement("topicName"))
+    topicName = "imu";
+  else
+    topicName = _sdf->GetElement("topicName")->GetValueString();
 
   accelModel.Load(_sdf, "accel");
   rateModel.Load(_sdf, "rate");
@@ -233,14 +242,15 @@ bool GazeboRosIMU::SetRateBiasCallback(hector_gazebo_plugins::SetBias::Request &
 // Update the controller
 void GazeboRosIMU::Update()
 {
+  // Get Time Difference dt
+  common::Time cur_time = world->GetSimTime();
+  double dt = (cur_time - last_time).Double();
+  if (last_time + update_period > cur_time) return;
+
   boost::mutex::scoped_lock scoped_lock(lock);
 
   // Get Pose/Orientation
   math::Pose pose = link->GetWorldPose();
-
-  // Get Time Difference dt
-  common::Time cur_time = world->GetSimTime();
-  double dt = (cur_time - last_time).Double();
 
   // get Acceleration and Angular Rates
   // the result of GetRelativeLinearAccel() seems to be unreliable (sum of forces added during the current simulation step)?
@@ -285,7 +295,7 @@ void GazeboRosIMU::Update()
   pose.rot = attitudeError * pose.rot * headingError;
 
   // copy data into pose message
-  imuMsg.header.frame_id = linkName;
+  imuMsg.header.frame_id = frameId;
   imuMsg.header.stamp.sec = cur_time.sec;
   imuMsg.header.stamp.nsec = cur_time.nsec;
 

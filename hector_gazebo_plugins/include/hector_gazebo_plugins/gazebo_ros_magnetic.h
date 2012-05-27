@@ -66,6 +66,7 @@ private:
   std::string namespace_;
   std::string topic_;
   std::string link_name_;
+  std::string frame_id_;
 
   double magnitude_;
   double reference_heading_;
@@ -76,6 +77,7 @@ private:
 
   /// \brief save last_time
   common::Time last_time;
+  common::Time update_period;
 
   // Pointer to the update event connection
   event::ConnectionPtr updateConnection;

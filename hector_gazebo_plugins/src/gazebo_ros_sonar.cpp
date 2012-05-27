@@ -57,7 +57,7 @@ void GazeboRosSonar::Load(sensors::SensorPtr _sensor, sdf::ElementPtr _sdf)
   sensor_ = boost::shared_dynamic_cast<sensors::RaySensor>(_sensor);
   if (!sensor_)
   {
-    ROS_FATAL("gazebo_ros_sonar plugin needs a RaySensor as parent");
+    gzthrow("GazeboRosSonar requires a Ray Sensor as its parent");
     return;
   }
 
@@ -81,6 +81,14 @@ void GazeboRosSonar::Load(sensors::SensorPtr _sensor, sdf::ElementPtr _sdf)
   else
     topic_ = _sdf->GetElement("topicName")->GetValueString();
 
+  if (!_sdf->GetElement("updateRate"))
+    updateRate = 0;
+  else
+    updateRate = _sdf->GetElement("updateRate")->GetValueDouble();
+
+  // set parent sensor update rate
+  sensor_->SetUpdateRate(updateRate);
+
   sensor_model_.Load(_sdf);
 
   range_.header.frame_id = frame_id_;
@@ -88,8 +96,6 @@ void GazeboRosSonar::Load(sensors::SensorPtr _sensor, sdf::ElementPtr _sdf)
   range_.field_of_view = std::min(fabs((sensor_->GetAngleMax() - sensor_->GetAngleMin()).GetAsRadian()), fabs((sensor_->GetVerticalAngleMax() - sensor_->GetVerticalAngleMin().GetAsRadian()).GetAsRadian()));
   range_.max_range = sensor_->GetRangeMax();
   range_.min_range = sensor_->GetRangeMin();
-
-  sensor_->SetActive(false);
 
   // start ros node
   if (!ros::isInitialized())
@@ -103,12 +109,20 @@ void GazeboRosSonar::Load(sensors::SensorPtr _sensor, sdf::ElementPtr _sdf)
   publisher_ = node_handle_->advertise<sensor_msgs::Range>(topic_, 1);
 
   Reset();
+  sensor_->SetActive(true);
 
   // New Mechanism for Updating every World Cycle
   // Listen to the update event. This event is broadcast every
   // simulation iteration.
-  updateConnection = event::Events::ConnectWorldUpdateStart(
-      boost::bind(&GazeboRosSonar::Update, this));
+  updateConnection = sensor_->GetLaserShape()->ConnectNewLaserScans(
+        boost::bind(&GazeboRosSonar::Update, this));
+//  updateConnection = event::Events::ConnectWorldUpdateStart(
+//      boost::bind(&GazeboRosSonar::Update, this));
+}
+
+void GazeboRosSonar::Reset()
+{
+  sensor_model_.reset();
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -117,8 +131,7 @@ void GazeboRosSonar::Update()
 {
   common::Time sim_time = world->GetSimTime();
   double dt = (sim_time - last_time).Double();
-
-  if (!sensor_->IsActive()) sensor_->SetActive(true);
+//  if (last_time + updatePeriod > sim_time) return;
 
   range_.header.stamp.sec  = (world->GetSimTime()).sec;
   range_.header.stamp.nsec = (world->GetSimTime()).nsec;

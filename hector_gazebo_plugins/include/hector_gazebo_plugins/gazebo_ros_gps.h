@@ -83,6 +83,7 @@ private:
 
   /// \brief save last_time
   common::Time last_time;
+  common::Time update_period;
 
   // Pointer to the update event connection
   event::ConnectionPtr updateConnection;

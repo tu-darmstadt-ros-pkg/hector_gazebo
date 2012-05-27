@@ -63,8 +63,28 @@ void GazeboRosGps::Load(physics::ModelPtr _model, sdf::ElementPtr _sdf)
   else
     namespace_ = _sdf->GetElement("robotNamespace")->GetValueString() + "/";
 
+  if (!_sdf->HasElement("bodyName"))
+  {
+    link = _model->GetLink();
+    link_name_ = link->GetName();
+  }
+  else {
+    link_name_ = _sdf->GetElement("bodyName")->GetValueString();
+    link = boost::shared_dynamic_cast<physics::Link>(world->GetEntity(link_name_));
+  }
+
+  if (!link)
+  {
+    ROS_FATAL("GazeboRosGps plugin error: bodyName: %s does not exist\n", link_name_.c_str());
+    return;
+  }
+
+  double update_rate = 4.0;
+  if (_sdf->HasElement("updateRate")) update_rate = _sdf->GetElement("updateRate")->GetValueDouble();
+  update_period = update_rate > 0.0 ? 1.0/update_rate : 0.0;
+
   if (!_sdf->HasElement("frameId"))
-    frame_id_ = "";
+    frame_id_ = link_name_;
   else
     frame_id_ = _sdf->GetElement("frameId")->GetValueString();
 
@@ -78,22 +98,6 @@ void GazeboRosGps::Load(physics::ModelPtr _model, sdf::ElementPtr _sdf)
   else
     velocity_topic_ = _sdf->GetElement("velocityTopicName")->GetValueString();
 
-  if (!_sdf->HasElement("bodyName"))
-  {
-    link = _model->GetLink();
-    link_name_ = link->GetName();
-  }
-  else {
-    link_name_ = _sdf->GetElement("bodyName")->GetValueString();
-    link = boost::shared_dynamic_cast<physics::Link>(world->GetEntity(link_name_));
-  }
-
-  if (!link)
-  {
-    ROS_FATAL("gazebo_ros_gps plugin error: bodyName: %s does not exist\n", link_name_.c_str());
-    return;
-  }
-
   if (!_sdf->HasElement("referenceLatitude"))
     reference_latitude_ = DEFAULT_REFERENCE_LATITUDE;
   else
@@ -103,7 +107,6 @@ void GazeboRosGps::Load(physics::ModelPtr _model, sdf::ElementPtr _sdf)
     reference_longitude_ = DEFAULT_REFERENCE_LONGITUDE;
   else
     reference_longitude_ = _sdf->GetElement("referenceLongitude")->GetValueDouble();
-
 
   if (!_sdf->HasElement("referenceHeading"))
     reference_heading_ = DEFAULT_REFERENCE_HEADING * M_PI/180.0;
@@ -168,6 +171,7 @@ void GazeboRosGps::Update()
 {
   common::Time sim_time = world->GetSimTime();
   double dt = (sim_time - last_time).Double();
+  if (last_time + update_period > sim_time) return;
 
   math::Pose pose = link->GetWorldPose();
 

@@ -107,6 +107,9 @@ namespace gazebo
       /// \brief store link name
       std::string linkName;
 
+      /// \brief frame id
+      std::string frameId;
+
       /// \brief topic name
       std::string topicName;
 
@@ -120,6 +123,7 @@ namespace gazebo
 
       /// \brief save last_time
       common::Time last_time;
+      common::Time update_period;
 
       /// \brief save current body/physics state
       math::Quaternion orientation;

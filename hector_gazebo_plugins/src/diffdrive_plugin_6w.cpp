@@ -101,7 +101,7 @@ void DiffDrivePlugin6W::Load(physics::ModelPtr _model, sdf::ElementPtr _sdf)
   // assert that the body by linkName exists
   if (!link)
   {
-    ROS_FATAL("diffdrive_plugin_6w plugin error: bodyName: %s does not exist\n", linkName.c_str());
+    ROS_FATAL("DiffDrivePlugin6W plugin error: bodyName: %s does not exist\n", linkName.c_str());
     return;
   }
 
