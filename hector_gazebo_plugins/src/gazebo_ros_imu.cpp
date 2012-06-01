@@ -160,12 +160,12 @@ void GazeboRosIMU::LoadChild(XMLConfigNode *node)
   }
 
   // fill in constant covariance matrix
-  imuMsg.angular_velocity_covariance[0] = rateModel.gaussian_noise.z*rateModel.gaussian_noise.z;
+  imuMsg.angular_velocity_covariance[0] = rateModel.gaussian_noise.x*rateModel.gaussian_noise.x;
   imuMsg.angular_velocity_covariance[4] = rateModel.gaussian_noise.y*rateModel.gaussian_noise.y;
-  imuMsg.angular_velocity_covariance[8] = rateModel.gaussian_noise.x*rateModel.gaussian_noise.x;
-  imuMsg.linear_acceleration_covariance[0] = accelModel.gaussian_noise.z*accelModel.gaussian_noise.z;
+  imuMsg.angular_velocity_covariance[8] = rateModel.gaussian_noise.z*rateModel.gaussian_noise.z;
+  imuMsg.linear_acceleration_covariance[0] = accelModel.gaussian_noise.x*accelModel.gaussian_noise.x;
   imuMsg.linear_acceleration_covariance[4] = accelModel.gaussian_noise.y*accelModel.gaussian_noise.y;
-  imuMsg.linear_acceleration_covariance[8] = accelModel.gaussian_noise.x*accelModel.gaussian_noise.x;
+  imuMsg.linear_acceleration_covariance[8] = accelModel.gaussian_noise.z*accelModel.gaussian_noise.z;
 
   if (topicName != "")
   {
@@ -242,8 +242,8 @@ void GazeboRosIMU::UpdateChild()
   // get Acceleration and Angular Rates
   // the result of GetRelativeLinearAccel() seems to be unreliable (sum of forces added during the current simulation step)?
   //accel = myBody->GetRelativeLinearAccel(); // get acceleration in body frame
-  Vector3 temp = myBody->GetRelativeLinearVel(); // get velocity in body frame
-  accel = (temp - velocity) / dt;
+  Vector3 temp = myBody->GetWorldLinearVel(); // get velocity in world frame
+  accel = pose.rot.RotateVectorReverse((temp - velocity) / dt);
   velocity = temp;
 
   // GetRelativeAngularVel() sometimes return nan?
@@ -303,13 +303,13 @@ void GazeboRosIMU::UpdateChild()
   imuMsg.linear_acceleration.z    = accel.z;
 
   // fill in covariance matrix
-  imuMsg.orientation_covariance[0] = headingModel.gaussian_noise*headingModel.gaussian_noise;
+  imuMsg.orientation_covariance[8] = headingModel.gaussian_noise*headingModel.gaussian_noise;
   if (gravity_length > 0.0) {
+    imuMsg.orientation_covariance[0] = accelModel.gaussian_noise.x*accelModel.gaussian_noise.x/(gravity_length*gravity_length);
     imuMsg.orientation_covariance[4] = accelModel.gaussian_noise.y*accelModel.gaussian_noise.y/(gravity_length*gravity_length);
-    imuMsg.orientation_covariance[8] = accelModel.gaussian_noise.x*accelModel.gaussian_noise.x/(gravity_length*gravity_length);
   } else {
+    imuMsg.orientation_covariance[0] = -1;
     imuMsg.orientation_covariance[4] = -1;
-    imuMsg.orientation_covariance[8] = -1;
   }
 
   // publish to ros
