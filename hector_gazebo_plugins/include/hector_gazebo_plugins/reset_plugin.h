@@ -29,7 +29,6 @@
 #ifndef HECTOR_GAZEBO_PLUGINS_RESET_PLUGIN_H
 #define HECTOR_GAZEBO_PLUGINS_RESET_PLUGIN_H
 
-#include "gazebo.h"
 #include "common/Plugin.hh"
 
 #include <ros/ros.h>

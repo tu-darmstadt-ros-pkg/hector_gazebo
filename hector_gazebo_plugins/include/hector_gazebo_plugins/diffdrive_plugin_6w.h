@@ -27,7 +27,6 @@
 
 #include <map>
 
-#include "gazebo.h"
 #include "common/Plugin.hh"
 //#include "physics/physics.h"
 //#include "transport/TransportTypes.hh"

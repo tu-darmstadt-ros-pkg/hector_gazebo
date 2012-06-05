@@ -64,7 +64,6 @@
 #include <ros/advertise_options.h>
 #endif
 
-#include "gazebo.h"
 #include "common/Plugin.hh"
 
 #include <ros/ros.h>

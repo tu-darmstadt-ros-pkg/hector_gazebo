@@ -255,7 +255,7 @@ void GazeboRosIMU::Update()
   // get Acceleration and Angular Rates
   // the result of GetRelativeLinearAccel() seems to be unreliable (sum of forces added during the current simulation step)?
   //accel = myBody->GetRelativeLinearAccel(); // get acceleration in body frame
-  math::Vector3 temp = myBody->GetWorldLinearVel(); // get velocity in world frame
+  math::Vector3 temp = link->GetWorldLinearVel(); // get velocity in world frame
   accel = pose.rot.RotateVectorReverse((temp - velocity) / dt);
   velocity = temp;
 

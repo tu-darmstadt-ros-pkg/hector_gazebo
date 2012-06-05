@@ -29,7 +29,6 @@
 #ifndef HECTOR_GAZEBO_PLUGINS_GAZEBO_ROS_SONAR_H
 #define HECTOR_GAZEBO_PLUGINS_GAZEBO_ROS_SONAR_H
 
-#include "gazebo.h"
 #include "common/Plugin.hh"
 
 #include <ros/callback_queue.h>
