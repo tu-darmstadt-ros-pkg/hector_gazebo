@@ -43,7 +43,7 @@ public:
   virtual ~GazeboResetPlugin();
 
 protected:
-  virtual void Load();
+  virtual void Load(int argc, char **argv);
   virtual void Reset();
 
 private:

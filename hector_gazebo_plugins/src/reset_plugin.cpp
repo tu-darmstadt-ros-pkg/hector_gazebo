@@ -47,7 +47,7 @@ GazeboResetPlugin::~GazeboResetPlugin()
 
 ////////////////////////////////////////////////////////////////////////////////
 // Load the controller
-void GazeboResetPlugin::Load()
+void GazeboResetPlugin::Load(int, char **)
 {
   if (!ros::isInitialized())
   {
