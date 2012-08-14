@@ -66,9 +66,6 @@ private:
   std::string topic_;
   std::string frame_id_;
 
-  double updateRate;
-  double updatePeriod;
-
   SensorModel sensor_model_;
 
   /// \brief save last_time

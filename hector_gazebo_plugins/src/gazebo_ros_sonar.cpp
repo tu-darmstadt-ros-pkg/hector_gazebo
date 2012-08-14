@@ -81,14 +81,6 @@ void GazeboRosSonar::Load(sensors::SensorPtr _sensor, sdf::ElementPtr _sdf)
   else
     topic_ = _sdf->GetElement("topicName")->GetValueString();
 
-  if (!_sdf->GetElement("updateRate"))
-    updateRate = 0;
-  else
-    updateRate = _sdf->GetElement("updateRate")->GetValueDouble();
-
-  // set parent sensor update rate
-  sensor_->SetUpdateRate(updateRate);
-
   sensor_model_.Load(_sdf);
 
   range_.header.frame_id = frame_id_;
@@ -109,15 +101,11 @@ void GazeboRosSonar::Load(sensors::SensorPtr _sensor, sdf::ElementPtr _sdf)
   publisher_ = node_handle_->advertise<sensor_msgs::Range>(topic_, 1);
 
   Reset();
-  sensor_->SetActive(true);
-
-  // New Mechanism for Updating every World Cycle
-  // Listen to the update event. This event is broadcast every
-  // simulation iteration.
   updateConnection = sensor_->GetLaserShape()->ConnectNewLaserScans(
         boost::bind(&GazeboRosSonar::Update, this));
-//  updateConnection = event::Events::ConnectWorldUpdateStart(
-//      boost::bind(&GazeboRosSonar::Update, this));
+
+  // activate RaySensor
+  sensor_->SetActive(true);
 }
 
 void GazeboRosSonar::Reset()
@@ -133,15 +121,25 @@ void GazeboRosSonar::Update()
   double dt = (sim_time - last_time).Double();
 //  if (last_time + updatePeriod > sim_time) return;
 
+  // activate RaySensor if it is not yet active
+  if (!sensor_->IsActive()) sensor_->SetActive(true);
+
   range_.header.stamp.sec  = (world->GetSimTime()).sec;
   range_.header.stamp.nsec = (world->GetSimTime()).nsec;
 
+  // find ray with minimal range
   range_.range = std::numeric_limits<sensor_msgs::Range::_range_type>::max();
   for(int i = 0; i < sensor_->GetRangeCount(); ++i) {
-    double ray = sensor_->GetRange(i);
+    double ray = sensor_->GetLaserShape()->GetRange(i);
     if (ray < range_.range) range_.range = ray;
   }
-  range_.range += sensor_model_.update(dt);
+
+  // add Gaussian noise (and limit to min/max range)
+  if (range_.range < range_.max_range) {
+    range_.range += sensor_model_.update(dt);
+    if (range_.range < range_.min_range) range_.range = range_.min_range;
+    if (range_.range > range_.max_range) range_.range = range_.max_range;
+  }
 
   publisher_.publish(range_);
 
