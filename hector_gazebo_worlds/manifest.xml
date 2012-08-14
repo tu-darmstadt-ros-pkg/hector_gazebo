@@ -9,6 +9,7 @@
   <review status="unreviewed" notes=""/>
   <url>http://ros.org/wiki/hector_gazebo_worlds</url>
   <depend package="gazebo"/>
+  <depend package="hector_gazebo_plugins"/>
   
   <export>
     <gazebo gazebo_media_path="${prefix}" />
