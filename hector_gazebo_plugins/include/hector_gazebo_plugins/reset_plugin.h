@@ -36,14 +36,14 @@
 namespace gazebo
 {
 
-class GazeboResetPlugin : public SystemPlugin
+class GazeboResetPlugin : public ModelPlugin
 {
 public:
   GazeboResetPlugin();
   virtual ~GazeboResetPlugin();
 
 protected:
-  virtual void Load(int argc, char **argv);
+  virtual void Load(physics::ModelPtr _model, sdf::ElementPtr _sdf);
   virtual void Reset();
 
 private:

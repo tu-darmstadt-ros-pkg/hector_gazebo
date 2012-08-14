@@ -47,7 +47,7 @@ GazeboResetPlugin::~GazeboResetPlugin()
 
 ////////////////////////////////////////////////////////////////////////////////
 // Load the controller
-void GazeboResetPlugin::Load(int, char **)
+void GazeboResetPlugin::Load(physics::ModelPtr _model, sdf::ElementPtr _sdf)
 {
   if (!ros::isInitialized())
   {
@@ -70,6 +70,6 @@ void GazeboResetPlugin::Reset()
 }
 
 // Register this plugin with the simulator
-GZ_REGISTER_SYSTEM_PLUGIN(GazeboResetPlugin)
+GZ_REGISTER_MODEL_PLUGIN(GazeboResetPlugin)
 
 } // namespace gazebo
