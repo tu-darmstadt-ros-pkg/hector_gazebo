@@ -24,7 +24,7 @@ rosbuild_link_boost(diffdrive_plugin_6w thread)
 rosbuild_add_library(reset_plugin src/reset_plugin.cpp)
 
 rosbuild_add_library(hector_gazebo_ros_imu src/gazebo_ros_imu.cpp)
-#rosbuild_link_boost(hector_gazebo_ros_imu thread)
+rosbuild_link_boost(hector_gazebo_ros_imu thread)
 
 rosbuild_add_library(hector_gazebo_ros_magnetic src/gazebo_ros_magnetic.cpp)
 rosbuild_add_library(hector_gazebo_ros_gps src/gazebo_ros_gps.cpp)
