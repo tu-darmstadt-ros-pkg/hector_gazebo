@@ -1,21 +1,8 @@
 <?xml version="1.0"?>
 
 <launch>
-
-  <arg name="use_sim_time" default="true"/>
-  <arg name="gui" default="true"/>
-
-  <!-- set use_sim_time flag -->
-  <group if="$(arg use_sim_time)">
-    <param name="/use_sim_time" value="true" />
-  </group>
-    
-  <!-- start gazebo -->
-  <node name="gazebo" pkg="gazebo" type="gazebo" args="$(find hector_gazebo_worlds)/worlds/wg_collada_realtime.world" respawn="false" output="screen" required="true" />
-
-  <!-- start gui -->
-  <group if="$(arg gui)">
-    <node name="gazebo_gui" pkg="gazebo" type="gui" respawn="false" output="screen" required="true"/>
-  </group>
+  <include file="$(find hector_gazebo_worlds)/launch/start.launch">
+   <arg name="world" value="$(find hector_gazebo_worlds)/worlds/wg_collada_realtime.world"/> 
+  </include>
 
 </launch>
