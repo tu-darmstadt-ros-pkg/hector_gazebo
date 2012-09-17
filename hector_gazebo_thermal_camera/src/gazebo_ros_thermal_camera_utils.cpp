@@ -330,6 +330,11 @@ void GazeboRosThermalCameraUtils::Init()
   // sensor generation off by default
   this->parentSensor_->SetActive(false);
 
+  this->type_ = sensor_msgs::image_encodings::MONO8;
+  this->skip_ = 1;
+
+  /*
+
   // set buffer size
   if (this->format_ == "L8")
   {
@@ -376,6 +381,7 @@ void GazeboRosThermalCameraUtils::Init()
     this->type_ = sensor_msgs::image_encodings::BGR8;
     this->skip_ = 3;
   }
+  */
 
   /// Compute camera_ parameters if set to 0
   if (this->cx_prime_ == 0)
@@ -427,12 +433,39 @@ void GazeboRosThermalCameraUtils::PutCameraData(const unsigned char *_src)
   if (this->imageConnectCount > 0)
   {
     // copy from src to image_msg_
+
+    this->image_msg_.encoding = this->type_;
+    this->image_msg_.width = this->width_;
+    this->image_msg_.height = this->height_;
+
+    size_t size = this->width_ * this->height_;
+
+    std::vector<uint8_t>& data (this->image_msg_.data);
+    data.resize(size);
+
+    size_t img_index = 0;
+
+    for (size_t i = 0; i < size; ++i){
+      if (_src[img_index] >254 && _src[img_index+1] < 1 && _src[img_index+2 < 1]){
+        //RGB [255,0,0] translates to white (white hot)
+        data[i]= 255;
+      }else{
+        //Everything else is written to the MONO8 output image much darker
+        data[i]= (_src[img_index] + _src[img_index+1] + _src[img_index+2]) /8 ;
+      }
+      img_index += 3;
+    }
+
+
+
+    /*
     fillImage(this->image_msg_,
         this->type_,
         this->height_,
         this->width_,
         this->skip_*this->width_,
         (void*)_src );
+    */
 
     // publish to ros
     this->image_pub_.publish(this->image_msg_);
