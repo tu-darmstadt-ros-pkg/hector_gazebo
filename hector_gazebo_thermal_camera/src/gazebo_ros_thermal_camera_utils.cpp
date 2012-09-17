@@ -1,3 +1,34 @@
+//=================================================================================================
+// Copyright (c) 2012, Stefan Kohlbrecher, TU Darmstadt
+// All rights reserved.
+
+// Redistribution and use in source and binary forms, with or without
+// modification, are permitted provided that the following conditions are met:
+//     * Redistributions of source code must retain the above copyright
+//       notice, this list of conditions and the following disclaimer.
+//     * Redistributions in binary form must reproduce the above copyright
+//       notice, this list of conditions and the following disclaimer in the
+//       documentation and/or other materials provided with the distribution.
+//     * Neither the name of the Simulation, Systems Optimization and Robotics
+//       group, TU Darmstadt nor the names of its contributors may be used to
+//       endorse or promote products derived from this software without
+//       specific prior written permission.
+
+// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
+// ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
+// WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
+// DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER BE LIABLE FOR ANY
+// DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
+// (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
+// LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
+// ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+// (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
+// SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+//=================================================================================================
+/**
+ * Copy of the DepthCameraSensor plugin with minor changes
+ */
+
 /*
  *  Gazebo - Outdoor Multi-Robot Simulator
  *  Copyright (C) 2003
@@ -18,21 +49,13 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  *
  */
-/*
- @mainpage
-   Desc: GazeboRosThermalCameraUtils plugin for simulating camera_s in Gazebo
-   Author: John Hsu
-   Date: 24 Sept 2008
-   SVN info: $Id$
- @htmlinclude manifest.html
- @b GazeboRosThermalCameraUtils plugin broadcasts ROS Image messages
- */
 
 #include <algorithm>
 #include <assert.h>
 #include <boost/thread/thread.hpp>
 #include <boost/bind.hpp>
 
+//#include <gazebo_plugins/gazebo_ros_camera_utils.h>
 #include <hector_gazebo_thermal_camera/gazebo_ros_thermal_camera_utils.h>
 
 #include "physics/World.hh"
@@ -52,6 +75,8 @@
 #include <geometry_msgs/Point32.h>
 #include <sensor_msgs/ChannelFloat32.h>
 
+#include "tf/tf.h"
+
 namespace gazebo
 {
 
@@ -59,8 +84,12 @@ namespace gazebo
 // Constructor
 GazeboRosThermalCameraUtils::GazeboRosThermalCameraUtils()
 {
-  this->imageConnectCount = 0;
-  this->infoConnectCount = 0;
+  this->image_connect_count_ = 0;
+  this->info_connect_count_ = 0;
+
+  // maintain for one more release for backwards compatibility with pr2_gazebo_plugins
+  this->imageConnectCount = this->image_connect_count_;
+  this->infoConnectCount = this->info_connect_count_;
 
   this->last_update_time_ = common::Time(0);
   this->last_info_update_time_ = common::Time(0);
@@ -89,10 +118,13 @@ GazeboRosThermalCameraUtils::~GazeboRosThermalCameraUtils()
 void GazeboRosThermalCameraUtils::Load(sensors::SensorPtr _parent, sdf::ElementPtr _sdf)
 {
   // Get the world name.
-  std::string worldName = _parent->GetWorldName();
+  std::string world_name = _parent->GetWorldName();
 
-  // Get the world
-  this->world = physics::get_world(worldName);
+  // Get the world_
+  this->world_ = physics::get_world(world_name);
+
+  // maintain for one more release for backwards compatibility with pr2_gazebo_plugins
+  this->world = this->world_;
 
   this->robot_namespace_ = "";
   if (_sdf->HasElement("robotNamespace"))
@@ -222,9 +254,14 @@ void GazeboRosThermalCameraUtils::Load(sensors::SensorPtr _parent, sdf::ElementP
                ros::init_options::AnonymousName );
   }
 
-  this->rosnode_ = new ros::NodeHandle(
-      this->robot_namespace_+"/"+this->camera_name_);
+  this->rosnode_ = new ros::NodeHandle(this->robot_namespace_+"/"+this->camera_name_);
+
   this->itnode_ = new image_transport::ImageTransport(*this->rosnode_);
+
+  // resolve tf prefix
+  std::string prefix;
+  this->rosnode_->getParam(std::string("tf_prefix"), prefix);
+  this->frame_name_ = tf::resolve(prefix, this->frame_name_);
 
   if (!this->camera_name_.empty())
   {
@@ -272,13 +309,17 @@ void GazeboRosThermalCameraUtils::Load(sensors::SensorPtr _parent, sdf::ElementP
 // Increment count
 void GazeboRosThermalCameraUtils::InfoConnect()
 {
-  this->infoConnectCount++;
+  this->info_connect_count_++;
+  // maintain for one more release for backwards compatibility with pr2_gazebo_plugins
+  this->infoConnectCount = this->info_connect_count_;
 }
 ////////////////////////////////////////////////////////////////////////////////
 // Decrement count
 void GazeboRosThermalCameraUtils::InfoDisconnect()
 {
-  this->infoConnectCount--;
+  this->info_connect_count_--;
+  // maintain for one more release for backwards compatibility with pr2_gazebo_plugins
+  this->infoConnectCount = this->info_connect_count_;
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -299,15 +340,19 @@ void GazeboRosThermalCameraUtils::SetUpdateRate(const std_msgs::Float64::ConstPt
 // Increment count
 void GazeboRosThermalCameraUtils::ImageConnect()
 {
-  this->imageConnectCount++;
+  this->image_connect_count_++;
+  // maintain for one more release for backwards compatibility with pr2_gazebo_plugins
+  this->imageConnectCount = this->image_connect_count_;
   this->parentSensor_->SetActive(true);
 }
 ////////////////////////////////////////////////////////////////////////////////
 // Decrement count
 void GazeboRosThermalCameraUtils::ImageDisconnect()
 {
-  this->imageConnectCount--;
-  if (this->imageConnectCount <= 0)
+  this->image_connect_count_--;
+  // maintain for one more release for backwards compatibility with pr2_gazebo_plugins
+  this->imageConnectCount = this->image_connect_count_;
+  if (this->image_connect_count_ <= 0)
     this->parentSensor_->SetActive(false);
 }
 
@@ -334,7 +379,6 @@ void GazeboRosThermalCameraUtils::Init()
   this->skip_ = 1;
 
   /*
-
   // set buffer size
   if (this->format_ == "L8")
   {
@@ -430,10 +474,8 @@ void GazeboRosThermalCameraUtils::PutCameraData(const unsigned char *_src)
   this->image_msg_.header.stamp.nsec = this->sensor_update_time_.nsec;
 
   /// don't bother if there are no subscribers
-  if (this->imageConnectCount > 0)
+  if (this->image_connect_count_ > 0)
   {
-    // copy from src to image_msg_
-
     this->image_msg_.encoding = this->type_;
     this->image_msg_.width = this->width_;
     this->image_msg_.height = this->height_;
@@ -456,17 +498,6 @@ void GazeboRosThermalCameraUtils::PutCameraData(const unsigned char *_src)
       img_index += 3;
     }
 
-
-
-    /*
-    fillImage(this->image_msg_,
-        this->type_,
-        this->height_,
-        this->width_,
-        this->skip_*this->width_,
-        (void*)_src );
-    */
-
     // publish to ros
     this->image_pub_.publish(this->image_msg_);
   }
@@ -486,10 +517,10 @@ void GazeboRosThermalCameraUtils::PublishCameraInfo(common::Time &last_update_ti
 
 void GazeboRosThermalCameraUtils::PublishCameraInfo()
 {
-  if (this->infoConnectCount > 0)
+  if (this->info_connect_count_ > 0)
   {
     this->sensor_update_time_ = this->parentSensor_->GetLastUpdateTime();
-    common::Time cur_time = this->world->GetSimTime();
+    common::Time cur_time = this->world_->GetSimTime();
     if (cur_time - this->last_info_update_time_ >= this->update_period_)
     {
       this->PublishCameraInfo(this->camera_info_pub_);
