@@ -252,7 +252,7 @@ void DiffDrivePlugin6W::GetPositionCmd()
   double vr, va;
 
   vr = x_; //myIface->data->cmdVelocity.pos.x;
-  va = rot_; //myIface->data->cmdVelocity.yaw;
+  va = -rot_; //myIface->data->cmdVelocity.yaw;
 
   //std::cout << "X: [" << x_ << "] ROT: [" << rot_ << "]" << std::endl;
 
