@@ -30,11 +30,12 @@
 // library for processing camera data for gazebo / ros conversions
 #include <hector_gazebo_thermal_camera/gazebo_ros_thermal_camera_utils.h>
 #include "plugins/CameraPlugin.hh"
+#include "plugins/DepthCameraPlugin.hh"
 
 namespace gazebo
 {
 
-  class GazeboRosThermalCamera : public CameraPlugin, GazeboRosThermalCameraUtils
+  class GazeboRosThermalCamera : public DepthCameraPlugin, GazeboRosThermalCameraUtils
   {
     /// \brief Constructor
     /// \param parent The parent entity, must be a Model or a Sensor

@@ -51,14 +51,15 @@ GazeboRosThermalCamera::~GazeboRosThermalCamera()
 
 void GazeboRosThermalCamera::Load(sensors::SensorPtr _parent, sdf::ElementPtr _sdf)
 {
-  CameraPlugin::Load(_parent, _sdf);
+  DepthCameraPlugin::Load(_parent, _sdf);
   // copying from CameraPlugin into GazeboRosThermalCameraUtils
   this->parentSensor_ = this->parentSensor;
   this->width_ = this->width;
   this->height_ = this->height;
   this->depth_ = this->depth;
   this->format_ = this->format;
-  this->camera_ = this->camera;
+  //this->camera_ = this->camera;
+  this->camera_ = this->depthCamera;
   GazeboRosThermalCameraUtils::Load(_parent, _sdf);
 }
 

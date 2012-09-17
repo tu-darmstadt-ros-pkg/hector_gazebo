@@ -28,7 +28,7 @@ target_link_libraries(gazebo_ros_thermal_camera_utils gazebo_sdf_interface)
 rosbuild_link_boost(gazebo_ros_thermal_camera_utils thread)
 
 rosbuild_add_library(gazebo_ros_thermal_camera src/gazebo_ros_thermal_camera.cpp)
-target_link_libraries(gazebo_ros_thermal_camera gazebo_ros_thermal_camera_utils CameraPlugin)
+target_link_libraries(gazebo_ros_thermal_camera gazebo_ros_thermal_camera_utils DepthCameraPlugin)
 rosbuild_link_boost(gazebo_ros_thermal_camera thread)
 
 #uncomment if you have defined messages
