@@ -125,15 +125,15 @@ void GazeboRosIMU::Load(physics::ModelPtr _model, sdf::ElementPtr _sdf)
   else
     frameId = _sdf->GetElement("frameId")->GetValueString();
 
-  if (!_sdf->HasElement("serviceName"))
-    serviceName = topicName + "/calibrate";
-  else
-    serviceName = _sdf->GetElement("serviceName")->GetValueString();
-
   if (!_sdf->HasElement("topicName"))
     topicName = "imu";
   else
     topicName = _sdf->GetElement("topicName")->GetValueString();
+
+  if (!_sdf->HasElement("serviceName"))
+    serviceName = topicName + "/calibrate";
+  else
+    serviceName = _sdf->GetElement("serviceName")->GetValueString();
 
   accelModel.Load(_sdf, "accel");
   rateModel.Load(_sdf, "rate");
