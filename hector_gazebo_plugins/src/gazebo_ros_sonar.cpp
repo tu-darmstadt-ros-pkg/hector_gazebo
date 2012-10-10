@@ -111,11 +111,18 @@ void GazeboRosSonar::UpdateChild()
   range_.header.stamp.nsec = (Simulator::Instance()->GetSimTime()).nsec;
 
   range_.range = std::numeric_limits<sensor_msgs::Range::_range_type>::max();
-  for(int i = 0; i < sensor_->GetRangeCount(); ++i) {
+  int num_ranges = sensor_->GetRangeCount() * sensor_->GetVerticalRangeCount();
+  for(int i = 0; i < num_ranges; ++i) {
     double ray = sensor_->GetRange(i);
     if (ray < range_.range) range_.range = ray;
   }
-  range_.range += sensor_model_.update(dt);
+
+  // add Gaussian noise (and limit to min/max range)
+  if (range_.range < range_.max_range) {
+    range_.range += sensor_model_.update(dt);
+    if (range_.range < range_.min_range) range_.range = range_.min_range;
+    if (range_.range > range_.max_range) range_.range = range_.max_range;
+  }
 
   publisher_.publish(range_);
 }

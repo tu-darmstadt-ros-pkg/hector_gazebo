@@ -4,6 +4,13 @@
   <license>BSD</license>  
   <review status="unreviewed" notes=""/>
   <url>http://ros.org/wiki/hector_gazebo</url>
+  <depend stack="common_msgs" />
+  <depend stack="driver_common" />
+  <depend stack="image_common" />
+  <depend stack="nodelet_core" />
+  <depend stack="perception_pcl" />
   <depend stack="ros" />
+  <depend stack="ros_comm" />
+  <depend stack="simulator_gazebo" />
 
 </stack>
