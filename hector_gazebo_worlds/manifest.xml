@@ -1,0 +1,20 @@
+<package>
+  <description brief="hector_gazebo_worlds">
+
+     hector_gazebo_worlds provides gazebo scenarios used by Team Hector Darmstadt
+
+  </description>
+  <author>Stefan Kohlbrecher</author>
+  <license>BSD</license>
+  <review status="unreviewed" notes=""/>
+  <url>http://ros.org/wiki/hector_gazebo_worlds</url>
+  <depend package="gazebo"/>
+  <depend package="hector_gazebo_plugins"/>
+  
+  <export>
+    <gazebo gazebo_media_path="${prefix}" />
+  </export>
+
+</package>
+
+

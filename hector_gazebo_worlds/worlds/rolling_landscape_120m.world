@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<gazebo version="1.0">
+    <world name="default">
+        <scene>
+            <ambient rgba="0.5 0.5 0.5 1"/>
+            <background rgba="0.5 0.5 0.5 1"/>
+            <shadows enabled="false"/>
+        </scene>
+        <physics type="ode">
+            <gravity xyz="0 0 -9.81"/>
+            <ode>
+                <solver type="quick" dt="0.001" iters="10" sor="1.3"/>
+                <constraints cfm="0.0" erp="0.2" contact_max_correcting_vel="10" contact_surface_layer="0.001"/>
+            </ode>
+        </physics>
+        <light type="directional" name="directional_light_1" cast_shadows="false">
+            <origin pose="0 20 20 0.1 0.1 0"/>
+            <diffuse rgba="1 1 1 1"/>
+            <specular rgba="1 1 1 1"/>
+            <attenuation range="300"/>
+            <direction xyz="0.1 0.1 -1"/>
+        </light>
+        <model name="120m_landscape_smooth_tri" static="true">
+            <link name="120m_landscape_smooth_tri_link">
+                <origin pose="0 0 0 0 0 0"/>
+                <collision name="120m_landscape_smooth_tri_collision">
+                    <geometry>
+                        <mesh filename="120m_landscape_smooth_tri.dae" scale="1 1 1"/>
+                    </geometry>
+                </collision>
+                <visual name="120m_landscape_smooth_tri" cast_shadows="false">
+                    <geometry>
+                        <mesh filename="120m_landscape_smooth_tri.dae" scale="1 1 1"/>
+                    </geometry>
+                </visual>
+            </link>
+        </model>
+    </world>
+</gazebo>
