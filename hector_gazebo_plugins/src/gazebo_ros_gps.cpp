@@ -183,7 +183,7 @@ void GazeboRosGps::Update()
   velocity_.header.stamp = fix_.header.stamp;
 
   fix_.latitude  = reference_latitude_  + ( cos(reference_heading_) * position.x + sin(reference_heading_) * position.y) / EARTH_RADIUS * 180.0/M_PI;
-  fix_.longitude = reference_longitude_ - (-sin(reference_heading_) * position.x + cos(reference_heading_) * position.y) / EARTH_RADIUS * 180.0/M_PI * cos(fix_.latitude);
+  fix_.longitude = reference_longitude_ - (-sin(reference_heading_) * position.x + cos(reference_heading_) * position.y) / EARTH_RADIUS * 180.0/M_PI / cos(fix_.latitude);
   fix_.altitude  = reference_altitude_  + position.z;
   fix_.position_covariance_type = sensor_msgs::NavSatFix::COVARIANCE_TYPE_UNKNOWN;
   velocity_.vector.x =  cos(reference_heading_) * velocity.x + sin(reference_heading_) * velocity.y;
