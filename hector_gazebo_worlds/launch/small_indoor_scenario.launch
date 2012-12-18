@@ -1,10 +1,8 @@
 <?xml version="1.0"?>
 
 <launch>
-
-  <!-- start gazebo with an empty plane -->
-  <param name="/use_sim_time" value="true" />
-
-  <node name="gazebo" pkg="gazebo" type="gazebo" args="$(find hector_gazebo_worlds)/worlds/small_indoor_scenario.world" respawn="false" output="screen" required="true" />
+  <include file="$(find hector_gazebo_worlds)/launch/start.launch">
+   <arg name="world" value="$(find hector_gazebo_worlds)/worlds/small_indoor_scenario.world"/> 
+  </include>
 
 </launch>

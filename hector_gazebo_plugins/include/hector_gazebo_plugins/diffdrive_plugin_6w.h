@@ -27,9 +27,12 @@
 
 #include <map>
 
-#include <gazebo/Param.hh>
-#include <gazebo/Controller.hh>
-#include <gazebo/Model.hh>
+#include "common/Plugin.hh"
+//#include "physics/physics.h"
+//#include "transport/TransportTypes.hh"
+//#include "msgs/MessageTypes.hh"
+//#include "common/Time.hh"
+//#include "common/Events.hh"
 
 // ROS 
 #include <ros/ros.h>
@@ -48,51 +51,38 @@
 
 namespace gazebo
 {
-class Joint;
-class Entity;
 
-class DiffDrivePlugin6W : public Controller
+class DiffDrivePlugin6W : public ModelPlugin
 {
 
 public:
-  DiffDrivePlugin6W(Entity *parent);
+  DiffDrivePlugin6W();
   virtual ~DiffDrivePlugin6W();
 
 protected:
-  virtual void LoadChild(XMLConfigNode *node);
-  void SaveChild(std::string &prefix, std::ostream &stream);
-  virtual void InitChild();
-  void ResetChild();
-  virtual void UpdateChild();
-  virtual void FiniChild();
+  virtual void Load(physics::ModelPtr _model, sdf::ElementPtr _sdf);
+  virtual void Reset();
+  virtual void Update();
 
 private:
-  void write_position_data();
   void publish_odometry();
   void GetPositionCmd();
 
-  libgazebo::PositionIface *pos_iface_;
-  Model *parent_;
-  ParamT<float> *wheelSepP;
-  ParamT<float> *wheelDiamP;
-  ParamT<float> *torqueP;
+  physics::LinkPtr link;
+  physics::WorldPtr world;
+  physics::JointPtr joints[6];
+
+  float wheelSep;
+  float wheelDiam;
+  float torque;
   float wheelSpeed[2];
 
   // Simulation time of the last update
-  Time prevUpdateTime;
+  common::Time prevUpdateTime;
 
   bool enableMotors;
   float odomPose[3];
   float odomVel[3];
-
-  Joint *joints[6];
-  PhysicsEngine *physicsEngine;
-  ParamT<std::string> *frontLeftJointNameP;
-  ParamT<std::string> *frontRightJointNameP;
-  ParamT<std::string> *midLeftJointNameP;
-  ParamT<std::string> *midRightJointNameP;
-  ParamT<std::string> *rearLeftJointNameP;
-  ParamT<std::string> *rearRightJointNameP;
 
   // ROS STUFF
   ros::NodeHandle* rosnode_;
@@ -104,15 +94,13 @@ private:
 
   boost::mutex lock;
 
-  ParamT<std::string> *robotNamespaceP;
   std::string robotNamespace;
-
-  ParamT<std::string> *topicNameP;
   std::string topicName;
+  std::string linkName;
 
   // Custom Callback Queue
   ros::CallbackQueue queue_;
-  boost::thread* callback_queue_thread_;
+  boost::thread callback_queue_thread_;
   void QueueThread();
 
   // DiffDrive stuff
@@ -121,6 +109,9 @@ private:
   float x_;
   float rot_;
   bool alive_;
+
+  // Pointer to the update event connection
+  event::ConnectionPtr updateConnection;
 };
 
 }

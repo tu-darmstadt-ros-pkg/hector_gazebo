@@ -29,12 +29,7 @@
 #ifndef HECTOR_GAZEBO_PLUGINS_GAZEBO_ROS_GPS_H
 #define HECTOR_GAZEBO_PLUGINS_GAZEBO_ROS_GPS_H
 
-#include <gazebo/Controller.hh>
-#include <gazebo/Entity.hh>
-#include <gazebo/Model.hh>
-#include <gazebo/Body.hh>
-#include <gazebo/Param.hh>
-#include <gazebo/Time.hh>
+#include "common/Plugin.hh"
 
 #include <ros/ros.h>
 #include <sensor_msgs/NavSatFix.h>
@@ -44,21 +39,23 @@
 namespace gazebo
 {
 
-class GazeboRosGps : public Controller
+class GazeboRosGps : public ModelPlugin
 {
 public:
-  GazeboRosGps(Entity *parent);
+  GazeboRosGps();
   virtual ~GazeboRosGps();
 
 protected:
-  virtual void LoadChild(XMLConfigNode *node);
-  virtual void InitChild();
-  virtual void UpdateChild();
-  virtual void FiniChild();
+  virtual void Load(physics::ModelPtr _model, sdf::ElementPtr _sdf);
+  virtual void Reset();
+  virtual void Update();
 
 private:
-  Model *parent_;
-  Body *body_;
+  /// \brief The parent World
+  physics::WorldPtr world;
+
+  /// \brief The link referred to by this plugin
+  physics::LinkPtr link;
 
   ros::NodeHandle* node_handle_;
   ros::Publisher fix_publisher_;
@@ -67,21 +64,28 @@ private:
   sensor_msgs::NavSatFix fix_;
   geometry_msgs::Vector3Stamped velocity_;
 
-  ParamT<std::string> *body_name_;
-  ParamT<std::string> *namespace_;
-  ParamT<std::string> *frame_id_;
-  ParamT<std::string> *fix_topic_;
-  ParamT<std::string> *velocity_topic_;
+  std::string namespace_;
+  std::string link_name_;
+  std::string frame_id_;
+  std::string fix_topic_;
+  std::string velocity_topic_;
 
-  ParamT<double> *reference_latitude_;
-  ParamT<double> *reference_longitude_;
-  ParamT<double> *reference_heading_;
-  ParamT<double> *reference_altitude_;
-  ParamT<sensor_msgs::NavSatStatus::_status_type> *status_;
-  ParamT<sensor_msgs::NavSatStatus::_service_type> *service_;
+  double reference_latitude_;
+  double reference_longitude_;
+  double reference_heading_;
+  double reference_altitude_;
+  sensor_msgs::NavSatStatus::_status_type status_;
+  sensor_msgs::NavSatStatus::_service_type service_;
 
   SensorModel3 position_error_model_;
   SensorModel3 velocity_error_model_;
+
+  /// \brief save last_time
+  common::Time last_time;
+  common::Time update_period;
+
+  // Pointer to the update event connection
+  event::ConnectionPtr updateConnection;
 };
 
 } // namespace gazebo

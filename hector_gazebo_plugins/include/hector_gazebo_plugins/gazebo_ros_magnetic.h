@@ -29,12 +29,7 @@
 #ifndef HECTOR_GAZEBO_PLUGINS_GAZEBO_ROS_MAGNETIC_H
 #define HECTOR_GAZEBO_PLUGINS_GAZEBO_ROS_MAGNETIC_H
 
-#include <gazebo/Controller.hh>
-#include <gazebo/Entity.hh>
-#include <gazebo/Model.hh>
-#include <gazebo/Body.hh>
-#include <gazebo/Param.hh>
-#include <gazebo/Time.hh>
+#include "common/Plugin.hh"
 
 #include <ros/ros.h>
 #include <geometry_msgs/Vector3Stamped.h>
@@ -43,38 +38,48 @@
 namespace gazebo
 {
 
-class GazeboRosMagnetic : public Controller
+class GazeboRosMagnetic : public ModelPlugin
 {
 public:
-  GazeboRosMagnetic(Entity *parent);
+  GazeboRosMagnetic();
   virtual ~GazeboRosMagnetic();
 
 protected:
-  virtual void LoadChild(XMLConfigNode *node);
-  virtual void InitChild();
-  virtual void UpdateChild();
-  virtual void FiniChild();
+  virtual void Load(physics::ModelPtr _model, sdf::ElementPtr _sdf);
+  virtual void Reset();
+  virtual void Update();
 
 private:
-  Model *parent_;
-  Body *body_;
+  /// \brief The parent World
+  physics::WorldPtr world;
+
+  /// \brief The link referred to by this plugin
+  physics::LinkPtr link;
 
   ros::NodeHandle* node_handle_;
   ros::Publisher publisher_;
 
   geometry_msgs::Vector3Stamped magnetic_field_;
-  gazebo::Vector3 magnetic_field_world_;
+  gazebo::math::Vector3 magnetic_field_world_;
 
-  ParamT<std::string> *body_name_;
-  ParamT<std::string> *namespace_;
-  ParamT<std::string> *topic_;
+  std::string namespace_;
+  std::string topic_;
+  std::string link_name_;
+  std::string frame_id_;
 
-  ParamT<double> *magnitude_;
-  ParamT<double> *reference_heading_;
-  ParamT<double> *declination_;
-  ParamT<double> *inclination_;
+  double magnitude_;
+  double reference_heading_;
+  double declination_;
+  double inclination_;
 
   SensorModel3 sensor_model_;
+
+  /// \brief save last_time
+  common::Time last_time;
+  common::Time update_period;
+
+  // Pointer to the update event connection
+  event::ConnectionPtr updateConnection;
 };
 
 } // namespace gazebo

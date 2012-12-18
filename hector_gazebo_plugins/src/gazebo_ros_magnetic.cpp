@@ -27,109 +27,135 @@
 //=================================================================================================
 
 #include <hector_gazebo_plugins/gazebo_ros_magnetic.h>
+#include "common/Events.hh"
+#include "physics/physics.h"
 
-#include <gazebo/Sensor.hh>
-#include <gazebo/Global.hh>
-#include <gazebo/XMLConfig.hh>
-#include <gazebo/Simulator.hh>
-#include <gazebo/gazebo.h>
-#include <gazebo/World.hh>
-#include <gazebo/PhysicsEngine.hh>
-#include <gazebo/GazeboError.hh>
-#include <gazebo/ControllerFactory.hh>
+static const double DEFAULT_MAGNITUDE           = 1.0;
+static const double DEFAULT_REFERENCE_HEADING   = 0.0;
+static const double DEFAULT_DECLINATION         = 0.0;
+static const double DEFAULT_INCLINATION         = 60.0;
 
-using namespace gazebo;
+namespace gazebo {
 
-GZ_REGISTER_DYNAMIC_CONTROLLER("hector_gazebo_ros_magnetic", GazeboRosMagnetic)
-
-GazeboRosMagnetic::GazeboRosMagnetic(Entity *parent)
-   : Controller(parent)
-   , sensor_model_(parameters)
+GazeboRosMagnetic::GazeboRosMagnetic()
 {
-  parent_ = dynamic_cast<Model*>(parent);
-  if (!parent_) gzthrow("GazeboRosMagnetic controller requires a Model as its parent");
-
-  if (!ros::isInitialized())
-  {
-    int argc = 0;
-    char** argv = NULL;
-    ros::init(argc,argv, "gazebo", ros::init_options::NoSigintHandler|ros::init_options::AnonymousName);
-  }
-
-  Param::Begin(&parameters);
-  namespace_ = new ParamT<std::string>("robotNamespace", "", false);
-  body_name_ = new ParamT<std::string>("bodyName", "", true);
-  topic_ = new ParamT<std::string>("topicName", "magnetic", false);
-
-  magnitude_ = new ParamT<double>("magnitude", 1.0, false);
-  reference_heading_ = new ParamT<double>("referenceHeading", 0.0, false);
-  declination_ = new ParamT<double>("declination", 0.0, false);
-  inclination_ = new ParamT<double>("inclination", 60.0, false);
-  Param::End();
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 // Destructor
 GazeboRosMagnetic::~GazeboRosMagnetic()
 {
-  delete namespace_;
-  delete body_name_;
-  delete topic_;
-  delete magnitude_;
-  delete reference_heading_;
-  delete declination_;
-  delete inclination_;
+  event::Events::DisconnectWorldUpdateStart(updateConnection);
+
+  node_handle_->shutdown();
+  delete node_handle_;
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 // Load the controller
-void GazeboRosMagnetic::LoadChild(XMLConfigNode *node)
+void GazeboRosMagnetic::Load(physics::ModelPtr _model, sdf::ElementPtr _sdf)
 {
-  namespace_->Load(node);
-  body_name_->Load(node);
+  world = _model->GetWorld();
 
-  // assert that the body by body_name_ exists
-  body_ = dynamic_cast<Body*>(parent_->GetBody(**body_name_));
-  if (!body_) gzthrow("gazebo_quadrotor_simple_controller plugin error: body_name_: " << **body_name_ << "does not exist\n");
+  // load parameters
+  if (!_sdf->HasElement("robotNamespace"))
+    namespace_.clear();
+  else
+    namespace_ = _sdf->GetElement("robotNamespace")->GetValueString() + "/";
 
-  magnetic_field_.header.frame_id = body_->GetName();
+  if (!_sdf->HasElement("topicName"))
+    topic_ = "magnetic";
+  else
+    topic_ = _sdf->GetElement("topicName")->GetValueString();
 
-  topic_->Load(node);
+  if (!_sdf->HasElement("bodyName"))
+  {
+    link = _model->GetLink();
+    link_name_ = link->GetName();
+  }
+  else {
+    link_name_ = _sdf->GetElement("bodyName")->GetValueString();
+    link = _model->GetLink(link_name_);
+  }
 
-  magnitude_->Load(node);
-  reference_heading_->Load(node);
-  declination_->Load(node);
-  inclination_->Load(node);
+  if (!link)
+  {
+    ROS_FATAL("GazeboRosMagnetic plugin error: bodyName: %s does not exist\n", link_name_.c_str());
+    return;
+  }
 
-  reference_heading_->SetValue(**reference_heading_ * M_PI/180.0); // convert to radians
-  declination_->SetValue(**declination_ * M_PI/180.0); // convert to radians
-  inclination_->SetValue(**inclination_ * M_PI/180.0); // convert to radians
+  double update_rate = 0.0;
+  if (_sdf->HasElement("updateRate")) update_rate = _sdf->GetElement("updateRate")->GetValueDouble();
+  update_period = update_rate > 0.0 ? 1.0/update_rate : 0.0;
+
+  if (!_sdf->HasElement("frameId"))
+    frame_id_ = link_name_;
+  else
+    frame_id_ = _sdf->GetElement("frameId")->GetValueString();
+
+  if (!_sdf->HasElement("magnitude"))
+    magnitude_ = DEFAULT_MAGNITUDE;
+  else
+    magnitude_ = _sdf->GetElement("magnitude")->GetValueDouble();
+
+  if (!_sdf->HasElement("referenceHeading"))
+    reference_heading_ = DEFAULT_REFERENCE_HEADING * M_PI/180.0;
+  else
+    reference_heading_ = _sdf->GetElement("referenceHeading")->GetValueDouble() * M_PI/180.0;
+
+  if (!_sdf->HasElement("declination"))
+    declination_ = DEFAULT_DECLINATION * M_PI/180.0;
+  else
+    declination_ = _sdf->GetElement("declination")->GetValueDouble() * M_PI/180.0;
+
+  if (!_sdf->HasElement("inclination"))
+    inclination_ = DEFAULT_INCLINATION * M_PI/180.0;
+  else
+    inclination_ = _sdf->GetElement("inclination")->GetValueDouble() * M_PI/180.0;
 
   // Note: Gazebo uses NorthWestUp coordinate system, heading and declination are compass headings
-  magnetic_field_world_.x = **magnitude_ *  cos(**inclination_) * cos(**reference_heading_ - **declination_);
-  magnetic_field_world_.y = **magnitude_ *  sin(**reference_heading_ - **declination_);
-  magnetic_field_world_.z = **magnitude_ * -sin(**inclination_) * cos(**reference_heading_ - **declination_);
+  magnetic_field_.header.frame_id = frame_id_;
+  magnetic_field_world_.x = magnitude_ *  cos(inclination_) * cos(reference_heading_ - declination_);
+  magnetic_field_world_.y = magnitude_ *  sin(reference_heading_ - declination_);
+  magnetic_field_world_.z = magnitude_ * -sin(inclination_) * cos(reference_heading_ - declination_);
 
-  sensor_model_.Load(node);
+  sensor_model_.Load(_sdf);
+
+  // start ros node
+  if (!ros::isInitialized())
+  {
+    int argc = 0;
+    char** argv = NULL;
+    ros::init(argc,argv,"gazebo",ros::init_options::NoSigintHandler|ros::init_options::AnonymousName);
+  }
+
+  node_handle_ = new ros::NodeHandle(namespace_);
+  publisher_ = node_handle_->advertise<geometry_msgs::Vector3Stamped>(topic_, 1);
+
+  Reset();
+
+  // New Mechanism for Updating every World Cycle
+  // Listen to the update event. This event is broadcast every
+  // simulation iteration.
+  updateConnection = event::Events::ConnectWorldUpdateStart(
+      boost::bind(&GazeboRosMagnetic::Update, this));
 }
 
-///////////////////////////////////////////////////////
-// Initialize the controller
-void GazeboRosMagnetic::InitChild()
+void GazeboRosMagnetic::Reset()
 {
-  node_handle_ = new ros::NodeHandle(**namespace_);
-  publisher_ = node_handle_->advertise<geometry_msgs::Vector3Stamped>(**topic_, 10);
+  sensor_model_.reset();
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 // Update the controller
-void GazeboRosMagnetic::UpdateChild()
+void GazeboRosMagnetic::Update()
 {
-  Time sim_time = Simulator::Instance()->GetSimTime();
-  double dt = (sim_time - lastUpdate).Double();
+  common::Time sim_time = world->GetSimTime();
+  double dt = (sim_time - last_time).Double();
+  if (last_time + update_period > sim_time) return;
 
-  Pose3d pose = body_->GetWorldPose();
-  Vector3 field = sensor_model_(pose.rot.RotateVectorReverse(magnetic_field_world_), dt);
+  math::Pose pose = link->GetWorldPose();
+  math::Vector3 field = sensor_model_(pose.rot.RotateVectorReverse(magnetic_field_world_), dt);
 
   magnetic_field_.header.stamp = ros::Time(sim_time.sec, sim_time.nsec);
   magnetic_field_.vector.x = field.x;
@@ -137,13 +163,12 @@ void GazeboRosMagnetic::UpdateChild()
   magnetic_field_.vector.z = field.z;
 
   publisher_.publish(magnetic_field_);
+
+  // save last time stamp
+  last_time = sim_time;
 }
 
-////////////////////////////////////////////////////////////////////////////////
-// Finalize the controller
-void GazeboRosMagnetic::FiniChild()
-{
-  node_handle_->shutdown();
-  delete node_handle_;
-}
+// Register this plugin with the simulator
+GZ_REGISTER_MODEL_PLUGIN(GazeboRosMagnetic)
 
+} // namespace gazebo

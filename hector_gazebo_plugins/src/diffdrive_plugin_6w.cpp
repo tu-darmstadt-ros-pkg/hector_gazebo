@@ -34,18 +34,8 @@
 #include <assert.h>
 
 #include <hector_gazebo_plugins/diffdrive_plugin_6w.h>
-
-#include <gazebo/gazebo.h>
-#include <gazebo/GazeboError.hh>
-#include <gazebo/Quatern.hh>
-#include <gazebo/Controller.hh>
-#include <gazebo/Body.hh>
-#include <gazebo/World.hh>
-#include <gazebo/Simulator.hh>
-#include <gazebo/Global.hh>
-#include <gazebo/XMLConfig.hh>
-#include <gazebo/ControllerFactory.hh>
-#include <gazebo/PhysicsEngine.hh>
+#include "common/Events.hh"
+#include "physics/physics.h"
 
 #include <ros/ros.h>
 #include <tf/transform_broadcaster.h>
@@ -54,9 +44,7 @@
 #include <nav_msgs/Odometry.h>
 #include <boost/bind.hpp>
 
-using namespace gazebo;
-
-GZ_REGISTER_DYNAMIC_CONTROLLER("diffdrive_plugin_6w", DiffDrivePlugin6W);
+namespace gazebo {
 
 enum
 {
@@ -70,111 +58,94 @@ enum
 };
 
 // Constructor
-DiffDrivePlugin6W::DiffDrivePlugin6W(Entity *parent) :
-  Controller(parent)
+DiffDrivePlugin6W::DiffDrivePlugin6W()
 {
-  parent_ = dynamic_cast<Model*> (parent);
-
-  if (!parent_)
-    gzthrow("Differential_Position2d controller requires a Model as its parent");
-
-  enableMotors = true;
-
-  for (size_t i = 0; i < 2; ++i){
-    wheelSpeed[i] = 0;
-  }
-
-  prevUpdateTime = Simulator::Instance()->GetSimTime();
-
-  Param::Begin(&parameters);
-  frontLeftJointNameP = new ParamT<std::string> ("frontLeftJoint", "", 1);
-  frontRightJointNameP = new ParamT<std::string> ("frontRightJoint", "", 1);
-  midLeftJointNameP = new ParamT<std::string> ("midLeftJoint", "", 1);
-  midRightJointNameP = new ParamT<std::string> ("midRightJoint", "", 1);
-  rearLeftJointNameP = new ParamT<std::string> ("rearLeftJoint", "", 1);
-  rearRightJointNameP = new ParamT<std::string> ("rearRightJoint", "", 1);
-
-  wheelSepP = new ParamT<float> ("wheelSeparation", 0.34, 1);
-  wheelDiamP = new ParamT<float> ("wheelDiameter", 0.15, 1);
-  torqueP = new ParamT<float> ("torque", 10.0, 1);
-  robotNamespaceP = new ParamT<std::string> ("robotNamespace", "", 0);
-  topicNameP = new ParamT<std::string> ("topicName", "", 1);
-  Param::End();
-
-  x_ = 0;
-  rot_ = 0;
-  alive_ = true;
 }
 
 // Destructor
 DiffDrivePlugin6W::~DiffDrivePlugin6W()
 {
-
-  delete frontLeftJointNameP;
-  delete frontRightJointNameP;
-  delete midLeftJointNameP;
-  delete midRightJointNameP;
-  delete rearLeftJointNameP;
-  delete rearRightJointNameP;
-
-  delete wheelSepP;
-  delete wheelDiamP;
-  delete torqueP;
-  delete robotNamespaceP;
-  delete topicNameP;
-  delete callback_queue_thread_;
-  delete rosnode_;
+  event::Events::DisconnectWorldUpdateStart(updateConnection);
   delete transform_broadcaster_;
+  rosnode_->shutdown();
+  callback_queue_thread_.join();
+  delete rosnode_;
 }
 
 // Load the controller
-void DiffDrivePlugin6W::LoadChild(XMLConfigNode *node)
+void DiffDrivePlugin6W::Load(physics::ModelPtr _model, sdf::ElementPtr _sdf)
 {
-  pos_iface_ = dynamic_cast<libgazebo::PositionIface*> (GetIface("position"));
+  world = _model->GetWorld();
 
-  // the defaults are from pioneer2dx
-  wheelSepP->Load(node);
-  wheelDiamP->Load(node);
-  torqueP->Load(node);
+  // load parameters
+  if (!_sdf->HasElement("robotNamespace"))
+    robotNamespace.clear();
+  else
+    robotNamespace = _sdf->GetElement("robotNamespace")->GetValueString() + "/";
 
-  //leftJointNameP->Load(node);
-  //rightJointNameP->Load(node);
+  if (!_sdf->HasElement("topicName"))
+    topicName = "cmd_vel";
+  else
+    topicName = _sdf->GetElement("topicName")->GetValueString();
 
-  frontLeftJointNameP->Load(node);
-  frontRightJointNameP->Load(node);
-  midLeftJointNameP->Load(node);
-  midRightJointNameP->Load(node);
-  rearLeftJointNameP->Load(node);
-  rearRightJointNameP->Load(node);
+  if (!_sdf->HasElement("bodyName"))
+  {
+    link = _model->GetLink();
+    linkName = link->GetName();
+  }
+  else {
+    linkName = _sdf->GetElement("bodyName")->GetValueString();
+    link = _model->GetLink(linkName);
+  }
 
-  joints[FRONT_LEFT] = parent_->GetJoint(**frontLeftJointNameP);
-  joints[FRONT_RIGHT] = parent_->GetJoint(**frontRightJointNameP);
-  joints[MID_LEFT] = parent_->GetJoint(**midLeftJointNameP);
-  joints[MID_RIGHT] = parent_->GetJoint(**midRightJointNameP);
-  joints[REAR_LEFT] = parent_->GetJoint(**rearLeftJointNameP);
-  joints[REAR_RIGHT] = parent_->GetJoint(**rearRightJointNameP);
+  // assert that the body by linkName exists
+  if (!link)
+  {
+    ROS_FATAL("DiffDrivePlugin6W plugin error: bodyName: %s does not exist\n", linkName.c_str());
+    return;
+  }
 
-  //if (!joints[LEFT])
-  //  gzthrow("The controller couldn't get left hinge joint");
+  if (_sdf->HasElement("frontLeftJoint"))  joints[FRONT_LEFT]  = _model->GetJoint(_sdf->GetElement("frontLeftJoint")->GetValueString());
+  if (_sdf->HasElement("frontRightJoint")) joints[FRONT_RIGHT] = _model->GetJoint(_sdf->GetElement("frontRightJoint")->GetValueString());
+  if (_sdf->HasElement("midLeftJoint"))    joints[MID_LEFT]    = _model->GetJoint(_sdf->GetElement("midLeftJoint")->GetValueString());
+  if (_sdf->HasElement("midRightJoint"))   joints[MID_RIGHT]   = _model->GetJoint(_sdf->GetElement("midRightJoint")->GetValueString());
+  if (_sdf->HasElement("rearLeftJoint"))   joints[REAR_LEFT]   = _model->GetJoint(_sdf->GetElement("rearLeftJoint")->GetValueString());
+  if (_sdf->HasElement("rearRightJoint"))  joints[REAR_RIGHT]  = _model->GetJoint(_sdf->GetElement("rearRightJoint")->GetValueString());
 
-  //if (!joints[RIGHT])
-  //  gzthrow("The controller couldn't get right hinge joint");
+  if (!joints[FRONT_LEFT])  ROS_FATAL("diffdrive_plugin_6w error: The controller couldn't get front left joint");
+  if (!joints[FRONT_RIGHT]) ROS_FATAL("diffdrive_plugin_6w error: The controller couldn't get front right joint");
+  if (!joints[MID_LEFT])    ROS_FATAL("diffdrive_plugin_6w error: The controller couldn't get mid left joint");
+  if (!joints[MID_RIGHT])   ROS_FATAL("diffdrive_plugin_6w error: The controller couldn't get mid right joint");
+  if (!joints[REAR_LEFT])   ROS_FATAL("diffdrive_plugin_6w error: The controller couldn't get rear left joint");
+  if (!joints[REAR_RIGHT])  ROS_FATAL("diffdrive_plugin_6w error: The controller couldn't get rear right joint");
 
-  // Initialize the ROS node and subscribe to cmd_vel
+  if (!_sdf->HasElement("wheelSeparation"))
+    wheelSep = 0.34;
+  else
+    wheelSep = _sdf->GetElement("wheelSeparation")->GetValueDouble();
 
-  robotNamespaceP->Load(node);
-  robotNamespace = robotNamespaceP->GetValue();
+  if (!_sdf->HasElement("wheelDiameter"))
+    wheelDiam = 0.15;
+  else
+    wheelDiam = _sdf->GetElement("wheelDiameter")->GetValueDouble();
 
-  int argc = 0;
-  char** argv = NULL;
-  ros::init(argc, argv, "diff_drive_plugin", ros::init_options::NoSigintHandler | ros::init_options::AnonymousName);
+  if (!_sdf->HasElement("torque"))
+    torque = 10.0;
+  else
+    torque = _sdf->GetElement("torque")->GetValueDouble();
+
+  // start ros node
+  if (!ros::isInitialized())
+  {
+    int argc = 0;
+    char** argv = NULL;
+    ros::init(argc,argv,"gazebo",ros::init_options::NoSigintHandler|ros::init_options::AnonymousName);
+  }
+
   rosnode_ = new ros::NodeHandle(robotNamespace);
 
   tf_prefix_ = tf::getPrefixParam(*rosnode_);
   transform_broadcaster_ = new tf::TransformBroadcaster();
-
-  topicNameP->Load(node);
-  topicName = topicNameP->GetValue();
 
   // ROS: Subscribe to the velocity command topic (usually "cmd_vel")
   ros::SubscribeOptions so =
@@ -183,41 +154,33 @@ void DiffDrivePlugin6W::LoadChild(XMLConfigNode *node)
                                                           ros::VoidPtr(), &queue_);
   sub_ = rosnode_->subscribe(so);
   pub_ = rosnode_->advertise<nav_msgs::Odometry>("odom", 1);
+
+  callback_queue_thread_ = boost::thread(boost::bind(&DiffDrivePlugin6W::QueueThread, this));
+
+  Reset();
+
+  // New Mechanism for Updating every World Cycle
+  // Listen to the update event. This event is broadcast every
+  // simulation iteration.
+  updateConnection = event::Events::ConnectWorldUpdateStart(
+      boost::bind(&DiffDrivePlugin6W::Update, this));
 }
 
 // Initialize the controller
-void DiffDrivePlugin6W::InitChild()
+void DiffDrivePlugin6W::Reset()
 {
-  // Reset odometric pose
-  odomPose[0] = 0.0;
-  odomPose[1] = 0.0;
-  odomPose[2] = 0.0;
+  enableMotors = true;
 
-  odomVel[0] = 0.0;
-  odomVel[1] = 0.0;
-  odomVel[2] = 0.0;
+  for (size_t i = 0; i < 2; ++i){
+    wheelSpeed[i] = 0;
+  }
 
-  callback_queue_thread_ = new boost::thread(boost::bind(&DiffDrivePlugin6W::QueueThread, this));
-}
+  prevUpdateTime = world->GetSimTime();
 
-// Load the controller
-void DiffDrivePlugin6W::SaveChild(std::string &prefix, std::ostream &stream)
-{
-  stream << prefix << *(frontLeftJointNameP) << "\n";
-  stream << prefix << *(frontRightJointNameP) << "\n";
-  stream << prefix << *(midLeftJointNameP) << "\n";
-  stream << prefix << *(midRightJointNameP) << "\n";
-  stream << prefix << *(rearLeftJointNameP) << "\n";
-  stream << prefix << *(rearRightJointNameP) << "\n";
+  x_ = 0;
+  rot_ = 0;
+  alive_ = true;
 
-  stream << prefix << *(torqueP) << "\n";
-  stream << prefix << *(wheelDiamP) << "\n";
-  stream << prefix << *(wheelSepP) << "\n";
-}
-
-// Reset
-void DiffDrivePlugin6W::ResetChild()
-{
   // Reset odometric pose
   odomPose[0] = 0.0;
   odomPose[1] = 0.0;
@@ -229,31 +192,25 @@ void DiffDrivePlugin6W::ResetChild()
 }
 
 // Update the controller
-void DiffDrivePlugin6W::UpdateChild()
+void DiffDrivePlugin6W::Update()
 {
   // TODO: Step should be in a parameter of this function
-  double wd, ws;
   double d1, d2;
   double dr, da;
-  Time stepTime;
-
-  //myIface->Lock(1);
+  common::Time stepTime;
 
   GetPositionCmd();
 
-  wd = **(wheelDiamP);
-  ws = **(wheelSepP);
-
   //stepTime = World::Instance()->GetPhysicsEngine()->GetStepTime();
-  stepTime = Simulator::Instance()->GetSimTime() - prevUpdateTime;
-  prevUpdateTime = Simulator::Instance()->GetSimTime();
+  stepTime = world->GetSimTime() - prevUpdateTime;
+  prevUpdateTime = world->GetSimTime();
 
   // Distance travelled by front wheels
-  d1 = stepTime.Double() * wd / 2 * joints[MID_LEFT]->GetVelocity(0);
-  d2 = stepTime.Double() * wd / 2 * joints[MID_RIGHT]->GetVelocity(0);
+  d1 = stepTime.Double() * wheelDiam / 2 * joints[MID_LEFT]->GetVelocity(0);
+  d2 = stepTime.Double() * wheelDiam / 2 * joints[MID_RIGHT]->GetVelocity(0);
 
   dr = (d1 + d2) / 2;
-  da = (d1 - d2) / ws;
+  da = (d1 - d2) / wheelSep;
 
   // Compute odometric pose
   odomPose[0] += dr * cos(odomPose[2]);
@@ -267,40 +224,24 @@ void DiffDrivePlugin6W::UpdateChild()
 
   if (enableMotors)
   {
-    joints[FRONT_LEFT]->SetVelocity(0, wheelSpeed[0] / (**(wheelDiamP) / 2.0));
-    joints[MID_LEFT]->SetVelocity(0, wheelSpeed[0] / (**(wheelDiamP) / 2.0));
-    joints[REAR_LEFT]->SetVelocity(0, wheelSpeed[0] / (**(wheelDiamP) / 2.0));
+    joints[FRONT_LEFT]->SetVelocity(0, wheelSpeed[0] / (wheelDiam / 2.0));
+    joints[MID_LEFT]->SetVelocity(0, wheelSpeed[0] / (wheelDiam / 2.0));
+    joints[REAR_LEFT]->SetVelocity(0, wheelSpeed[0] / (wheelDiam / 2.0));
 
-    joints[FRONT_RIGHT]->SetVelocity(0, wheelSpeed[1] / (**(wheelDiamP) / 2.0));
-    joints[MID_RIGHT]->SetVelocity(0, wheelSpeed[1] / (**(wheelDiamP) / 2.0));
-    joints[REAR_RIGHT]->SetVelocity(0, wheelSpeed[1] / (**(wheelDiamP) / 2.0));
+    joints[FRONT_RIGHT]->SetVelocity(0, wheelSpeed[1] / (wheelDiam / 2.0));
+    joints[MID_RIGHT]->SetVelocity(0, wheelSpeed[1] / (wheelDiam / 2.0));
+    joints[REAR_RIGHT]->SetVelocity(0, wheelSpeed[1] / (wheelDiam / 2.0));
 
-    joints[FRONT_LEFT]->SetMaxForce(0, **(torqueP));
-    joints[MID_LEFT]->SetMaxForce(0, **(torqueP));
-    joints[REAR_LEFT]->SetMaxForce(0, **(torqueP));
+    joints[FRONT_LEFT]->SetMaxForce(0, torque);
+    joints[MID_LEFT]->SetMaxForce(0, torque);
+    joints[REAR_LEFT]->SetMaxForce(0, torque);
 
-    joints[FRONT_RIGHT]->SetMaxForce(0, **(torqueP));
-    joints[MID_RIGHT]->SetMaxForce(0, **(torqueP));
-    joints[REAR_RIGHT]->SetMaxForce(0, **(torqueP));
+    joints[FRONT_RIGHT]->SetMaxForce(0, torque);
+    joints[MID_RIGHT]->SetMaxForce(0, torque);
+    joints[REAR_RIGHT]->SetMaxForce(0, torque);
   }
 
-  write_position_data();
   //publish_odometry();
-
-  //myIface->Unlock();
-}
-
-// Finalize the controller
-void DiffDrivePlugin6W::FiniChild()
-{
-  //std::cout << "ENTERING FINALIZE\n";
-  alive_ = false;
-  // Custom Callback Queue
-  queue_.clear();
-  queue_.disable();
-  rosnode_->shutdown();
-  callback_queue_thread_->join();
-  //std::cout << "EXITING FINALIZE\n";
 }
 
 // NEW: Now uses the target velocities from the ROS message, not the Iface 
@@ -311,7 +252,7 @@ void DiffDrivePlugin6W::GetPositionCmd()
   double vr, va;
 
   vr = x_; //myIface->data->cmdVelocity.pos.x;
-  va = rot_; //myIface->data->cmdVelocity.yaw;
+  va = -rot_; //myIface->data->cmdVelocity.yaw;
 
   //std::cout << "X: [" << x_ << "] ROT: [" << rot_ << "]" << std::endl;
 
@@ -320,8 +261,8 @@ void DiffDrivePlugin6W::GetPositionCmd()
 
   //std::cout << enableMotors << std::endl;
 
-  wheelSpeed[0] = vr + va * **(wheelSepP) / 2;
-  wheelSpeed[1] = vr - va * **(wheelSepP) / 2;
+  wheelSpeed[0] = vr + va * wheelSep / 2;
+  wheelSpeed[1] = vr - va * wheelSep / 2;
 
   lock.unlock();
 }
@@ -357,13 +298,15 @@ void DiffDrivePlugin6W::QueueThread()
 void DiffDrivePlugin6W::publish_odometry()
 {
   // get current time
-  ros::Time current_time_((Simulator::Instance()->GetSimTime()).sec, (Simulator::Instance()->GetSimTime()).nsec); 
+  ros::Time current_time_((world->GetSimTime()).sec, (world->GetSimTime()).nsec); 
 
   // getting data for base_footprint to odom transform
-  btQuaternion qt;
-  // TODO: Is there something wrong here? RVIZ has a problem?
-  qt.setEulerZYX(pos_iface_->data->pose.yaw, pos_iface_->data->pose.pitch, pos_iface_->data->pose.roll);
-  btVector3 vt(pos_iface_->data->pose.pos.x, pos_iface_->data->pose.pos.y, pos_iface_->data->pose.pos.z);
+  math::Pose pose = link->GetWorldPose();
+  math::Vector3 velocity = link->GetWorldLinearVel();
+  math::Vector3 angular_velocity = link->GetWorldAngularVel();
+
+  tf::Quaternion qt(pose.rot.x, pose.rot.y, pose.rot.z, pose.rot.w);
+  tf::Vector3 vt(pose.pos.x, pose.pos.y, pose.pos.z);
   tf::Transform base_footprint_to_odom(qt, vt);
 
   transform_broadcaster_->sendTransform(tf::StampedTransform(base_footprint_to_odom,
@@ -372,45 +315,25 @@ void DiffDrivePlugin6W::publish_odometry()
                                                             "base_footprint"));
 
   // publish odom topic
-  odom_.pose.pose.position.x = pos_iface_->data->pose.pos.x;
-  odom_.pose.pose.position.y = pos_iface_->data->pose.pos.y;
+  odom_.pose.pose.position.x = pose.pos.x;
+  odom_.pose.pose.position.y = pose.pos.y;
 
-  gazebo::Quatern rot;
-  rot.SetFromEuler(gazebo::Vector3(pos_iface_->data->pose.roll, pos_iface_->data->pose.pitch, pos_iface_->data->pose.yaw));
+  odom_.pose.pose.orientation.x = pose.rot.x;
+  odom_.pose.pose.orientation.y = pose.rot.y;
+  odom_.pose.pose.orientation.z = pose.rot.z;
+  odom_.pose.pose.orientation.w = pose.rot.w;
 
-  odom_.pose.pose.orientation.x = rot.x;
-  odom_.pose.pose.orientation.y = rot.y;
-  odom_.pose.pose.orientation.z = rot.z;
-  odom_.pose.pose.orientation.w = rot.u;
-
-  odom_.twist.twist.linear.x = pos_iface_->data->velocity.pos.x;
-  odom_.twist.twist.linear.y = pos_iface_->data->velocity.pos.y;
-  odom_.twist.twist.angular.z = pos_iface_->data->velocity.yaw;
+  odom_.twist.twist.linear.x = velocity.x;
+  odom_.twist.twist.linear.y = velocity.y;
+  odom_.twist.twist.angular.z = angular_velocity.z;
 
   odom_.header.frame_id = tf::resolve(tf_prefix_, "odom");
   odom_.child_frame_id = "base_footprint";
-
-  //odom_.header.stamp = current_time_;
-  odom_.header.stamp.sec = (Simulator::Instance()->GetSimTime()).sec;
-  odom_.header.stamp.nsec = (Simulator::Instance()->GetSimTime()).nsec;
+  odom_.header.stamp = current_time_;
 
   pub_.publish(odom_);
 }
 
-// Update the data in the interface
-void DiffDrivePlugin6W::write_position_data()
-{
-  // TODO: Data timestamp
-  pos_iface_->data->head.time = Simulator::Instance()->GetSimTime().Double();
+GZ_REGISTER_MODEL_PLUGIN(DiffDrivePlugin6W)
 
-  pos_iface_->data->pose.pos.x = odomPose[0];
-  pos_iface_->data->pose.pos.y = odomPose[1];
-  pos_iface_->data->pose.yaw = NORMALIZE(odomPose[2]);
-
-  pos_iface_->data->velocity.pos.x = odomVel[0];
-  pos_iface_->data->velocity.yaw = odomVel[2];
-
-  // TODO
-  pos_iface_->data->stall = 0;
-}
-
+} // namespace gazebo

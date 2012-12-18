@@ -58,21 +58,16 @@
 #ifndef HECTOR_GAZEBO_PLUGINS_GAZEBO_ROS_IMU_H
 #define HECTOR_GAZEBO_PLUGINS_GAZEBO_ROS_IMU_H
 
-#define USE_CBQ
+// #define USE_CBQ
 #ifdef USE_CBQ
 #include <ros/callback_queue.h>
 #include <ros/advertise_options.h>
 #endif
 
-#include <gazebo/Controller.hh>
-#include <gazebo/Entity.hh>
-#include <gazebo/Model.hh>
-#include <gazebo/Body.hh>
-#include <gazebo/Param.hh>
-#include <gazebo/Time.hh>
+#include "common/Plugin.hh"
 
 #include <ros/ros.h>
-#include "boost/thread/mutex.hpp"
+#include <boost/thread/mutex.hpp>
 #include <sensor_msgs/Imu.h>
 #include <std_srvs/Empty.h>
 #include <hector_gazebo_plugins/SetBias.h>
@@ -80,99 +75,90 @@
 
 namespace gazebo
 {
-   class GazeboRosIMU : public Controller
+   class GazeboRosIMU : public ModelPlugin
    {
+   public:
       /// \brief Constructor
-      public: GazeboRosIMU(Entity *parent );
+      GazeboRosIMU();
 
       /// \brief Destructor
-      public: virtual ~GazeboRosIMU();
+      virtual ~GazeboRosIMU();
 
-      /// \brief Load the controller
-      /// \param node XML config node
-      protected: virtual void LoadChild(XMLConfigNode *node);
+   protected:
+      virtual void Load(physics::ModelPtr _model, sdf::ElementPtr _sdf);
+      virtual void Reset();
+      virtual void Update();
 
-      /// \brief Init the controller
-      protected: virtual void InitChild();
+   private:
+      /// \brief The parent World
+      physics::WorldPtr world;
 
-      /// \brief Update the controller
-      protected: virtual void UpdateChild();
-
-      /// \brief Finalize the controller
-      protected: virtual void FiniChild();
-
-      /// \brief The parent Model
-      private: Model *myParent;
-
-      /// \brief The parent Model
-      private: Body *myBody; //Gazebo/ODE body
+      /// \brief The link referred to by this plugin
+      physics::LinkPtr link;
 
       /// \brief pointer to ros node
-      private: ros::NodeHandle* rosnode_;
-      private: ros::Publisher pub_;
+      ros::NodeHandle* node_handle_;
+      ros::Publisher pub_;
 
       /// \brief ros message
-      private: sensor_msgs::Imu imuMsg;
+      sensor_msgs::Imu imuMsg;
 
-      /// \brief store bodyname
-      private: ParamT<std::string> *bodyNameP;
-      private: std::string bodyName;
+      /// \brief store link name
+      std::string linkName;
+
+      /// \brief frame id
+      std::string frameId;
 
       /// \brief topic name
-      private: ParamT<std::string> *topicNameP;
-      private: std::string topicName;
-
-      /// \brief allow specifying constant offsets and noise
-      private: ParamT<Vector3> *rpyOffsetsP;
-      private: ParamT<double> *gaussianNoiseP;
+      std::string topicName;
 
       /// \brief Sensor models
-      private: SensorModel3 accelModel;
-      private: SensorModel3 rateModel;
-      private: SensorModel headingModel;
+      SensorModel3 accelModel;
+      SensorModel3 rateModel;
+      SensorModel headingModel;
 
       /// \brief A mutex to lock access to fields that are used in message callbacks
-      private: boost::mutex lock;
+      boost::mutex lock;
+
+      /// \brief save last_time
+      common::Time last_time;
+      common::Time update_period;
 
       /// \brief save current body/physics state
-      private: Quatern orientation;
-      private: Vector3 velocity;
-      private: Vector3 accel;
-      private: Vector3 rate;
-      private: Vector3 gravity;
-      private: Vector3 gravity_body;
+      math::Quaternion orientation;
+      math::Vector3 velocity;
+      math::Vector3 accel;
+      math::Vector3 rate;
+      math::Vector3 gravity;
+      math::Vector3 gravity_body;
 
       /// \brief Gaussian noise generator
-      private: double GaussianKernel(double mu,double sigma);
+      double GaussianKernel(double mu,double sigma);
 
       /// \brief for setting ROS name space
-      private: ParamT<std::string> *robotNamespaceP;
-      private: std::string robotNamespace;
+      std::string robotNamespace;
 
       /// \brief call back when using service
-      private: bool ServiceCallback(std_srvs::Empty::Request &req,
+      bool ServiceCallback(std_srvs::Empty::Request &req,
                                     std_srvs::Empty::Response &res);
-      private: ros::ServiceServer srv_;
-      private: ParamT<std::string> *serviceNameP;
-      private: std::string serviceName;
+      ros::ServiceServer srv_;
+      std::string serviceName;
 
       /// \brief Bias service callbacks
-      private: bool SetAccelBiasCallback(hector_gazebo_plugins::SetBias::Request &req, hector_gazebo_plugins::SetBias::Response &res);
-      private: bool SetRateBiasCallback(hector_gazebo_plugins::SetBias::Request &req, hector_gazebo_plugins::SetBias::Response &res);
-      private: ros::ServiceServer accelBiasService;
-      private: ros::ServiceServer rateBiasService;
+      bool SetAccelBiasCallback(hector_gazebo_plugins::SetBias::Request &req, hector_gazebo_plugins::SetBias::Response &res);
+      bool SetRateBiasCallback(hector_gazebo_plugins::SetBias::Request &req, hector_gazebo_plugins::SetBias::Response &res);
+      ros::ServiceServer accelBiasService;
+      ros::ServiceServer rateBiasService;
 
 #ifdef USE_CBQ
-      private: ros::CallbackQueue callback_queue_;
-      private: void CallbackQueueThread();
-      private: boost::thread callback_queue_thread_;
+      ros::CallbackQueue callback_queue_;
+      void CallbackQueueThread();
+      boost::thread callback_queue_thread_;
 #endif
+
+      // Pointer to the update event connection
+      event::ConnectionPtr updateConnection;
    };
-
-/** \} */
-/// @}
-
-
 }
 
 #endif // HECTOR_GAZEBO_PLUGINS_GAZEBO_ROS_IMU_H

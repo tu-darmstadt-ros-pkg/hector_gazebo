@@ -29,11 +29,7 @@
 #ifndef HECTOR_GAZEBO_PLUGINS_GAZEBO_ROS_SONAR_H
 #define HECTOR_GAZEBO_PLUGINS_GAZEBO_ROS_SONAR_H
 
-#include <gazebo/Controller.hh>
-#include <gazebo/Entity.hh>
-#include <gazebo/Model.hh>
-#include <gazebo/RaySensor.hh>
-#include <gazebo/Param.hh>
+#include "common/Plugin.hh"
 
 #include <ros/callback_queue.h>
 #include <ros/ros.h>
@@ -44,31 +40,39 @@
 namespace gazebo
 {
 
-class GazeboRosSonar : public Controller
+class GazeboRosSonar : public SensorPlugin
 {
 public:
-  GazeboRosSonar(Entity *parent);
+  GazeboRosSonar();
   virtual ~GazeboRosSonar();
 
 protected:
-  virtual void LoadChild(XMLConfigNode *node);
-  virtual void InitChild();
-  virtual void UpdateChild();
-  virtual void FiniChild();
+  virtual void Load(sensors::SensorPtr _sensor, sdf::ElementPtr _sdf);
+  virtual void Reset();
+  virtual void Update();
 
 private:
-  RaySensor *sensor_;
+  /// \brief The parent World
+  physics::WorldPtr world;
+
+  sensors::RaySensorPtr sensor_;
 
   ros::NodeHandle* node_handle_;
   ros::Publisher publisher_;
 
   sensor_msgs::Range range_;
 
-  ParamT<std::string> *namespace_param_;
-  ParamT<std::string> *topic_param_;
-  ParamT<std::string> *frame_id_param_;
+  std::string namespace_;
+  std::string topic_;
+  std::string frame_id_;
 
   SensorModel sensor_model_;
+
+  /// \brief save last_time
+  common::Time last_time;
+
+  // Pointer to the update event connection
+  event::ConnectionPtr updateConnection;
 };
 
 } // namespace gazebo

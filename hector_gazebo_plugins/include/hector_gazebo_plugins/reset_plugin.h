@@ -29,39 +29,26 @@
 #ifndef HECTOR_GAZEBO_PLUGINS_RESET_PLUGIN_H
 #define HECTOR_GAZEBO_PLUGINS_RESET_PLUGIN_H
 
-#include <gazebo/Controller.hh>
-#include <gazebo/Param.hh>
+#include "common/Plugin.hh"
 
-#include <ros/callback_queue.h>
 #include <ros/ros.h>
-
-#include <std_msgs/String.h>
 
 namespace gazebo
 {
 
-class GazeboResetPlugin : public Controller
+class GazeboResetPlugin : public ModelPlugin
 {
 public:
-  GazeboResetPlugin(Entity *parent);
+  GazeboResetPlugin();
   virtual ~GazeboResetPlugin();
 
 protected:
-  virtual void LoadChild(XMLConfigNode *node);
-  virtual void InitChild();
-  virtual void UpdateChild();
-  virtual void ResetChild();
-  virtual void FiniChild();
+  virtual void Load(physics::ModelPtr _model, sdf::ElementPtr _sdf);
+  virtual void Reset();
 
 private:
   ros::NodeHandle* node_handle_;
-  ros::CallbackQueue callback_queue_;
   ros::Publisher publisher_;
-
-  ParamT<std::string> *namespace_param_;
-  std::string namespace_;
-  ParamT<std::string> *topic_param_;
-  std::string topic_;
 };
 
 } // namespace gazebo

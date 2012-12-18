@@ -27,22 +27,27 @@
 //=================================================================================================
 
 #include <hector_gazebo_plugins/reset_plugin.h>
+#include "common/Events.hh"
 
-#include <gazebo/Global.hh>
-#include <gazebo/XMLConfig.hh>
-#include <gazebo/Simulator.hh>
-#include <gazebo/gazebo.h>
-#include <gazebo/World.hh>
-#include <gazebo/PhysicsEngine.hh>
-#include <gazebo/GazeboError.hh>
-#include <gazebo/ControllerFactory.hh>
+#include <std_msgs/String.h>
 
-using namespace gazebo;
+namespace gazebo {
 
-GZ_REGISTER_DYNAMIC_CONTROLLER("reset_plugin", GazeboResetPlugin)
+GazeboResetPlugin::GazeboResetPlugin()
+{
+}
 
-GazeboResetPlugin::GazeboResetPlugin(Entity *parent)
-   : Controller(parent)
+////////////////////////////////////////////////////////////////////////////////
+// Destructor
+GazeboResetPlugin::~GazeboResetPlugin()
+{
+  node_handle_->shutdown();
+  delete node_handle_;
+}
+
+////////////////////////////////////////////////////////////////////////////////
+// Load the controller
+void GazeboResetPlugin::Load(physics::ModelPtr _model, sdf::ElementPtr _sdf)
 {
   if (!ros::isInitialized())
   {
@@ -51,63 +56,20 @@ GazeboResetPlugin::GazeboResetPlugin(Entity *parent)
     ros::init(argc,argv, "gazebo", ros::init_options::NoSigintHandler|ros::init_options::AnonymousName);
   }
 
-  Param::Begin(&parameters);
-  namespace_param_ = new ParamT<std::string>("robotNamespace", "", false);
-  topic_param_ = new ParamT<std::string>("topicName", "/syscommand", false);
-  Param::End();
-}
-
-////////////////////////////////////////////////////////////////////////////////
-// Destructor
-GazeboResetPlugin::~GazeboResetPlugin()
-{
-  delete namespace_param_;
-  delete topic_param_;
-}
-
-////////////////////////////////////////////////////////////////////////////////
-// Load the controller
-void GazeboResetPlugin::LoadChild(XMLConfigNode *node)
-{
-  namespace_param_->Load(node);
-  namespace_ = namespace_param_->GetValue();
-  topic_param_->Load(node);
-  topic_ = topic_param_->GetValue();
-}
-
-///////////////////////////////////////////////////////
-// Initialize the controller
-void GazeboResetPlugin::InitChild()
-{
-  node_handle_ = new ros::NodeHandle(namespace_);
-
-  ros::AdvertiseOptions aso = ros::AdvertiseOptions::create<std_msgs::String>(
-    topic_, 1,
-    ros::SubscriberStatusCallback(), ros::SubscriberStatusCallback(),
-    ros::VoidPtr(), &this->callback_queue_);
-  publisher_ = node_handle_->advertise(aso);
-
-}
-
-////////////////////////////////////////////////////////////////////////////////
-// Update the controller
-void GazeboResetPlugin::UpdateChild()
-{
+  node_handle_ = new ros::NodeHandle;
+  publisher_ = node_handle_->advertise<std_msgs::String>("/syscommand", 1);
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 // Reset the controller
-void GazeboResetPlugin::ResetChild()
+void GazeboResetPlugin::Reset()
 {
   std_msgs::String command;
   command.data = "reset";
   publisher_.publish(command);
 }
 
-////////////////////////////////////////////////////////////////////////////////
-// Finalize the controller
-void GazeboResetPlugin::FiniChild()
-{
-  node_handle_->shutdown();
-  delete node_handle_;
-}
+// Register this plugin with the simulator
+GZ_REGISTER_MODEL_PLUGIN(GazeboResetPlugin)
+
+} // namespace gazebo

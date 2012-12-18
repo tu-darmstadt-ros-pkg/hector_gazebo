@@ -29,17 +29,17 @@
 #ifndef HECTOR_GAZEBO_PLUGINS_SENSOR_MODEL_H
 #define HECTOR_GAZEBO_PLUGINS_SENSOR_MODEL_H
 
-#include <gazebo/Param.hh>
+#include <gazebo/sdf/sdf.h>
 
 namespace gazebo {
 
 template <typename T>
 class SensorModel_ {
 public:
-  SensorModel_(std::vector<Param*> &parameters, const std::string& prefix = "");
+  SensorModel_();
   virtual ~SensorModel_();
 
-  virtual void Load(XMLConfigNode *node);
+  virtual void Load(sdf::ElementPtr _sdf, const std::string& prefix = std::string());
 
   virtual T operator()(const T& value) const { return value + current_error_; }
   virtual T operator()(const T& value, double dt) { return value + update(dt); }
@@ -59,57 +59,47 @@ public:
   T gaussian_noise;
 
 private:
-  ParamT<T> *offset_param_;
-  ParamT<T> *drift_param_;
-  ParamT<T> *drift_frequency_param_;
-  ParamT<T> *gaussian_noise_param_;
-
-  static T Value(double value);
-
   T current_drift_;
   T current_error_;
 };
 
 template <typename T>
-SensorModel_<T>::SensorModel_(std::vector<Param*> &parameters, const std::string &prefix)
+SensorModel_<T>::SensorModel_()
+  : offset()
+  , drift()
+  , drift_frequency()
+  , gaussian_noise()
 {
-  Param::Begin(&parameters);
-  if (prefix.empty()) {
-    offset_param_          = new ParamT<T>("offset", Value(0.0), 0);
-    drift_param_           = new ParamT<T>("drift", Value(0.0), 0);
-    drift_frequency_param_ = new ParamT<T>("driftFrequency", Value(1.0/3600.0), 0);
-    gaussian_noise_param_  = new ParamT<T>("gaussianNoise", Value(0.0), 0);
-  } else {
-    offset_param_          = new ParamT<T>(prefix + "Offset", Value(0.0), 0);
-    drift_param_           = new ParamT<T>(prefix + "Drift", Value(0.0), 0);
-    drift_frequency_param_ = new ParamT<T>(prefix + "DriftFrequency", Value(1.0/3600.0), 0);
-    gaussian_noise_param_  = new ParamT<T>(prefix + "GaussianNoise", Value(0.0), 0);
-  }
-  Param::End();
-
+  drift_frequency = 1.0/3600.0;
   reset();
 }
 
 template <typename T>
 SensorModel_<T>::~SensorModel_()
 {
-  delete offset_param_;
-  delete drift_param_;
-  delete drift_frequency_param_;
-  delete gaussian_noise_param_;
 }
 
 template <typename T>
-void SensorModel_<T>::Load(XMLConfigNode *node)
+void SensorModel_<T>::Load(sdf::ElementPtr _sdf, const std::string& prefix)
 {
-  offset_param_->Load(node);
-  offset = offset_param_->GetValue();
-  drift_param_->Load(node);
-  drift = drift_param_->GetValue();
-  drift_frequency_param_->Load(node);
-  drift_frequency = drift_frequency_param_->GetValue();
-  gaussian_noise_param_->Load(node);
-  gaussian_noise = gaussian_noise_param_->GetValue();
+  sdf::ElementPtr _offset, _drift, _drift_frequency, _gaussian_noise;
+
+  if (prefix.empty()) {
+    _offset          = _sdf->GetElement("offset");
+    _drift           = _sdf->GetElement("drift");
+    _drift_frequency = _sdf->GetElement("driftFrequency");
+    _gaussian_noise  = _sdf->GetElement("gaussianNoise");
+  } else {
+    _offset          = _sdf->GetElement(prefix + "Offset");
+    _drift           = _sdf->GetElement(prefix + "Drift");
+    _drift_frequency = _sdf->GetElement(prefix + "DriftFrequency");
+    _gaussian_noise  = _sdf->GetElement(prefix + "GaussianNoise");
+  }
+
+  if (_offset          && !_offset->GetValue()->Get(offset))                   offset = _offset->GetValueDouble();
+  if (_drift           && !_drift->GetValue()->Get(drift))                     drift = _drift->GetValueDouble();
+  if (_drift_frequency && !_drift_frequency->GetValue()->Get(drift_frequency)) drift_frequency = _drift_frequency->GetValueDouble();
+  if (_gaussian_noise  && !_gaussian_noise->GetValue()->Get(gaussian_noise))   gaussian_noise = _gaussian_noise->GetValueDouble();
 }
 
 namespace {
@@ -148,7 +138,7 @@ double SensorModel_<double>::update(double dt)
 }
 
 template <>
-Vector3 SensorModel_<Vector3>::update(double dt)
+math::Vector3 SensorModel_<math::Vector3>::update(double dt)
 {
   current_error_.x = SensorModelInternalUpdate(current_drift_.x, drift.x, drift_frequency.x, offset.x, gaussian_noise.x, dt);
   current_error_.y = SensorModelInternalUpdate(current_drift_.y, drift.y, drift_frequency.y, offset.y, gaussian_noise.y, dt);
@@ -163,11 +153,8 @@ void SensorModel_<T>::reset(const T& value)
   current_error_ = value;
 }
 
-template <typename T> T SensorModel_<T>::Value(double value) { return T(value); }
-template <> Vector3 SensorModel_<Vector3>::Value(double value) { return Vector3(value, value, value); }
-
 typedef SensorModel_<double> SensorModel;
-typedef SensorModel_<Vector3> SensorModel3;
+typedef SensorModel_<math::Vector3> SensorModel3;
 
 }
 
