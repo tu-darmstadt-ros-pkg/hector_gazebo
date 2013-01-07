@@ -30,7 +30,12 @@
 #include "common/Events.hh"
 #include "physics/physics.h"
 
-static const double EARTH_RADIUS = 6371000.0;
+// WGS84 constants
+static const double equatorial_radius = 6378137.0;
+static const double flattening = 1.0/298.257223563;
+static const double excentrity2 = 2*flattening - flattening*flattening;
+
+// default reference position
 static const double DEFAULT_REFERENCE_LATITUDE  = 49.9;
 static const double DEFAULT_REFERENCE_LONGITUDE = 8.9;
 static const double DEFAULT_REFERENCE_HEADING   = 0.0;
@@ -84,7 +89,7 @@ void GazeboRosGps::Load(physics::ModelPtr _model, sdf::ElementPtr _sdf)
   update_period = update_rate > 0.0 ? 1.0/update_rate : 0.0;
 
   if (!_sdf->HasElement("frameId"))
-    frame_id_ = link_name_;
+    frame_id_ = "/world";
   else
     frame_id_ = _sdf->GetElement("frameId")->GetValueString();
 
@@ -136,6 +141,12 @@ void GazeboRosGps::Load(physics::ModelPtr _model, sdf::ElementPtr _sdf)
   position_error_model_.Load(_sdf);
   velocity_error_model_.Load(_sdf, "velocity");
 
+  // calculate earth radii
+  double temp = 1.0 / (1.0 - excentrity2 * sin(reference_latitude_ * M_PI/180.0) * sin(reference_latitude_ * M_PI/180.0));
+  double prime_vertical_radius = equatorial_radius * sqrt(temp);
+  radius_north_ = prime_vertical_radius * (1 - excentrity2) * temp;
+  radius_east_  = prime_vertical_radius * cos(reference_latitude_ * M_PI/180.0);
+
   // start ros node
   if (!ros::isInitialized())
   {
@@ -182,8 +193,8 @@ void GazeboRosGps::Update()
   fix_.header.stamp = ros::Time(sim_time.sec, sim_time.nsec);
   velocity_.header.stamp = fix_.header.stamp;
 
-  fix_.latitude  = reference_latitude_  + ( cos(reference_heading_) * position.x + sin(reference_heading_) * position.y) / EARTH_RADIUS * 180.0/M_PI;
-  fix_.longitude = reference_longitude_ - (-sin(reference_heading_) * position.x + cos(reference_heading_) * position.y) / EARTH_RADIUS * 180.0/M_PI / cos(fix_.latitude * M_PI/180.0);
+  fix_.latitude  = reference_latitude_  + ( cos(reference_heading_) * position.x + sin(reference_heading_) * position.y) / radius_north_ * 180.0/M_PI;
+  fix_.longitude = reference_longitude_ - (-sin(reference_heading_) * position.x + cos(reference_heading_) * position.y) / radius_east_  * 180.0/M_PI;
   fix_.altitude  = reference_altitude_  + position.z;
   fix_.position_covariance_type = sensor_msgs::NavSatFix::COVARIANCE_TYPE_UNKNOWN;
   velocity_.vector.x =  cos(reference_heading_) * velocity.x + sin(reference_heading_) * velocity.y;

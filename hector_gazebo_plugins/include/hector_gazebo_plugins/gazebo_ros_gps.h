@@ -77,6 +77,9 @@ private:
   sensor_msgs::NavSatStatus::_status_type status_;
   sensor_msgs::NavSatStatus::_service_type service_;
 
+  double radius_north_;
+  double radius_east_;
+
   SensorModel3 position_error_model_;
   SensorModel3 velocity_error_model_;
 
