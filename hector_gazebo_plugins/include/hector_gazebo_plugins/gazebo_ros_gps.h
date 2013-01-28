@@ -35,6 +35,7 @@
 #include <sensor_msgs/NavSatFix.h>
 #include <geometry_msgs/Vector3Stamped.h>
 #include <hector_gazebo_plugins/sensor_model.h>
+#include <hector_gazebo_plugins/update_timer.h>
 
 namespace gazebo
 {
@@ -83,11 +84,7 @@ private:
   SensorModel3 position_error_model_;
   SensorModel3 velocity_error_model_;
 
-  /// \brief save last_time
-  common::Time last_time;
-  common::Time update_period;
-
-  // Pointer to the update event connection
+  UpdateTimer updateTimer;
   event::ConnectionPtr updateConnection;
 };
 

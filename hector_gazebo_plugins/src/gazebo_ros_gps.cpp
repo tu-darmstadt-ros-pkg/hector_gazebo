@@ -27,8 +27,7 @@
 //=================================================================================================
 
 #include <hector_gazebo_plugins/gazebo_ros_gps.h>
-#include "common/Events.hh"
-#include "physics/physics.h"
+#include "physics/physics.hh"
 
 // WGS84 constants
 static const double equatorial_radius = 6378137.0;
@@ -51,7 +50,7 @@ GazeboRosGps::GazeboRosGps()
 // Destructor
 GazeboRosGps::~GazeboRosGps()
 {
-  event::Events::DisconnectWorldUpdateStart(updateConnection);
+  updateTimer.Disconnect(updateConnection);
   node_handle_->shutdown();
   delete node_handle_;
 }
@@ -83,10 +82,6 @@ void GazeboRosGps::Load(physics::ModelPtr _model, sdf::ElementPtr _sdf)
     ROS_FATAL("GazeboRosGps plugin error: bodyName: %s does not exist\n", link_name_.c_str());
     return;
   }
-
-  double update_rate = 4.0;
-  if (_sdf->HasElement("updateRate")) update_rate = _sdf->GetElement("updateRate")->GetValueDouble();
-  update_period = update_rate > 0.0 ? 1.0/update_rate : 0.0;
 
   if (!_sdf->HasElement("frameId"))
     frame_id_ = "/world";
@@ -161,17 +156,15 @@ void GazeboRosGps::Load(physics::ModelPtr _model, sdf::ElementPtr _sdf)
 
   Reset();
 
-  // New Mechanism for Updating every World Cycle
-  // Listen to the update event. This event is broadcast every
-  // simulation iteration.
-  updateConnection = event::Events::ConnectWorldUpdateStart(
-      boost::bind(&GazeboRosGps::Update, this));
+  // connect Update function
+  updateTimer.setUpdateRate(4.0);
+  updateTimer.Load(world, _sdf);
+  updateConnection = updateTimer.Connect(boost::bind(&GazeboRosGps::Update, this));
 }
 
 void GazeboRosGps::Reset()
 {
-  last_time = world->GetSimTime();
-
+  updateTimer.Reset();
   position_error_model_.reset();
   velocity_error_model_.reset();
 }
@@ -181,8 +174,7 @@ void GazeboRosGps::Reset()
 void GazeboRosGps::Update()
 {
   common::Time sim_time = world->GetSimTime();
-  double dt = (sim_time - last_time).Double();
-  if (last_time + update_period > sim_time) return;
+  double dt = updateTimer.getTimeSinceLastUpdate().Double();
 
   math::Pose pose = link->GetWorldPose();
 
@@ -203,9 +195,6 @@ void GazeboRosGps::Update()
 
   fix_publisher_.publish(fix_);
   velocity_publisher_.publish(velocity_);
-
-  // save last time stamp
-  last_time = sim_time;
 }
 
 // Register this plugin with the simulator

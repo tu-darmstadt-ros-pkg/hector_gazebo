@@ -45,8 +45,7 @@ GazeboRosMagnetic::GazeboRosMagnetic()
 // Destructor
 GazeboRosMagnetic::~GazeboRosMagnetic()
 {
-  event::Events::DisconnectWorldUpdateStart(updateConnection);
-
+  updateTimer.Disconnect(updateConnection);
   node_handle_->shutdown();
   delete node_handle_;
 }
@@ -83,10 +82,6 @@ void GazeboRosMagnetic::Load(physics::ModelPtr _model, sdf::ElementPtr _sdf)
     ROS_FATAL("GazeboRosMagnetic plugin error: bodyName: %s does not exist\n", link_name_.c_str());
     return;
   }
-
-  double update_rate = 0.0;
-  if (_sdf->HasElement("updateRate")) update_rate = _sdf->GetElement("updateRate")->GetValueDouble();
-  update_period = update_rate > 0.0 ? 1.0/update_rate : 0.0;
 
   if (!_sdf->HasElement("frameId"))
     frame_id_ = link_name_;
@@ -134,15 +129,14 @@ void GazeboRosMagnetic::Load(physics::ModelPtr _model, sdf::ElementPtr _sdf)
 
   Reset();
 
-  // New Mechanism for Updating every World Cycle
-  // Listen to the update event. This event is broadcast every
-  // simulation iteration.
-  updateConnection = event::Events::ConnectWorldUpdateStart(
-      boost::bind(&GazeboRosMagnetic::Update, this));
+  // connect Update function
+  updateTimer.Load(world, _sdf);
+  updateConnection = updateTimer.Connect(boost::bind(&GazeboRosMagnetic::Update, this));
 }
 
 void GazeboRosMagnetic::Reset()
 {
+  updateTimer.Reset();
   sensor_model_.reset();
 }
 
@@ -151,8 +145,7 @@ void GazeboRosMagnetic::Reset()
 void GazeboRosMagnetic::Update()
 {
   common::Time sim_time = world->GetSimTime();
-  double dt = (sim_time - last_time).Double();
-  if (last_time + update_period > sim_time) return;
+  double dt = updateTimer.getTimeSinceLastUpdate().Double();
 
   math::Pose pose = link->GetWorldPose();
   math::Vector3 field = sensor_model_(pose.rot.RotateVectorReverse(magnetic_field_world_), dt);
@@ -163,9 +156,6 @@ void GazeboRosMagnetic::Update()
   magnetic_field_.vector.z = field.z;
 
   publisher_.publish(magnetic_field_);
-
-  // save last time stamp
-  last_time = sim_time;
 }
 
 // Register this plugin with the simulator

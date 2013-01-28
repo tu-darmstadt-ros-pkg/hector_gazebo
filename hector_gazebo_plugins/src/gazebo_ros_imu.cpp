@@ -56,7 +56,9 @@
 
 #include <hector_gazebo_plugins/gazebo_ros_imu.h>
 #include "common/Events.hh"
-#include "physics/physics.h"
+#include "physics/physics.hh"
+
+#include <ros/console.h>
 
 namespace gazebo
 {
@@ -77,7 +79,7 @@ GazeboRosIMU::GazeboRosIMU()
 // Destructor
 GazeboRosIMU::~GazeboRosIMU()
 {
-  event::Events::DisconnectWorldUpdateStart(updateConnection);
+  updateTimer.Disconnect(updateConnection);
 
   node_handle_->shutdown();
 #ifdef USE_CBQ
@@ -115,10 +117,6 @@ void GazeboRosIMU::Load(physics::ModelPtr _model, sdf::ElementPtr _sdf)
     ROS_FATAL("GazeboRosIMU plugin error: bodyName: %s does not exist\n", linkName.c_str());
     return;
   }
-
-  double update_rate = 0.0;
-  if (_sdf->HasElement("updateRate")) update_rate = _sdf->GetElement("updateRate")->GetValueDouble();
-  update_period = update_rate > 0.0 ? 1.0/update_rate : 0.0;
 
   if (!_sdf->HasElement("frameId"))
     frameId = linkName;
@@ -175,7 +173,7 @@ void GazeboRosIMU::Load(physics::ModelPtr _model, sdf::ElementPtr _sdf)
 
   // if topic name specified as empty, do not publish (then what is this plugin good for?)
   if (!topicName.empty())
-    pub_ = node_handle_->advertise<sensor_msgs::Imu>(topicName, 1);
+    pub_ = node_handle_->advertise<sensor_msgs::Imu>(topicName, 10);
 
 #ifdef DEBUG_OUTPUT
   debugPublisher = rosnode_->advertise<geometry_msgs::PoseStamped>(topicName + "/pose", 10);
@@ -195,16 +193,15 @@ void GazeboRosIMU::Load(physics::ModelPtr _model, sdf::ElementPtr _sdf)
 
   Reset();
 
-  // New Mechanism for Updating every World Cycle
-  // Listen to the update event. This event is broadcast every
-  // simulation iteration.
-  updateConnection = event::Events::ConnectWorldUpdateStart(
-      boost::bind(&GazeboRosIMU::Update, this));
+  // connect Update function
+  updateTimer.Load(world, _sdf);
+  updateConnection = updateTimer.Connect(boost::bind(&GazeboRosIMU::Update, this));
 }
 
 void GazeboRosIMU::Reset()
 {
-  last_time = world->GetSimTime();
+  updateTimer.Reset();
+
   orientation = math::Quaternion();
   velocity = 0.0;
   accel = 0.0;
@@ -244,9 +241,7 @@ void GazeboRosIMU::Update()
 {
   // Get Time Difference dt
   common::Time cur_time = world->GetSimTime();
-  double dt = (cur_time - last_time).Double();
-  if (last_time + update_period > cur_time) return;
-
+  double dt = updateTimer.getTimeSinceLastUpdate().Double();
   boost::mutex::scoped_lock scoped_lock(lock);
 
   // Get Pose/Orientation
@@ -271,7 +266,7 @@ void GazeboRosIMU::Update()
   gravity       = world->GetPhysicsEngine()->GetGravity();
   gravity_body  = orientation.RotateVectorReverse(gravity);
   double gravity_length = gravity.GetLength();
-  ROS_DEBUG_NAMED("hector_gazebo_ros_imu", "gravity_world = [%g %g %g]", gravity.x, gravity.y, gravity.z);
+  ROS_DEBUG_NAMED("gazebo_ros_imu", "gravity_world = [%g %g %g]", gravity.x, gravity.y, gravity.z);
 
   // add gravity vector to body acceleration
   accel = accel - gravity_body;
@@ -280,7 +275,7 @@ void GazeboRosIMU::Update()
   accel = accel + accelModel.update(dt);
   rate  = rate  + rateModel.update(dt);
   headingModel.update(dt);
-  ROS_DEBUG_NAMED("hector_gazebo_ros_imu", "Current errors: accel = [%g %g %g], rate = [%g %g %g], heading = %g",
+  ROS_DEBUG_NAMED("gazebo_ros_imu", "Current errors: accel = [%g %g %g], rate = [%g %g %g], heading = %g",
                  accelModel.getCurrentError().x, accelModel.getCurrentError().y, accelModel.getCurrentError().z,
                  rateModel.getCurrentError().x, rateModel.getCurrentError().y, rateModel.getCurrentError().z,
                  headingModel.getCurrentError());
@@ -327,6 +322,7 @@ void GazeboRosIMU::Update()
 
   // publish to ros
   pub_.publish(imuMsg);
+  ROS_DEBUG_NAMED("gazebo_ros_imu", "Publishing IMU data at t = %f", cur_time.Double());
 
   // debug output
 #ifdef DEBUG_OUTPUT
@@ -345,9 +341,6 @@ void GazeboRosIMU::Update()
     debugPublisher.publish(debugPose);
   }
 #endif // DEBUG_OUTPUT
-
-  // save last time stamp
-  last_time = cur_time;
 }
 
 #ifdef USE_CBQ

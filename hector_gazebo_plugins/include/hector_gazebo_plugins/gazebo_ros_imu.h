@@ -72,6 +72,7 @@
 #include <std_srvs/Empty.h>
 #include <hector_gazebo_plugins/SetBias.h>
 #include <hector_gazebo_plugins/sensor_model.h>
+#include <hector_gazebo_plugins/update_timer.h>
 
 namespace gazebo
 {
@@ -120,10 +121,6 @@ namespace gazebo
       /// \brief A mutex to lock access to fields that are used in message callbacks
       boost::mutex lock;
 
-      /// \brief save last_time
-      common::Time last_time;
-      common::Time update_period;
-
       /// \brief save current body/physics state
       math::Quaternion orientation;
       math::Vector3 velocity;
@@ -156,7 +153,7 @@ namespace gazebo
       boost::thread callback_queue_thread_;
 #endif
 
-      // Pointer to the update event connection
+      UpdateTimer updateTimer;
       event::ConnectionPtr updateConnection;
    };
 }

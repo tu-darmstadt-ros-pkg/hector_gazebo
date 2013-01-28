@@ -43,8 +43,8 @@ GazeboRosSonar::GazeboRosSonar()
 // Destructor
 GazeboRosSonar::~GazeboRosSonar()
 {
+  updateTimer.Disconnect(updateConnection);
   sensor_->SetActive(false);
-  event::Events::DisconnectWorldUpdateStart(updateConnection);
   node_handle_->shutdown();
   delete node_handle_;
 }
@@ -101,8 +101,11 @@ void GazeboRosSonar::Load(sensors::SensorPtr _sensor, sdf::ElementPtr _sdf)
   publisher_ = node_handle_->advertise<sensor_msgs::Range>(topic_, 1);
 
   Reset();
-  updateConnection = sensor_->GetLaserShape()->ConnectNewLaserScans(
-        boost::bind(&GazeboRosSonar::Update, this));
+
+  // connect Update function
+  updateTimer.setUpdateRate(10.0);
+  updateTimer.Load(world, _sdf);
+  updateConnection = updateTimer.Connect(boost::bind(&GazeboRosSonar::Update, this));
 
   // activate RaySensor
   sensor_->SetActive(true);
@@ -110,6 +113,7 @@ void GazeboRosSonar::Load(sensors::SensorPtr _sensor, sdf::ElementPtr _sdf)
 
 void GazeboRosSonar::Reset()
 {
+  updateTimer.Reset();
   sensor_model_.reset();
 }
 
@@ -118,8 +122,7 @@ void GazeboRosSonar::Reset()
 void GazeboRosSonar::Update()
 {
   common::Time sim_time = world->GetSimTime();
-  double dt = (sim_time - last_time).Double();
-//  if (last_time + updatePeriod > sim_time) return;
+  double dt = updateTimer.getTimeSinceLastUpdate().Double();
 
   // activate RaySensor if it is not yet active
   if (!sensor_->IsActive()) sensor_->SetActive(true);
@@ -143,9 +146,6 @@ void GazeboRosSonar::Update()
   }
 
   publisher_.publish(range_);
-
-  // save last time stamp
-  last_time = sim_time;
 }
 
 // Register this plugin with the simulator
