@@ -1,0 +1,20 @@
+<package>
+  <description brief="gazebo_rtt_plugin">
+
+     gazebo_rtt_plugin allows to load Orocos Tas
+
+  </description>
+  <author>Johannes Meyer</author>
+  <license>BSD</license>
+  <review status="unreviewed" notes=""/>
+  <url>http://ros.org/wiki/gazebo_rtt_plugin</url>
+  <depend package="gazebo"/>
+  <depend package="hector_gazebo_plugins" />
+  <!-- <depend package="rtt"/> -->
+
+  <export>
+    <cpp cflags="-I${prefix}/include" lflags="-L${prefix}/lib -Wl,-rpath=${prefix}/lib" />
+    <gazebo plugin_path="${prefix}/lib" />
+  </export>
+
+</package>
