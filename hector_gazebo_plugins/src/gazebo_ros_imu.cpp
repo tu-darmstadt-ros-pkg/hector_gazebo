@@ -251,16 +251,18 @@ void GazeboRosIMU::Update()
   // the result of GetRelativeLinearAccel() seems to be unreliable (sum of forces added during the current simulation step)?
   //accel = myBody->GetRelativeLinearAccel(); // get acceleration in body frame
   math::Vector3 temp = link->GetWorldLinearVel(); // get velocity in world frame
-  accel = pose.rot.RotateVectorReverse((temp - velocity) / dt);
+  if (dt > 0.0) accel = pose.rot.RotateVectorReverse((temp - velocity) / dt);
   velocity = temp;
 
   // GetRelativeAngularVel() sometimes return nan?
   //rate  = link->GetRelativeAngularVel(); // get angular rate in body frame
   math::Quaternion delta = pose.rot - orientation;
   orientation = pose.rot;
-  rate.x = 2.0 * (-orientation.x * delta.w + orientation.w * delta.x + orientation.z * delta.y - orientation.y * delta.z) / dt;
-  rate.y = 2.0 * (-orientation.y * delta.w - orientation.z * delta.x + orientation.w * delta.y + orientation.x * delta.z) / dt;
-  rate.z = 2.0 * (-orientation.z * delta.w + orientation.y * delta.x - orientation.x * delta.y + orientation.w * delta.z) / dt;
+  if (dt > 0.0) {
+    rate.x = 2.0 * (-orientation.x * delta.w + orientation.w * delta.x + orientation.z * delta.y - orientation.y * delta.z) / dt;
+    rate.y = 2.0 * (-orientation.y * delta.w - orientation.z * delta.x + orientation.w * delta.y + orientation.x * delta.z) / dt;
+    rate.z = 2.0 * (-orientation.z * delta.w + orientation.y * delta.x - orientation.x * delta.y + orientation.w * delta.z) / dt;
+  }
 
   // get Gravity
   gravity       = world->GetPhysicsEngine()->GetGravity();
