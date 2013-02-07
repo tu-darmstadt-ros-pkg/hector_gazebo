@@ -12,5 +12,6 @@
   <depend stack="ros" />
   <depend stack="ros_comm" />
   <depend stack="simulator_gazebo" />
+  <depend stack="geometry" /> <!-- tf used by diffdrive_plugin_6w -->
 
 </stack>

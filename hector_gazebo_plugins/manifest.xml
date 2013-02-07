@@ -19,6 +19,8 @@
   <depend package="geometry_msgs"/>
   <depend package="nav_msgs"/>
 
+  <depend package="tf"/> <!-- used by diffdrive_plugin_6w -->
+
   <export>
     <cpp cflags="-I${prefix}/include" lflags="-Wl,-rpath,${prefix}/lib -L${prefix}/lib" />
     <gazebo plugin_path="${prefix}/lib" />
