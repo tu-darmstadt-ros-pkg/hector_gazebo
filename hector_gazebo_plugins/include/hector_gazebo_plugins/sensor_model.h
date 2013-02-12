@@ -52,6 +52,9 @@ public:
 
   virtual void setCurrentDrift(const T& new_drift) { current_drift_ = new_drift; }
 
+private:
+  virtual bool LoadImpl(sdf::ElementPtr _element, T& value);
+
 public:
   T offset;
   T drift;
@@ -82,24 +85,37 @@ SensorModel_<T>::~SensorModel_()
 template <typename T>
 void SensorModel_<T>::Load(sdf::ElementPtr _sdf, const std::string& prefix)
 {
-  sdf::ElementPtr _offset, _drift, _drift_frequency, _gaussian_noise;
+  std::string _offset, _drift, _drift_frequency, _gaussian_noise;
 
   if (prefix.empty()) {
-    _offset          = _sdf->GetElement("offset");
-    _drift           = _sdf->GetElement("drift");
-    _drift_frequency = _sdf->GetElement("driftFrequency");
-    _gaussian_noise  = _sdf->GetElement("gaussianNoise");
+    _offset          = "offset";
+    _drift           = "drift";
+    _drift_frequency = "driftFrequency";
+    _gaussian_noise  = "gaussianNoise";
   } else {
-    _offset          = _sdf->GetElement(prefix + "Offset");
-    _drift           = _sdf->GetElement(prefix + "Drift");
-    _drift_frequency = _sdf->GetElement(prefix + "DriftFrequency");
-    _gaussian_noise  = _sdf->GetElement(prefix + "GaussianNoise");
+    _offset          = prefix + "Offset";
+    _drift           = prefix + "Drift";
+    _drift_frequency = prefix + "DriftFrequency";
+    _gaussian_noise  = prefix + "GaussianNoise";
   }
 
-  if (_offset          && !_offset->GetValue()->Get(offset))                   offset = _offset->GetValueDouble();
-  if (_drift           && !_drift->GetValue()->Get(drift))                     drift = _drift->GetValueDouble();
-  if (_drift_frequency && !_drift_frequency->GetValue()->Get(drift_frequency)) drift_frequency = _drift_frequency->GetValueDouble();
-  if (_gaussian_noise  && !_gaussian_noise->GetValue()->Get(gaussian_noise))   gaussian_noise = _gaussian_noise->GetValueDouble();
+  if (_sdf->HasElement(_offset))          LoadImpl(_sdf->GetElement(_offset), offset);
+  if (_sdf->HasElement(_drift))           LoadImpl(_sdf->GetElement(_drift), drift);
+  if (_sdf->HasElement(_drift_frequency)) LoadImpl(_sdf->GetElement(_drift_frequency), drift_frequency);
+  if (_sdf->HasElement(_gaussian_noise))  LoadImpl(_sdf->GetElement(_gaussian_noise), gaussian_noise);
+}
+
+template <> bool SensorModel_<double>::LoadImpl(sdf::ElementPtr _element, double& value) {
+  if (!_element->GetValue()) return false;
+  value = _element->GetValueDouble();
+  return true;
+}
+
+template <> bool SensorModel_<math::Vector3>::LoadImpl(sdf::ElementPtr _element, math::Vector3& value) {
+  if (!_element->GetValue()) return false;
+  if (_element->GetValue()->Get(value)) return true;
+  value = _element->GetValueDouble();
+  return true;
 }
 
 namespace {
