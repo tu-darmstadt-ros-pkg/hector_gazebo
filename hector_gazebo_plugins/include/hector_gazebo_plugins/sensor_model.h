@@ -29,7 +29,7 @@
 #ifndef HECTOR_GAZEBO_PLUGINS_SENSOR_MODEL_H
 #define HECTOR_GAZEBO_PLUGINS_SENSOR_MODEL_H
 
-#include <gazebo/sdf/sdf.h>
+#include <gazebo/sdf/sdf.hh>
 
 namespace gazebo {
 

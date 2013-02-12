@@ -34,8 +34,8 @@
 #include <assert.h>
 
 #include <hector_gazebo_plugins/diffdrive_plugin_6w.h>
-#include "common/Events.hh"
-#include "physics/physics.h"
+#include <gazebo/common/Events.hh>
+#include <gazebo/physics/physics.hh>
 
 #include <ros/ros.h>
 #include <tf/transform_broadcaster.h>

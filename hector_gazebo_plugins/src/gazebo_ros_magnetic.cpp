@@ -27,8 +27,8 @@
 //=================================================================================================
 
 #include <hector_gazebo_plugins/gazebo_ros_magnetic.h>
-#include "common/Events.hh"
-#include "physics/physics.h"
+#include <gazebo/common/Events.hh>
+#include <gazebo/physics/physics.hh>
 
 static const double DEFAULT_MAGNITUDE           = 1.0;
 static const double DEFAULT_REFERENCE_HEADING   = 0.0;

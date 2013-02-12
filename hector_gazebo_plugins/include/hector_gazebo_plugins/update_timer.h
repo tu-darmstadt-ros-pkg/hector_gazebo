@@ -29,7 +29,7 @@
 #ifndef HECTOR_GAZEBO_PLUGINS_UPDATE_TIMER_H
 #define HECTOR_GAZEBO_PLUGINS_UPDATE_TIMER_H
 
-#include <gazebo/sdf/sdf.h>
+#include <gazebo/sdf/sdf.hh>
 #include <gazebo/physics/World.hh>
 #include <gazebo/physics/PhysicsEngine.hh>
 

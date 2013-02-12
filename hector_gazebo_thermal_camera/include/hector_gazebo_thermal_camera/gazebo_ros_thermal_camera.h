@@ -70,13 +70,13 @@
 #include "image_transport/image_transport.h"
 
 // gazebo stuff
-#include "sdf/interface/Param.hh"
-#include "physics/physics.h"
-#include "transport/TransportTypes.hh"
-#include "msgs/MessageTypes.hh"
-#include "common/Time.hh"
-#include "sensors/SensorTypes.hh"
-#include "plugins/DepthCameraPlugin.hh"
+#include <gazebo/sdf/interface/Param.hh>
+#include <gazebo/physics/physics.hh>
+#include <gazebo/transport/TransportTypes.hh>
+#include <gazebo/msgs/MessageTypes.hh>
+#include <gazebo/common/Time.hh>
+#include <gazebo/sensors/SensorTypes.hh>
+#include <gazebo/plugins/DepthCameraPlugin.hh>
 
 // dynamic reconfigure stuff
 #include <gazebo_plugins/GazeboRosCameraConfig.h>

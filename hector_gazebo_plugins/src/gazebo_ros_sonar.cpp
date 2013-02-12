@@ -27,9 +27,9 @@
 //=================================================================================================
 
 #include <hector_gazebo_plugins/gazebo_ros_sonar.h>
-#include "common/Events.hh"
-#include "physics/physics.h"
-#include "sensors/RaySensor.hh"
+#include <gazebo/common/Events.hh>
+#include <gazebo/physics/physics.hh>
+#include <gazebo/sensors/RaySensor.hh>
 
 #include <limits>
 

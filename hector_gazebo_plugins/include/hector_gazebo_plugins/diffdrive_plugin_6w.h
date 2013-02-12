@@ -27,12 +27,7 @@
 
 #include <map>
 
-#include "common/Plugin.hh"
-//#include "physics/physics.h"
-//#include "transport/TransportTypes.hh"
-//#include "msgs/MessageTypes.hh"
-//#include "common/Time.hh"
-//#include "common/Events.hh"
+#include <gazebo/common/Plugin.hh>
 
 // ROS 
 #include <ros/ros.h>
