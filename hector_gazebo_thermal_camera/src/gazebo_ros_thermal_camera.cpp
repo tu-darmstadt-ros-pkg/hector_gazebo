@@ -26,7 +26,7 @@
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //=================================================================================================
 /**
- * Copy of the CameraSensor plugin with minor changes
+ * Copy of the CameraSensor/DepthCameraSensor plugin with minor changes
  */
 
 /*
@@ -63,26 +63,29 @@ namespace gazebo
 
 ////////////////////////////////////////////////////////////////////////////////
 // Constructor
-GazeboRosThermalCamera::GazeboRosThermalCamera()
+template <class Base>
+GazeboRosThermalCamera_<Base>::GazeboRosThermalCamera_()
 {
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 // Destructor
-GazeboRosThermalCamera::~GazeboRosThermalCamera()
+template <class Base>
+GazeboRosThermalCamera_<Base>::~GazeboRosThermalCamera_()
 {
 }
 
-void GazeboRosThermalCamera::Load(sensors::SensorPtr _parent, sdf::ElementPtr _sdf)
+template <class Base>
+void GazeboRosThermalCamera_<Base>::Load(sensors::SensorPtr _parent, sdf::ElementPtr _sdf)
 {
-  CameraPlugin::Load(_parent, _sdf);
+  Base::Load(_parent, _sdf);
   // copying from CameraPlugin into GazeboRosCameraUtils
   this->parentSensor_ = this->parentSensor;
   this->width_ = this->width;
   this->height_ = this->height;
   this->depth_ = this->depth;
   this->format_ = this->format;
-  this->camera_ = this->camera;
+  LoadImpl(_parent, _sdf);
   GazeboRosCameraUtils::Load(_parent, _sdf);
 
   this->type_ = sensor_msgs::image_encodings::MONO8;
@@ -91,7 +94,8 @@ void GazeboRosThermalCamera::Load(sensors::SensorPtr _parent, sdf::ElementPtr _s
 
 ////////////////////////////////////////////////////////////////////////////////
 // Update the controller
-void GazeboRosThermalCamera::OnNewFrame(const unsigned char *_image,
+template <class Base>
+void GazeboRosThermalCamera_<Base>::OnNewFrame(const unsigned char *_image,
     unsigned int _width, unsigned int _height, unsigned int _depth,
     const std::string &_format)
 {
@@ -117,15 +121,25 @@ void GazeboRosThermalCamera::OnNewFrame(const unsigned char *_image,
   }
 }
 
+template <class Base>
+void GazeboRosThermalCamera_<Base>::OnNewImageFrame(const unsigned char *_image,
+    unsigned int _width, unsigned int _height, unsigned int _depth,
+    const std::string &_format)
+{
+  OnNewFrame(_image, _width, _height, _depth, _format);
+}
+
 ////////////////////////////////////////////////////////////////////////////////
 // Put camera_ data to the interface
-void GazeboRosThermalCamera::PutCameraData(const unsigned char *_src, common::Time &last_update_time)
+template <class Base>
+void GazeboRosThermalCamera_<Base>::PutCameraData(const unsigned char *_src, common::Time &last_update_time)
 {
   this->sensor_update_time_ = last_update_time;
   this->PutCameraData(_src);
 }
 
-void GazeboRosThermalCamera::PutCameraData(const unsigned char *_src)
+template <class Base>
+void GazeboRosThermalCamera_<Base>::PutCameraData(const unsigned char *_src)
 {
   this->lock_.lock();
 
@@ -165,8 +179,5 @@ void GazeboRosThermalCamera::PutCameraData(const unsigned char *_src)
 
   this->lock_.unlock();
 }
-
-// Register this plugin with the simulator
-GZ_REGISTER_SENSOR_PLUGIN(GazeboRosThermalCamera)
 
 }
