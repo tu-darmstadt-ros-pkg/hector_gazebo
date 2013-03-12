@@ -23,12 +23,8 @@ rosbuild_find_ros_package(dynamic_reconfigure)
 include(${dynamic_reconfigure_PACKAGE_PATH}/cmake/cfgbuild.cmake)
 gencfg()
 
-rosbuild_add_library(gazebo_ros_thermal_camera_utils src/gazebo_ros_thermal_camera_utils.cpp)
-target_link_libraries(gazebo_ros_thermal_camera_utils gazebo_sdf_interface)
-rosbuild_link_boost(gazebo_ros_thermal_camera_utils thread)
-
 rosbuild_add_library(gazebo_ros_thermal_camera src/gazebo_ros_thermal_camera.cpp)
-target_link_libraries(gazebo_ros_thermal_camera gazebo_ros_thermal_camera_utils DepthCameraPlugin)
+target_link_libraries(gazebo_ros_thermal_camera gazebo_ros_camera_utils CameraPlugin)
 rosbuild_link_boost(gazebo_ros_thermal_camera thread)
 
 #uncomment if you have defined messages

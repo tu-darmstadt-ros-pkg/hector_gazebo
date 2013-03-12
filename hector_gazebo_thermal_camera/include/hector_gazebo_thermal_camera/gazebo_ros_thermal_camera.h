@@ -53,45 +53,15 @@
 #ifndef GAZEBO_ROS_THERMAL_CAMERA_HH
 #define GAZEBO_ROS_THERMAL_CAMERA_HH
 
-// ros stuff
-#include <ros/ros.h>
-#include <ros/callback_queue.h>
-#include <ros/advertise_options.h>
-
-#include <pcl_ros/point_cloud.h>
-#include <pcl/point_types.h>
-
-// ros messages stuff
-#include <sensor_msgs/PointCloud2.h>
-#include <sensor_msgs/Image.h>
-#include <sensor_msgs/CameraInfo.h>
-#include "sensor_msgs/fill_image.h"
-#include <std_msgs/Float64.h>
-#include "image_transport/image_transport.h"
-
 // gazebo stuff
-#include <gazebo/sdf/interface/Param.hh>
-#include <gazebo/physics/physics.hh>
-#include <gazebo/transport/TransportTypes.hh>
-#include <gazebo/msgs/MessageTypes.hh>
-#include <gazebo/common/Time.hh>
-#include <gazebo/sensors/SensorTypes.hh>
-#include <gazebo/plugins/DepthCameraPlugin.hh>
-
-// dynamic reconfigure stuff
-#include <gazebo_plugins/GazeboRosCameraConfig.h>
-#include <dynamic_reconfigure/server.h>
-
-// boost stuff
-#include "boost/thread/mutex.hpp"
+#include <gazebo/plugins/CameraPlugin.hh>
 
 // camera stuff
-//#include <gazebo_plugins/gazebo_ros_camera_utils.h>
-#include <hector_gazebo_thermal_camera/gazebo_ros_thermal_camera_utils.h>
+#include <gazebo_plugins/gazebo_ros_camera_utils.h>
 
 namespace gazebo
 {
-  class GazeboRosThermalCamera : public DepthCameraPlugin, GazeboRosThermalCameraUtils
+  class GazeboRosThermalCamera : public CameraPlugin, GazeboRosCameraUtils
   {
     /// \brief Constructor
     /// \param parent The parent entity, must be a Model or a Sensor
@@ -105,61 +75,13 @@ namespace gazebo
     public: void Load(sensors::SensorPtr _parent, sdf::ElementPtr _sdf);
 
     /// \brief Update the controller
-    protected: virtual void OnNewDepthFrame(const float *_image,
-                   unsigned int _width, unsigned int _height,
-                   unsigned int _depth, const std::string &_format);
-
-    /// \brief Update the controller
-    protected: virtual void OnNewRGBPointCloud(const float *_pcd,
-                    unsigned int _width, unsigned int _height,
-                    unsigned int _depth, const std::string &_format);
-
-    /// \brief Update the controller
-    protected: virtual void OnNewImageFrame(const unsigned char *_image,
+    protected: virtual void OnNewFrame(const unsigned char *_image,
                    unsigned int _width, unsigned int _height,
                    unsigned int _depth, const std::string &_format);
 
     /// \brief Put camera data to the ROS topic
-    private: void FillPointdCloud(const float *_src);
-
-    /// \brief Keep track of number of connctions for point clouds
-    private: int point_cloud_connect_count_;
-    private: void PointCloudConnect();
-    private: void PointCloudDisconnect();
-
-    private: bool FillPointCloudHelper(sensor_msgs::PointCloud2 &point_cloud_msg,
-                                  uint32_t rows_arg, uint32_t cols_arg,
-                                  uint32_t step_arg, void* data_arg);
-
-    private: bool FillDepthImageHelper( sensor_msgs::Image& image_msg,
-                                  uint32_t rows_arg, uint32_t cols_arg,
-                                  uint32_t step_arg, void* data_arg);
-
-    /// \brief A pointer to the ROS node.  A node will be instantiated if it does not exist.
-    private: ros::Publisher point_cloud_pub_;
-    private: ros::Publisher depth_image_pub_;
-
-    /// \brief PCL point cloud message
-    private: sensor_msgs::PointCloud2 point_cloud_msg_;
-    private: sensor_msgs::Image depth_image_msg_;
-
-    private: double point_cloud_cutoff_;
-
-    /// \brief ROS image topic name
-    private: std::string point_cloud_topic_name_;
-
-    private: void InfoConnect();
-    private: void InfoDisconnect();
-    using GazeboRosThermalCameraUtils::PublishCameraInfo;
-    private: void PublishCameraInfo();
-
-    /// \brief image where each pixel contains the depth information
-    private: std::string depth_image_topic_name_;
-    private: std::string depth_image_camera_info_topic_name_;
-
-    // overload with our own
-    private: common::Time depth_sensor_update_time_;
-    protected: ros::Publisher depth_image_camera_info_pub_;
+    protected: void PutCameraData(const unsigned char *_src);
+    protected: void PutCameraData(const unsigned char *_src, common::Time &last_update_time);
   };
 
 }

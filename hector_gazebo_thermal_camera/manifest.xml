@@ -9,7 +9,6 @@
   <review status="unreviewed" notes=""/>
   <url>http://ros.org/wiki/hector_gazebo_thermal_camera</url>
   <depend package="nodelet"/>
-  <depend package="pcl_ros"/>
   <depend package="gazebo"/>
   <depend package="image_transport"/>
   <depend package="dynamic_reconfigure" />
