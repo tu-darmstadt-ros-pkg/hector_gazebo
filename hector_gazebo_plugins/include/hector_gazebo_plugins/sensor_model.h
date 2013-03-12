@@ -53,7 +53,7 @@ public:
   virtual void setCurrentDrift(const T& new_drift) { current_drift_ = new_drift; }
 
 private:
-  virtual bool LoadImpl(sdf::ElementPtr _element, T& value);
+  virtual bool LoadImpl(sdf::ElementPtr _element, T& _value);
 
 public:
   T offset;
@@ -105,17 +105,18 @@ void SensorModel_<T>::Load(sdf::ElementPtr _sdf, const std::string& prefix)
   if (_sdf->HasElement(_gaussian_noise))  LoadImpl(_sdf->GetElement(_gaussian_noise), gaussian_noise);
 }
 
-template <> bool SensorModel_<double>::LoadImpl(sdf::ElementPtr _element, double& value) {
+template <typename T>
+bool SensorModel_<T>::LoadImpl(sdf::ElementPtr _element, T& _value) {
   if (!_element->GetValue()) return false;
-  value = _element->GetValueDouble();
-  return true;
-}
-
-template <> bool SensorModel_<math::Vector3>::LoadImpl(sdf::ElementPtr _element, math::Vector3& value) {
-  if (!_element->GetValue()) return false;
-  if (_element->GetValue()->Get(value)) return true;
-  value = _element->GetValueDouble();
-  return true;
+  if (_element->GetValue()->IsStr()) {
+    try {
+      _value = boost::lexical_cast<T>(_element->GetValue()->GetAsString());
+      return true;
+    } catch(boost::bad_lexical_cast&) {
+      return false;
+    }
+  }
+  return _element->GetValue()->Get(_value);
 }
 
 namespace {
