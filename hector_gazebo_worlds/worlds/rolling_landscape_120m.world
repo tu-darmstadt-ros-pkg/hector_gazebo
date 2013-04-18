@@ -1,39 +1,60 @@
-<?xml version="1.0" encoding="UTF-8"?>
-<gazebo version="1.0">
+<?xml version="1.0" encoding="UTF-8" ?>
+<sdf version="1.3">
     <world name="default">
         <scene>
-            <ambient rgba="0.5 0.5 0.5 1"/>
-            <background rgba="0.5 0.5 0.5 1"/>
-            <shadows enabled="false"/>
+            <ambient>0.5 0.5 0.5 1</ambient>
+            <background>0.5 0.5 0.5 1</background>
+            <shadows>false</shadows>
         </scene>
         <physics type="ode">
-            <gravity xyz="0 0 -9.81"/>
+            <gravity>0 0 -9.81</gravity>
             <ode>
-                <solver type="quick" dt="0.001" iters="10" sor="1.3"/>
-                <constraints cfm="0.0" erp="0.2" contact_max_correcting_vel="10" contact_surface_layer="0.001"/>
+                <solver>
+                    <type>quick</type>
+                    <dt>0.001</dt>
+                    <iters>10</iters>
+                    <sor>1.3</sor>
+                </solver>
+                <constraints>
+                    <cfm>0.0</cfm>
+                    <erp>0.2</erp>
+                    <contact_max_correcting_vel>10</contact_max_correcting_vel>
+                    <contact_surface_layer>0.001</contact_surface_layer>
+                </constraints>
             </ode>
         </physics>
-        <light type="directional" name="directional_light_1" cast_shadows="false">
-            <origin pose="0 20 20 0.1 0.1 0"/>
-            <diffuse rgba="1 1 1 1"/>
-            <specular rgba="1 1 1 1"/>
-            <attenuation range="300"/>
-            <direction xyz="0.1 0.1 -1"/>
+        <light type="directional" name="directional_light_1">
+            <pose>0 20 20 0.1 0.1 0</pose>
+            <diffuse>1 1 1 1</diffuse>
+            <specular>1 1 1 1</specular>
+            <attenuation>
+                <range>300</range>
+            </attenuation>
+            <direction>0.1 0.1 -1</direction>
+            <cast_shadows>false</cast_shadows>
         </light>
-        <model name="120m_landscape_smooth_tri" static="true">
+        <model name="120m_landscape_smooth_tri">
             <link name="120m_landscape_smooth_tri_link">
-                <origin pose="0 0 0 0 0 0"/>
+                <pose>0 0 0 0 0 0</pose>
                 <collision name="120m_landscape_smooth_tri_collision">
                     <geometry>
-                        <mesh filename="120m_landscape_smooth_tri.dae" scale="1 1 1"/>
+                        <mesh>
+                            <uri>file://120m_landscape_smooth_tri.dae</uri>
+                            <scale>1 1 1</scale>
+                        </mesh>
                     </geometry>
                 </collision>
-                <visual name="120m_landscape_smooth_tri" cast_shadows="false">
+                <visual name="120m_landscape_smooth_tri">
                     <geometry>
-                        <mesh filename="120m_landscape_smooth_tri.dae" scale="1 1 1"/>
+                        <mesh>
+                            <uri>file://120m_landscape_smooth_tri.dae</uri>
+                            <scale>1 1 1</scale>
+                        </mesh>
                     </geometry>
+                    <cast_shadows>false</cast_shadows>
                 </visual>
             </link>
+            <static>true</static>
         </model>
     </world>
-</gazebo>
+</sdf>
