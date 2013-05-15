@@ -67,10 +67,10 @@ public:
     }
   }
 
-  virtual event::ConnectionPtr Connect(const boost::function<void()> &_subscriber, bool connectToWorldUpdateStart = true)
+  virtual event::ConnectionPtr Connect(const boost::function<void()> &_subscriber, bool connectToWorldUpdateBegin = true)
   {
-    if (connectToWorldUpdateStart && !update_connection_) {
-      update_connection_ = event::Events::ConnectWorldUpdateStart(
+    if (connectToWorldUpdateBegin && !update_connection_) {
+      update_connection_ = event::Events::ConnectWorldUpdateBegin(
             boost::bind(&UpdateTimer::Update, this));
     }
     connection_count_++;
@@ -82,7 +82,7 @@ public:
     if (_c) update_event_.Disconnect(_c);
 
     if (update_connection_ && (!_c || --connection_count_ == 0)) {
-      event::Events::DisconnectWorldUpdateStart(update_connection_);
+      event::Events::DisconnectWorldUpdateBegin(update_connection_);
       update_connection_.reset();
     }
   }
