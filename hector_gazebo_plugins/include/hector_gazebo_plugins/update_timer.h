@@ -116,10 +116,10 @@ public:
   virtual bool checkUpdate() const
   {
     double period = update_period_.Double();
+    double step = world_->GetPhysicsEngine()->GetStepTime();
     if (period == 0) return true;
-    double fraction =  fmod((world_->GetSimTime() - update_offset_).Double(), period);
-    // gzwarn << "time is " << world_->GetSimTime().Double() << ", period is " << period << ", check if fraction = " << fraction << " < " << world_->GetPhysicsEngine()->GetStepTime() << std::endl;
-    return fraction >= 0.0 && fraction < world_->GetPhysicsEngine()->GetStepTime();
+    double fraction = fmod((world_->GetSimTime() - update_offset_).Double() + (step / 2.0), period);
+    return (fraction >= 0.0) && (fraction < step);
   }
 
   virtual bool update()
