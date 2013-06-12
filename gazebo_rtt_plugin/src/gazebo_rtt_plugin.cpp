@@ -131,7 +131,11 @@ void RTTPlugin::Load(physics::ModelPtr _parent, sdf::ElementPtr _sdf)
   while(property) {
     std::string name = property->GetValueString("name");
     RTT::base::PropertyBase *prop = taskContext->getProperty(name);
-    if (!prop) continue;
+    if (!prop) {
+      gzwarn << "Component '" << taskContext->getName() << "' has no property named '" << name << "'" << std::endl;
+      property = property->GetNextElement("property");
+      continue;
+    }
 
     if (prop->getType() == "string")
       RTT::Property<std::string>(prop).set(property->GetValueString());
@@ -162,12 +166,17 @@ void RTTPlugin::Load(physics::ModelPtr _parent, sdf::ElementPtr _sdf)
   // create Streams
   sdf::ElementPtr port = _sdf->GetElement("port");
   while(port) {
-    std::string name;
+    std::string name = port->GetValueString("name");
+    RTT::base::PortInterface *port_interface = taskContext->getPort(name);
+    if (!port_interface) {
+      gzwarn << "Component '" << taskContext->getName() << "' has no port named '" << name << "'" << std::endl;
+      port = port->GetNextElement("port");
+      continue;
+    }
+
     RTT::ConnPolicy conn_policy;
     conn_policy.transport = ORO_ROS_PROTOCOL_ID;
 
-    if (!port->HasAttribute("name")) continue;
-    name = port->GetAttribute("name")->GetAsString();
     if (port->HasAttribute("topic"))
       conn_policy.name_id = port->GetAttribute("topic")->GetAsString();
     else
@@ -175,48 +184,22 @@ void RTTPlugin::Load(physics::ModelPtr _parent, sdf::ElementPtr _sdf)
     if (port->HasAttribute("queue_size")) conn_policy.size = boost::lexical_cast<int>(port->GetAttribute("queue_size")->GetAsString());
     conn_policy.type = conn_policy.size > 1 ? RTT::ConnPolicy::BUFFER : RTT::ConnPolicy::DATA;
 
-    RTT::base::PortInterface *port_interface = taskContext->getPort(name);
-    if (port_interface) {
-      port_interface->createStream(conn_policy);
-
-    } else {
-      gzwarn << "Component '" << taskContext->getName() << "' has no port named '" << name << "'" << std::endl;
-    }
-
+    port_interface->createStream(conn_policy);
     port = port->GetNextElement("port");
   }
-
-  // Listen to the update event. This event is broadcast every
-  // simulation iteration.
-  this->updateConnection = event::Events::ConnectWorldUpdateStart(
-      boost::bind(&RTTPlugin::OnUpdate, this));
 }
 
 void RTTPlugin::Init()
 {
-  // do nothing for now
-}
-
-// Called by the world update start event
-void RTTPlugin::OnUpdate()
-{
   if (!taskContext) return;
-
-  // start TaskContext
-  if (!taskContext->isRunning()) {
-    if (!taskContext->start()) {
-      gzerr << "Failed to start TaskContext " << taskContext->getName() << std::endl;
-      return;
-    }
-  }
-
-  taskContext->update();
+  taskContext->start();
 }
 
 void RTTPlugin::Reset()
 {
   if (!taskContext) return;
   taskContext->stop();
+  Init();
 }
 
 // Register this plugin with the simulator

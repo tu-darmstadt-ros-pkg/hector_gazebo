@@ -76,6 +76,7 @@ private:
     bool active;
 
     UpdateTimer updateTimer;
+    gazebo::event::ConnectionPtr updateConnection;
 };
 
 } // namespace gazebo

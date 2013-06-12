@@ -45,11 +45,6 @@ namespace gazebo
 
     virtual void Init();
     virtual void Load(physics::ModelPtr _parent, sdf::ElementPtr /*_sdf*/);
-
-    // Called by the world update start event
-    virtual void OnUpdate();
-
-    // Called on model reset (stops and restarts the TaskContext)
     virtual void Reset();
 
   protected:

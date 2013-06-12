@@ -122,13 +122,18 @@ bool GazeboActivity::start()
   }
 
   active = true;
-  updateTimer.Reset();
 
   if ( runner ? runner->initialize() : this->initialize() ) {
-    running = this->isPeriodic();
+    running = true;
   } else {
     active = false;
   }
+
+  if (active) {
+    updateConnection = updateTimer.Connect(boost::bind(&GazeboActivity::execute, this));
+    updateTimer.Reset();
+  }
+
   return active;
 }
 
@@ -138,11 +143,7 @@ bool GazeboActivity::stop()
   if ( !active )
     return false;
 
-  // use breakLoop if not periodic and within loop
-  if ( this->isPeriodic() == false) {
-    if ( running && (runner ? (runner->breakLoop() == false): (this->breakLoop() == false) ) )
-      return false;
-  }
+  updateTimer.Disconnect(updateConnection);
 
   running = false;
   if (runner)
@@ -162,6 +163,7 @@ bool GazeboActivity::isPeriodic() const
 {
   return true;
 }
+
 bool GazeboActivity::isActive() const
 {
   return active;
@@ -175,7 +177,6 @@ bool GazeboActivity::trigger()
 bool GazeboActivity::execute()
 {
   if (!running) return false;
-  if (!updateTimer.update()) return true;
 
   ROS_DEBUG_NAMED("gazebo_rtt_plugin", "Updating RTT plugin %s at t = %f", mname.c_str(), mworld->GetSimTime().Double());
   if (runner) runner->step(); else this->step();
