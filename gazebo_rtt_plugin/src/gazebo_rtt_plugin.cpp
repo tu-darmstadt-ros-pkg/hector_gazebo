@@ -177,11 +177,12 @@ void RTTPlugin::Load(physics::ModelPtr _parent, sdf::ElementPtr _sdf)
     RTT::ConnPolicy conn_policy;
     conn_policy.transport = ORO_ROS_PROTOCOL_ID;
 
-    if (port->HasAttribute("topic"))
-      conn_policy.name_id = port->GetAttribute("topic")->GetAsString();
+    if (port->HasAttribute("topic") || port->HasElement("topic"))
+      conn_policy.name_id = port->GetValueString("topic");
     else
       conn_policy.name_id = name;
-    if (port->HasAttribute("queue_size")) conn_policy.size = boost::lexical_cast<int>(port->GetAttribute("queue_size")->GetAsString());
+    if (port->HasAttribute("queue_size") || port->HasElement("queue_size"))
+      conn_policy.size = boost::lexical_cast<int>(port->GetValueString("queue_size"));
     conn_policy.type = conn_policy.size > 1 ? RTT::ConnPolicy::BUFFER : RTT::ConnPolicy::DATA;
 
     port_interface->createStream(conn_policy);
