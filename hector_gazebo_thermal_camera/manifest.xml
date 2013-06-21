@@ -9,7 +9,7 @@
   <review status="unreviewed" notes=""/>
   <url>http://ros.org/wiki/hector_gazebo_thermal_camera</url>
   <depend package="nodelet"/>
-  <depend package="gazebo"/>
+  <depend package="gazebo_ros"/>
   <depend package="image_transport"/>
   <depend package="dynamic_reconfigure" />
   <depend package="driver_base" />
@@ -17,7 +17,7 @@
   
   <export>
     <cpp cflags="-I${prefix}/include" lflags="-Wl,-rpath,${prefix}/lib -L${prefix}/lib" />
-    <gazebo plugin_path="${prefix}/lib" />
+    <gazebo_ros plugin_path="${prefix}/lib" />
   </export>
 
 </package>
