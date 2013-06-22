@@ -96,7 +96,11 @@ void GazeboRosThermalCamera_<Base>::OnNewFrame(const unsigned char *_image,
     unsigned int _width, unsigned int _height, unsigned int _depth,
     const std::string &_format)
 {
-  if (!this->initialized_ || this->height_ <=0 || this->width_ <=0)
+  // Workaround to be compatible with GazeboRosCameraUtils from simulator_gazebo and gazebo_ros_pkgs
+  // callback_queue_thread_ is started last in GazeboRosCameraUtils::Init()
+  // if (!this->initialized_
+  if (!callback_queue_thread_.joinable()
+      || this->height_ <=0 || this->width_ <=0)
     return;
 
   this->sensor_update_time_ = this->parentSensor_->GetLastUpdateTime();
