@@ -87,9 +87,6 @@ void GazeboRosThermalCamera_<Base>::Load(sensors::SensorPtr _parent, sdf::Elemen
   this->format_ = this->format;
   LoadImpl(_parent, _sdf);
   GazeboRosCameraUtils::Load(_parent, _sdf);
-
-  this->type_ = sensor_msgs::image_encodings::MONO8;
-  this->skip_ = 1;
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -99,6 +96,9 @@ void GazeboRosThermalCamera_<Base>::OnNewFrame(const unsigned char *_image,
     unsigned int _width, unsigned int _height, unsigned int _depth,
     const std::string &_format)
 {
+  if (!this->initialized_ || this->height_ <=0 || this->width_ <=0)
+    return;
+
   this->sensor_update_time_ = this->parentSensor_->GetLastUpdateTime();
 
   if (!this->parentSensor->IsActive())
@@ -142,6 +142,9 @@ void GazeboRosThermalCamera_<Base>::PutCameraData(const unsigned char *_src, com
 template <class Base>
 void GazeboRosThermalCamera_<Base>::PutCameraData(const unsigned char *_src)
 {
+  if (!this->initialized_ || this->height_ <=0 || this->width_ <=0)
+    return;
+
   this->lock_.lock();
 
   // copy data into image
@@ -152,9 +155,10 @@ void GazeboRosThermalCamera_<Base>::PutCameraData(const unsigned char *_src)
   /// don't bother if there are no subscribers
   if (this->image_connect_count_ > 0)
   {
-    this->image_msg_.encoding = this->type_;
     this->image_msg_.width = this->width_;
     this->image_msg_.height = this->height_;
+    this->image_msg_.encoding = sensor_msgs::image_encodings::MONO8;
+    this->image_msg_.step = this->image_msg_.width;
 
     size_t size = this->width_ * this->height_;
 
