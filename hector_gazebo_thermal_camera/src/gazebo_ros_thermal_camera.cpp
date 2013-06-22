@@ -115,6 +115,7 @@ void GazeboRosThermalCamera_<Base>::OnNewFrame(const unsigned char *_image,
       if (cur_time - this->last_update_time_ >= this->update_period_)
       {
         this->PutCameraData(_image);
+        this->PublishCameraInfo();
         this->last_update_time_ = cur_time;
       }
     }
