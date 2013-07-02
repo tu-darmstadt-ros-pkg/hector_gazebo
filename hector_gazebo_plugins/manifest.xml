@@ -13,6 +13,7 @@
   <url>http://ros.org/wiki/hector_gazebo_plugins</url>
 
   <depend package="roscpp"/>
+  <depend package="gazebo"/>
   <depend package="gazebo_ros"/>
 
   <depend package="std_msgs"/>
