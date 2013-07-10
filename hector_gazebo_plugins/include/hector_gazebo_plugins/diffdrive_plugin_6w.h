@@ -28,6 +28,7 @@
 #include <map>
 
 #include <gazebo/common/Plugin.hh>
+#include <gazebo/common/Time.hh>
 
 // ROS 
 #include <ros/ros.h>
