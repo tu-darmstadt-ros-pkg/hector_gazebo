@@ -41,6 +41,8 @@
   #define ORO_ROS_PROTOCOL_ID 3
 #endif
 
+#include <ros/names.h>
+
 namespace gazebo
 {
 
@@ -163,6 +165,9 @@ void RTTPlugin::Load(physics::ModelPtr _parent, sdf::ElementPtr _sdf)
     return;
   }
 
+  // get robot namespace
+  std::string robotNamespace = _sdf->GetValueString("robotNamespace");
+
   // create Streams
   sdf::ElementPtr port = _sdf->GetElement("port");
   while(port) {
@@ -185,6 +190,7 @@ void RTTPlugin::Load(physics::ModelPtr _parent, sdf::ElementPtr _sdf)
       conn_policy.size = boost::lexical_cast<int>(port->GetValueString("queue_size"));
     conn_policy.type = conn_policy.size > 1 ? RTT::ConnPolicy::BUFFER : RTT::ConnPolicy::DATA;
 
+    conn_policy.name_id = ros::names::resolve(robotNamespace, conn_policy.name_id, false);
     port_interface->createStream(conn_policy);
     port = port->GetNextElement("port");
   }
