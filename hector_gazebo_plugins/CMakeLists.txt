@@ -9,6 +9,13 @@ include($ENV{ROS_ROOT}/core/rosbuild/rosbuild.cmake)
 #  MinSizeRel     : w/o debug symbols, w/ optimization, stripped binaries
 #set(ROS_BUILD_TYPE RelWithDebInfo)
 
+# Find gazebo
+include (FindPkgConfig)
+if (PKG_CONFIG_FOUND)
+  pkg_check_modules(GAZEBO gazebo)
+endif()
+include_directories(${GAZEBO_INCLUDE_DIRS})
+
 rosbuild_init()
 
 #set the default path for built executables to the "bin" directory
@@ -20,15 +27,23 @@ rosbuild_add_boost_directories()
 
 rosbuild_add_library(diffdrive_plugin_6w src/diffdrive_plugin_6w.cpp)
 rosbuild_link_boost(diffdrive_plugin_6w thread)
+target_link_libraries(diffdrive_plugin_6w ${GAZEBO_LIBRARIES})
 
 rosbuild_add_library(reset_plugin src/reset_plugin.cpp)
+target_link_libraries(reset_plugin ${GAZEBO_LIBRARIES})
 
 rosbuild_add_library(hector_gazebo_ros_imu src/gazebo_ros_imu.cpp)
 rosbuild_link_boost(hector_gazebo_ros_imu thread)
+target_link_libraries(hector_gazebo_ros_imu ${GAZEBO_LIBRARIES})
 
 rosbuild_add_library(hector_gazebo_ros_magnetic src/gazebo_ros_magnetic.cpp)
+target_link_libraries(hector_gazebo_ros_magnetic ${GAZEBO_LIBRARIES})
+
 rosbuild_add_library(hector_gazebo_ros_gps src/gazebo_ros_gps.cpp)
+target_link_libraries(hector_gazebo_ros_gps ${GAZEBO_LIBRARIES})
+
 rosbuild_add_library(hector_gazebo_ros_sonar src/gazebo_ros_sonar.cpp)
+target_link_libraries(hector_gazebo_ros_sonar ${GAZEBO_LIBRARIES})
 
 #uncomment if you have defined messages
 #rosbuild_genmsg()

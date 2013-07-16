@@ -53,7 +53,7 @@
 #include <hector_gazebo_thermal_camera/gazebo_ros_thermal_camera.h>
 
 #include <gazebo/sensors/Sensor.hh>
-#include <gazebo/sdf/interface/SDF.hh>
+#include <sdf/SDF.hh>
 #include <gazebo/sensors/SensorTypes.hh>
 
 #include <sensor_msgs/image_encodings.h>

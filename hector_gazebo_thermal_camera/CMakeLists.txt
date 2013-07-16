@@ -9,6 +9,14 @@ include($ENV{ROS_ROOT}/core/rosbuild/rosbuild.cmake)
 #  MinSizeRel     : w/o debug symbols, w/ optimization, stripped binaries
 #set(ROS_BUILD_TYPE RelWithDebInfo)
 
+# Find gazebo
+include (FindPkgConfig)
+if (PKG_CONFIG_FOUND)
+  pkg_check_modules(GAZEBO gazebo)
+endif()
+include_directories(${GAZEBO_INCLUDE_DIRS})
+link_directories(${GAZEBO_LIBRARY_DIRS})
+
 rosbuild_init()
 
 #set the default path for built executables to the "bin" directory
@@ -24,11 +32,11 @@ include(${dynamic_reconfigure_PACKAGE_PATH}/cmake/cfgbuild.cmake)
 gencfg()
 
 rosbuild_add_library(gazebo_ros_thermal_camera src/gazebo_ros_thermal_camera_plugin.cpp)
-target_link_libraries(gazebo_ros_thermal_camera gazebo_ros_camera_utils CameraPlugin)
+target_link_libraries(gazebo_ros_thermal_camera ${GAZEBO_LIBRARIES} gazebo_ros_camera_utils CameraPlugin)
 rosbuild_link_boost(gazebo_ros_thermal_camera thread)
 
 rosbuild_add_library(gazebo_ros_thermal_depth_camera src/gazebo_ros_thermal_depth_camera_plugin.cpp)
-target_link_libraries(gazebo_ros_thermal_depth_camera gazebo_ros_camera_utils DepthCameraPlugin)
+target_link_libraries(gazebo_ros_thermal_depth_camera ${GAZEBO_LIBRARIES} gazebo_ros_camera_utils DepthCameraPlugin)
 rosbuild_link_boost(gazebo_ros_thermal_depth_camera thread)
 
 #uncomment if you have defined messages

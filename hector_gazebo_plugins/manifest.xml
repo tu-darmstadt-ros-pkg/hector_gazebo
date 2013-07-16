@@ -13,7 +13,6 @@
   <url>http://ros.org/wiki/hector_gazebo_plugins</url>
 
   <depend package="roscpp"/>
-  <depend package="gazebo"/>
   <depend package="gazebo_ros"/>
 
   <depend package="std_msgs"/>
@@ -21,6 +20,8 @@
   <depend package="nav_msgs"/>
 
   <depend package="tf"/> <!-- used by diffdrive_plugin_6w -->
+
+  <rosdep name="gazebo"/>
 
   <export>
     <cpp cflags="-I${prefix}/include" lflags="-Wl,-rpath,${prefix}/lib -L${prefix}/lib" />
