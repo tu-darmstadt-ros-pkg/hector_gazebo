@@ -1,44 +1,53 @@
-cmake_minimum_required(VERSION 2.4.6)
-include($ENV{ROS_ROOT}/core/rosbuild/rosbuild.cmake)
+cmake_minimum_required(VERSION 2.8.3)
+project(hector_gazebo_plugins)
 
-# Set the build type.  Options are:
-#  Coverage       : w/ debug symbols, w/o optimization, w/ code-coverage
-#  Debug          : w/ debug symbols, w/o optimization
-#  Release        : w/o debug symbols, w/ optimization
-#  RelWithDebInfo : w/ debug symbols, w/ optimization
-#  MinSizeRel     : w/o debug symbols, w/ optimization, stripped binaries
-#set(ROS_BUILD_TYPE RelWithDebInfo)
+find_package(catkin REQUIRED COMPONENTS 
+  roscpp 
+  gazebo_ros
+  std_msgs 
+  geometry_msgs 
+  nav_msgs
+  tf 
+)
 
-rosbuild_init()
+catkin_package(
+  INCLUDE_DIRS include
+  LIBRARIES hector_gazebo_gps_plugin
+  CATKIN_DEPENDS gazebo_ros
+  )
 
-#set the default path for built executables to the "bin" directory
-set(EXECUTABLE_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/bin)
-#set the default path for built libraries to the "lib" directory
-set(LIBRARY_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/lib)
 
-rosbuild_add_boost_directories()
+include (FindPkgConfig)
+if (PKG_CONFIG_FOUND)
+  pkg_check_modules(GAZEBO_SYSTEM REQUIRED gazebo_ros)
+  # pkg_check_modules(GAZEBO_ODE REQUIRED gazebo_ode)
+  # pkg_check_modules(GAZEBO_TRANSPORT REQUIRED gazebo_transport)
+  pkg_check_modules(XML libxml-2.0)
+else()
+  message(FATAL_ERROR "pkg-config is required; please install it")
+endif()
 
-rosbuild_add_library(diffdrive_plugin_6w src/diffdrive_plugin_6w.cpp)
-rosbuild_link_boost(diffdrive_plugin_6w thread)
+set(cxx_flags)
+foreach (item ${GAZEBO_SYSTEM_CFLAGS})
+  set(cxx_flags "${cxx_flags} ${item}")
+endforeach ()
+message(status "\n\n${cxx_flags}\n\n")
 
-rosbuild_add_library(reset_plugin src/reset_plugin.cpp)
+set(ld_flags)
+foreach (item ${GAZEBO_SYSTEM_LDFLAGS})
+  set(ld_flags "${ld_flags} ${item}")
+endforeach ()
+message(status "\n\n${ld_flags}\n\n")
 
-rosbuild_add_library(hector_gazebo_ros_imu src/gazebo_ros_imu.cpp)
-rosbuild_link_boost(hector_gazebo_ros_imu thread)
+## Generate services in the 'srv' folder
+ add_service_files(
+   FILES
+   SetBias.srv
+ )
 
-rosbuild_add_library(hector_gazebo_ros_magnetic src/gazebo_ros_magnetic.cpp)
-rosbuild_add_library(hector_gazebo_ros_gps src/gazebo_ros_gps.cpp)
-rosbuild_add_library(hector_gazebo_ros_sonar src/gazebo_ros_sonar.cpp)
+include_directories(include ${catkin_INCLUDE_DIRS} ${} ${GAZEBO_SYSTEM_INCLUDE_DIRS})
+add_library(hector_gazebo_gps_plugin src/gazebo_ros_gps.cpp)
+set_target_properties(hector_gazebo_gps_plugin PROPERTIES LINK_FLAGS "${ld_flags}")
+set_target_properties(hector_gazebo_gps_plugin PROPERTIES COMPILE_FLAGS "${cxx_flags}")
+target_link_libraries(hector_gazebo_gps_plugin ${GAZEBO_SYSTEM_LIBRARIES} ${catkin_LIBRARIES})
 
-#uncomment if you have defined messages
-#rosbuild_genmsg()
-#uncomment if you have defined services
-rosbuild_gensrv()
-
-#common commands for building c++ executables and libraries
-#rosbuild_add_library(${PROJECT_NAME} src/example.cpp)
-#target_link_libraries(${PROJECT_NAME} another_library)
-#rosbuild_add_boost_directories()
-#rosbuild_link_boost(${PROJECT_NAME} thread)
-#rosbuild_add_executable(example examples/example.cpp)
-#target_link_libraries(example ${PROJECT_NAME})
