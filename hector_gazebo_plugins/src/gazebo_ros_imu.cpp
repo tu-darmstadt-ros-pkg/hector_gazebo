@@ -96,42 +96,43 @@ void GazeboRosIMU::Load(physics::ModelPtr _model, sdf::ElementPtr _sdf)
   world = _model->GetWorld();
 
   // load parameters
-  if (!_sdf->HasElement("robotNamespace"))
-    robotNamespace.clear();
+  if (_sdf->HasElement("robotNamespace"))
+    namespace_ = _sdf->GetElement("robotNamespace")->GetValue()->GetAsString();
   else
-    robotNamespace = _sdf->GetElement("robotNamespace")->GetValueString() + "/";
+    namespace_.clear();
 
-  if (!_sdf->HasElement("bodyName"))
+  if (_sdf->HasElement("bodyName"))
+  {
+    link_name_ = _sdf->GetElement("bodyName")->GetValue()->GetAsString();
+    link = _model->GetLink(link_name_);
+  }
+  else
   {
     link = _model->GetLink();
-    linkName = link->GetName();
-  }
-  else {
-    linkName = _sdf->GetElement("bodyName")->GetValueString();
-    link = _model->GetLink(linkName);
+    link_name_ = link->GetName();
   }
 
-  // assert that the body by linkName exists
+  // assert that the body by link_name_ exists
   if (!link)
   {
-    ROS_FATAL("GazeboRosIMU plugin error: bodyName: %s does not exist\n", linkName.c_str());
+    ROS_FATAL("GazeboRosIMU plugin error: bodyName: %s does not exist\n", link_name_.c_str());
     return;
   }
 
-  if (!_sdf->HasElement("frameId"))
-    frameId = linkName;
-  else
-    frameId = _sdf->GetElement("frameId")->GetValueString();
+  // default parameters
+  frame_id_ = link_name_;
+  topic_ = "imu";
 
-  if (!_sdf->HasElement("topicName"))
-    topicName = "imu";
-  else
-    topicName = _sdf->GetElement("topicName")->GetValueString();
+  if (_sdf->HasElement("frameId"))
+    frame_id_ = _sdf->GetElement("frameId")->GetValue()->GetAsString();
 
-  if (!_sdf->HasElement("serviceName"))
-    serviceName = topicName + "/calibrate";
+  if (_sdf->HasElement("topicName"))
+    topic_ = _sdf->GetElement("topicName")->GetValue()->GetAsString();
+
+  if (_sdf->HasElement("serviceName"))
+    serviceName = _sdf->GetElement("serviceName")->GetValue()->GetAsString();
   else
-    serviceName = _sdf->GetElement("serviceName")->GetValueString();
+    serviceName = topic_ + "/calibrate";
 
   accelModel.Load(_sdf, "accel");
   rateModel.Load(_sdf, "rate");
@@ -139,18 +140,20 @@ void GazeboRosIMU::Load(physics::ModelPtr _model, sdf::ElementPtr _sdf)
 
   // also use old configuration variables from gazebo_ros_imu
   if (_sdf->HasElement("gaussianNoise")) {
-    double gaussianNoise = _sdf->GetElement("gaussianNoise")->GetValueDouble();
-    if (gaussianNoise != 0.0) {
+    double gaussianNoise;
+    if (_sdf->GetElement("gaussianNoise")->GetValue()->Get(gaussianNoise) && gaussianNoise != 0.0) {
       accelModel.gaussian_noise = gaussianNoise;
       rateModel.gaussian_noise  = gaussianNoise;
     }
   }
 
   if (_sdf->HasElement("rpyOffset")) {
-    sdf::Vector3 rpyOffset = _sdf->GetElement("rpyOffset")->GetValueVector3();
-    if (accelModel.offset.y == 0.0 && rpyOffset.x != 0.0) accelModel.offset.y = -rpyOffset.x * 9.8065;
-    if (accelModel.offset.x == 0.0 && rpyOffset.y != 0.0) accelModel.offset.x =  rpyOffset.y * 9.8065;
-    if (headingModel.offset == 0.0 && rpyOffset.z != 0.0) headingModel.offset =  rpyOffset.z;
+    sdf::Vector3 rpyOffset;
+    if (_sdf->GetElement("rpyOffset")->GetValue()->Get(rpyOffset)) {
+      if (accelModel.offset.y == 0.0 && rpyOffset.x != 0.0) accelModel.offset.y = -rpyOffset.x * 9.8065;
+      if (accelModel.offset.x == 0.0 && rpyOffset.y != 0.0) accelModel.offset.x =  rpyOffset.y * 9.8065;
+      if (headingModel.offset == 0.0 && rpyOffset.z != 0.0) headingModel.offset =  rpyOffset.z;
+    }
   }
 
   // fill in constant covariance matrix
@@ -169,22 +172,22 @@ void GazeboRosIMU::Load(physics::ModelPtr _model, sdf::ElementPtr _sdf)
     ros::init(argc,argv,"gazebo",ros::init_options::NoSigintHandler|ros::init_options::AnonymousName);
   }
 
-  node_handle_ = new ros::NodeHandle(robotNamespace);
+  node_handle_ = new ros::NodeHandle(namespace_);
 
   // if topic name specified as empty, do not publish (then what is this plugin good for?)
-  if (!topicName.empty())
-    pub_ = node_handle_->advertise<sensor_msgs::Imu>(topicName, 10);
+  if (!topic_.empty())
+    pub_ = node_handle_->advertise<sensor_msgs::Imu>(topic_, 10);
 
 #ifdef DEBUG_OUTPUT
-  debugPublisher = rosnode_->advertise<geometry_msgs::PoseStamped>(topicName + "/pose", 10);
+  debugPublisher = rosnode_->advertise<geometry_msgs::PoseStamped>(topic_ + "/pose", 10);
 #endif // DEBUG_OUTPUT
 
   // advertise services for calibration and bias setting
   if (!serviceName.empty())
     srv_ = node_handle_->advertiseService(serviceName, &GazeboRosIMU::ServiceCallback, this);
 
-  accelBiasService = node_handle_->advertiseService(topicName + "/set_accel_bias", &GazeboRosIMU::SetAccelBiasCallback, this);
-  rateBiasService  = node_handle_->advertiseService(topicName + "/set_rate_bias", &GazeboRosIMU::SetRateBiasCallback, this);
+  accelBiasService = node_handle_->advertiseService(topic_ + "/set_accel_bias", &GazeboRosIMU::SetAccelBiasCallback, this);
+  rateBiasService  = node_handle_->advertiseService(topic_ + "/set_rate_bias", &GazeboRosIMU::SetRateBiasCallback, this);
 
 #ifdef USE_CBQ
   // start custom queue for imu
@@ -292,7 +295,7 @@ void GazeboRosIMU::Update()
   pose.rot = attitudeError * pose.rot * headingError;
 
   // copy data into pose message
-  imuMsg.header.frame_id = frameId;
+  imuMsg.header.frame_id = frame_id_;
   imuMsg.header.stamp.sec = cur_time.sec;
   imuMsg.header.stamp.nsec = cur_time.nsec;
 

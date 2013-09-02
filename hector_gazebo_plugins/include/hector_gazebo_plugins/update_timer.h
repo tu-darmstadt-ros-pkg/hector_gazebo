@@ -54,18 +54,17 @@ public:
     this->world_ = _world;
 
     if (_sdf->HasElement(_prefix + "Rate")) {
-      double update_rate = _sdf->GetElement(_prefix + "Rate")->GetValueDouble();
+      double update_rate;
+      _sdf->GetElement(_prefix + "Rate")->GetValue()->Get(update_rate);
       update_period_ = update_rate > 0.0 ? 1.0/update_rate : 0.0;
     }
 
     if (_sdf->HasElement(_prefix + "Period")) {
-      sdf::Time temp = _sdf->GetElement(_prefix + "Period")->GetValueTime();
-      update_period_ = common::Time(temp.sec, temp.nsec);
+      _sdf->GetElement(_prefix + "Period")->GetValue()->Get(update_period_);
     }
 
     if (_sdf->HasElement(_prefix + "Offset")) {
-      sdf::Time temp = _sdf->GetElement(_prefix + "Offset")->GetValueTime();
-      update_offset_ = common::Time(temp.sec, temp.nsec);
+      _sdf->GetElement(_prefix + "Offset")->GetValue()->Get(update_offset_);
     }
   }
 
@@ -118,7 +117,7 @@ public:
   virtual bool checkUpdate() const
   {
     double period = update_period_.Double();
-    double step = world_->GetPhysicsEngine()->GetStepTime();
+    double step = world_->GetPhysicsEngine()->GetMaxStepSize();
     if (period == 0) return true;
     double fraction = fmod((world_->GetSimTime() - update_offset_).Double() + (step / 2.0), period);
     return (fraction >= 0.0) && (fraction < step);
