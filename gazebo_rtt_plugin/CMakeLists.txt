@@ -1,35 +1,71 @@
-cmake_minimum_required(VERSION 2.4.6)
-include($ENV{ROS_ROOT}/core/rosbuild/rosbuild.cmake)
+cmake_minimum_required(VERSION 2.8.3)
+project(gazebo_rtt_plugin)
 
-# Set the build type.  Options are:
-#  Coverage       : w/ debug symbols, w/o optimization, w/ code-coverage
-#  Debug          : w/ debug symbols, w/o optimization
-#  Release        : w/o debug symbols, w/ optimization
-#  RelWithDebInfo : w/ debug symbols, w/ optimization
-#  MinSizeRel     : w/o debug symbols, w/ optimization, stripped binaries
-#set(ROS_BUILD_TYPE RelWithDebInfo)
+## Find catkin macros and libraries
+## if COMPONENTS list like find_package(catkin REQUIRED COMPONENTS xyz)
+## is used, also find other catkin packages
+find_package(catkin REQUIRED COMPONENTS hector_gazebo_plugins)
+include_directories(include ${catkin_INCLUDE_DIRS})
 
-# Find gazebo
+## Find gazebo
 include (FindPkgConfig)
 if (PKG_CONFIG_FOUND)
   pkg_check_modules(GAZEBO gazebo)
 endif()
 include_directories(${GAZEBO_INCLUDE_DIRS})
+link_directories(${GAZEBO_LIBRARY_DIRS})
 
-rosbuild_init()
-
-#set the default path for built executables to the "bin" directory
-set(EXECUTABLE_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/bin)
-#set the default path for built libraries to the "lib" directory
-set(LIBRARY_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/lib)
-
-rosbuild_find_ros_package(rtt)
-find_package(OROCOS-RTT COMPONENTS rtt-marshalling HINTS "${rtt_PACKAGE_PATH}/../install")
+## Find Orocos RTT
+set(OROCOS_TARGET gnulinux)
+find_package(OROCOS-RTT COMPONENTS rtt-marshalling)
 add_definitions(-DRTT_STATIC)
 
-if(OROCOS-RTT_FOUND)
-  include(${OROCOS-RTT_USE_FILE})
-  add_subdirectory(src)
-else()
+if(NOT OROCOS-RTT_FOUND)
   message(WARNING "Orocos RTT was not found. Package ${PROJECT_NAME} will not be built.")
+  return()
+else()
+  include(${OROCOS-RTT_USE_FILE})
 endif()
+
+###################################
+## catkin specific configuration ##
+###################################
+## The catkin_package macro generates cmake config files for your package
+## Declare things to be passed to dependent projects
+## INCLUDE_DIRS: uncomment this if you package contains header files
+## LIBRARIES: libraries you create in this project that dependent projects also need
+## CATKIN_DEPENDS: catkin_packages dependent projects also need
+## DEPENDS: system dependencies of this project that dependent projects also need
+catkin_package(
+    DEPENDS orocos-rtt-gnulinux
+    CATKIN_DEPENDS
+    INCLUDE_DIRS include
+    LIBRARIES
+)
+
+###########
+## Build ##
+###########
+
+add_library(gazebo_rtt_plugin src/gazebo_rtt_plugin.cpp src/gazebo_activity.cpp)
+target_link_libraries(gazebo_rtt_plugin ${GAZEBO_LIBRARIES} ${catkin_LIBRARIES} ${OROCOS-RTT_LIBRARIES} ${OROCOS-RTT_RTT-MARSHALLING_LIBRARY})
+
+#############
+## Install ##
+#############
+
+# all install targets should use catkin DESTINATION variables
+# See http://ros.org/doc/api/catkin/html/adv_user_guide/variables.html
+
+install(DIRECTORY include/${PROJECT_NAME}/
+  DESTINATION ${CATKIN_PACKAGE_INCLUDE_DESTINATION}
+  FILES_MATCHING PATTERN "*.h"
+  PATTERN ".svn" EXCLUDE
+)
+
+install(TARGETS
+  gazebo_rtt_plugin
+  ARCHIVE DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
+  LIBRARY DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
+  RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
+)
