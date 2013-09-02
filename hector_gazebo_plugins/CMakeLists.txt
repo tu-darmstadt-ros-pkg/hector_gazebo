@@ -69,7 +69,7 @@ target_link_libraries(hector_gazebo_reset_plugin ${GAZEBO_LIBRARIES})
 add_library(hector_gazebo_ros_imu src/gazebo_ros_imu.cpp)
 target_link_libraries(hector_gazebo_ros_imu ${Boost_LIBRARIES})
 target_link_libraries(hector_gazebo_ros_imu ${GAZEBO_LIBRARIES})
-add_dependencies(hector_gazebo_ros_imu hector_gazebo_plugins_generated_messages_cpp)
+add_dependencies(hector_gazebo_ros_imu ${PROJECT_NAME}_generate_messages_cpp)
 
 add_library(hector_gazebo_ros_magnetic src/gazebo_ros_magnetic.cpp)
 target_link_libraries(hector_gazebo_ros_magnetic ${GAZEBO_LIBRARIES})
