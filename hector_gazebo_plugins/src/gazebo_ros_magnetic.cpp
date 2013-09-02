@@ -57,24 +57,20 @@ void GazeboRosMagnetic::Load(physics::ModelPtr _model, sdf::ElementPtr _sdf)
   world = _model->GetWorld();
 
   // load parameters
-  if (!_sdf->HasElement("robotNamespace"))
+  if (_sdf->HasElement("robotNamespace"))
+    namespace_ = _sdf->GetElement("robotNamespace")->GetValue()->GetAsString();
+  else
     namespace_.clear();
-  else
-    namespace_ = _sdf->GetElement("robotNamespace")->GetValueString() + "/";
 
-  if (!_sdf->HasElement("topicName"))
-    topic_ = "magnetic";
+  if (_sdf->HasElement("bodyName"))
+  {
+    link_name_ = _sdf->GetElement("bodyName")->GetValue()->GetAsString();
+    link = _model->GetLink(link_name_);
+  }
   else
-    topic_ = _sdf->GetElement("topicName")->GetValueString();
-
-  if (!_sdf->HasElement("bodyName"))
   {
     link = _model->GetLink();
     link_name_ = link->GetName();
-  }
-  else {
-    link_name_ = _sdf->GetElement("bodyName")->GetValueString();
-    link = _model->GetLink(link_name_);
   }
 
   if (!link)
@@ -83,30 +79,30 @@ void GazeboRosMagnetic::Load(physics::ModelPtr _model, sdf::ElementPtr _sdf)
     return;
   }
 
-  if (!_sdf->HasElement("frameId"))
-    frame_id_ = link_name_;
-  else
-    frame_id_ = _sdf->GetElement("frameId")->GetValueString();
+  // default parameters
+  frame_id_ = link_name_;
+  magnitude_ = DEFAULT_MAGNITUDE;
+  reference_heading_ = DEFAULT_REFERENCE_HEADING * M_PI/180.0;
+  declination_ = DEFAULT_DECLINATION * M_PI/180.0;
+  inclination_ = DEFAULT_INCLINATION * M_PI/180.0;
 
-  if (!_sdf->HasElement("magnitude"))
-    magnitude_ = DEFAULT_MAGNITUDE;
-  else
-    magnitude_ = _sdf->GetElement("magnitude")->GetValueDouble();
+  if (_sdf->HasElement("frameId"))
+    frame_id_ = _sdf->GetElement("frameId")->GetValue()->GetAsString();
 
-  if (!_sdf->HasElement("referenceHeading"))
-    reference_heading_ = DEFAULT_REFERENCE_HEADING * M_PI/180.0;
-  else
-    reference_heading_ = _sdf->GetElement("referenceHeading")->GetValueDouble() * M_PI/180.0;
+  if (_sdf->HasElement("magnitude"))
+    _sdf->GetElement("magnitude")->GetValue()->Get(magnitude_);
 
-  if (!_sdf->HasElement("declination"))
-    declination_ = DEFAULT_DECLINATION * M_PI/180.0;
-  else
-    declination_ = _sdf->GetElement("declination")->GetValueDouble() * M_PI/180.0;
+  if (_sdf->HasElement("referenceHeading"))
+    if (_sdf->GetElement("referenceHeading")->GetValue()->Get(reference_heading_))
+      reference_heading_ *= M_PI/180.0;
 
-  if (!_sdf->HasElement("inclination"))
-    inclination_ = DEFAULT_INCLINATION * M_PI/180.0;
-  else
-    inclination_ = _sdf->GetElement("inclination")->GetValueDouble() * M_PI/180.0;
+  if (_sdf->HasElement("declination"))
+    if (_sdf->GetElement("declination")->GetValue()->Get(declination_))
+      declination_ *= M_PI/180.0;
+
+  if (_sdf->HasElement("inclination"))
+    if (_sdf->GetElement("inclination")->GetValue()->Get(inclination_))
+      inclination_ *= M_PI/180.0;
 
   // Note: Gazebo uses NorthWestUp coordinate system, heading and declination are compass headings
   magnetic_field_.header.frame_id = frame_id_;

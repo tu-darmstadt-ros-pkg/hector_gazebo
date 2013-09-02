@@ -77,40 +77,42 @@ void DiffDrivePlugin6W::Load(physics::ModelPtr _model, sdf::ElementPtr _sdf)
 {
   world = _model->GetWorld();
 
+  // default parameters
+  namespace_.clear();
+  topic_ = "cmd_vel";
+  wheelSep = 0.34;
+  wheelDiam = 0.15;
+  torque = 10.0;
+
   // load parameters
-  if (!_sdf->HasElement("robotNamespace"))
-    robotNamespace.clear();
-  else
-    robotNamespace = _sdf->GetElement("robotNamespace")->GetValueString() + "/";
+  if (_sdf->HasElement("robotNamespace"))
+    namespace_ = _sdf->GetElement("robotNamespace")->GetValue()->GetAsString();
 
-  if (!_sdf->HasElement("topicName"))
-    topicName = "cmd_vel";
-  else
-    topicName = _sdf->GetElement("topicName")->GetValueString();
+  if (_sdf->HasElement("topicName"))
+    topic_ = _sdf->GetElement("topicName")->GetValue()->GetAsString();
 
-  if (!_sdf->HasElement("bodyName"))
+  if (_sdf->HasElement("bodyName"))
   {
+    link_name_ = _sdf->GetElement("bodyName")->GetValue()->GetAsString();
+    link = _model->GetLink(link_name_);
+  } else {
     link = _model->GetLink();
-    linkName = link->GetName();
-  }
-  else {
-    linkName = _sdf->GetElement("bodyName")->GetValueString();
-    link = _model->GetLink(linkName);
+    link_name_ = link->GetName();
   }
 
-  // assert that the body by linkName exists
+  // assert that the body by link_name_ exists
   if (!link)
   {
-    ROS_FATAL("DiffDrivePlugin6W plugin error: bodyName: %s does not exist\n", linkName.c_str());
+    ROS_FATAL("DiffDrivePlugin6W plugin error: bodyName: %s does not exist\n", link_name_.c_str());
     return;
   }
 
-  if (_sdf->HasElement("frontLeftJoint"))  joints[FRONT_LEFT]  = _model->GetJoint(_sdf->GetElement("frontLeftJoint")->GetValueString());
-  if (_sdf->HasElement("frontRightJoint")) joints[FRONT_RIGHT] = _model->GetJoint(_sdf->GetElement("frontRightJoint")->GetValueString());
-  if (_sdf->HasElement("midLeftJoint"))    joints[MID_LEFT]    = _model->GetJoint(_sdf->GetElement("midLeftJoint")->GetValueString());
-  if (_sdf->HasElement("midRightJoint"))   joints[MID_RIGHT]   = _model->GetJoint(_sdf->GetElement("midRightJoint")->GetValueString());
-  if (_sdf->HasElement("rearLeftJoint"))   joints[REAR_LEFT]   = _model->GetJoint(_sdf->GetElement("rearLeftJoint")->GetValueString());
-  if (_sdf->HasElement("rearRightJoint"))  joints[REAR_RIGHT]  = _model->GetJoint(_sdf->GetElement("rearRightJoint")->GetValueString());
+  if (_sdf->HasElement("frontLeftJoint"))  joints[FRONT_LEFT]  = _model->GetJoint(_sdf->GetElement("frontLeftJoint")->GetValue()->GetAsString());
+  if (_sdf->HasElement("frontRightJoint")) joints[FRONT_RIGHT] = _model->GetJoint(_sdf->GetElement("frontRightJoint")->GetValue()->GetAsString());
+  if (_sdf->HasElement("midLeftJoint"))    joints[MID_LEFT]    = _model->GetJoint(_sdf->GetElement("midLeftJoint")->GetValue()->GetAsString());
+  if (_sdf->HasElement("midRightJoint"))   joints[MID_RIGHT]   = _model->GetJoint(_sdf->GetElement("midRightJoint")->GetValue()->GetAsString());
+  if (_sdf->HasElement("rearLeftJoint"))   joints[REAR_LEFT]   = _model->GetJoint(_sdf->GetElement("rearLeftJoint")->GetValue()->GetAsString());
+  if (_sdf->HasElement("rearRightJoint"))  joints[REAR_RIGHT]  = _model->GetJoint(_sdf->GetElement("rearRightJoint")->GetValue()->GetAsString());
 
   if (!joints[FRONT_LEFT])  ROS_FATAL("diffdrive_plugin_6w error: The controller couldn't get front left joint");
   if (!joints[FRONT_RIGHT]) ROS_FATAL("diffdrive_plugin_6w error: The controller couldn't get front right joint");
@@ -119,20 +121,14 @@ void DiffDrivePlugin6W::Load(physics::ModelPtr _model, sdf::ElementPtr _sdf)
   if (!joints[REAR_LEFT])   ROS_FATAL("diffdrive_plugin_6w error: The controller couldn't get rear left joint");
   if (!joints[REAR_RIGHT])  ROS_FATAL("diffdrive_plugin_6w error: The controller couldn't get rear right joint");
 
-  if (!_sdf->HasElement("wheelSeparation"))
-    wheelSep = 0.34;
-  else
-    wheelSep = _sdf->GetElement("wheelSeparation")->GetValueDouble();
+  if (_sdf->HasElement("wheelSeparation"))
+    _sdf->GetElement("wheelSeparation")->GetValue()->Get(wheelSep);
 
-  if (!_sdf->HasElement("wheelDiameter"))
-    wheelDiam = 0.15;
-  else
-    wheelDiam = _sdf->GetElement("wheelDiameter")->GetValueDouble();
+  if (_sdf->HasElement("wheelDiameter"))
+    _sdf->GetElement("wheelDiameter")->GetValue()->Get(wheelDiam);
 
-  if (!_sdf->HasElement("torque"))
-    torque = 10.0;
-  else
-    torque = _sdf->GetElement("torque")->GetValueDouble();
+  if (_sdf->HasElement("torque"))
+    _sdf->GetElement("torque")->GetValue()->Get(torque);
 
   // start ros node
   if (!ros::isInitialized())
@@ -142,14 +138,14 @@ void DiffDrivePlugin6W::Load(physics::ModelPtr _model, sdf::ElementPtr _sdf)
     ros::init(argc,argv,"gazebo",ros::init_options::NoSigintHandler|ros::init_options::AnonymousName);
   }
 
-  rosnode_ = new ros::NodeHandle(robotNamespace);
+  rosnode_ = new ros::NodeHandle(namespace_);
 
   tf_prefix_ = tf::getPrefixParam(*rosnode_);
   transform_broadcaster_ = new tf::TransformBroadcaster();
 
   // ROS: Subscribe to the velocity command topic (usually "cmd_vel")
   ros::SubscribeOptions so =
-      ros::SubscribeOptions::create<geometry_msgs::Twist>(topicName, 1,
+      ros::SubscribeOptions::create<geometry_msgs::Twist>(topic_, 1,
                                                           boost::bind(&DiffDrivePlugin6W::cmdVelCallback, this, _1),
                                                           ros::VoidPtr(), &queue_);
   sub_ = rosnode_->subscribe(so);

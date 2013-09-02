@@ -65,21 +65,20 @@ void GazeboRosSonar::Load(sensors::SensorPtr _sensor, sdf::ElementPtr _sdf)
   std::string worldName = sensor_->GetWorldName();
   world = physics::get_world(worldName);
 
+  // default parameters
+  namespace_.clear();
+  topic_ = "sonar";
+  frame_id_ = "/sonar_link";
+
   // load parameters
-  if (!_sdf->HasElement("robotNamespace"))
-    namespace_.clear();
-  else
-    namespace_ = _sdf->GetElement("robotNamespace")->GetValueString() + "/";
+  if (_sdf->HasElement("robotNamespace"))
+    namespace_ = _sdf->GetElement("robotNamespace")->GetValue()->GetAsString();
 
-  if (!_sdf->HasElement("frameId"))
-    frame_id_ = "";
-  else
-    frame_id_ = _sdf->GetElement("frameId")->GetValueString();
+  if (_sdf->HasElement("frameId"))
+    frame_id_ = _sdf->GetElement("frameId")->GetValue()->GetAsString();
 
-  if (!_sdf->HasElement("topicName"))
-    topic_ = "sonar";
-  else
-    topic_ = _sdf->GetElement("topicName")->GetValueString();
+  if (_sdf->HasElement("topicName"))
+    topic_ = _sdf->GetElement("topicName")->GetValue()->GetAsString();
 
   sensor_model_.Load(_sdf);
 

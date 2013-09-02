@@ -29,7 +29,7 @@
 #ifndef HECTOR_GAZEBO_PLUGINS_UPDATE_TIMER_H
 #define HECTOR_GAZEBO_PLUGINS_UPDATE_TIMER_H
 
-#include <gazebo/sdf/sdf.hh>
+#include <sdf/sdf.hh>
 #include <gazebo/physics/World.hh>
 #include <gazebo/physics/PhysicsEngine.hh>
 
@@ -54,16 +54,17 @@ public:
     this->world_ = _world;
 
     if (_sdf->HasElement(_prefix + "Rate")) {
-      double update_rate = _sdf->GetElement(_prefix + "Rate")->GetValueDouble();
+      double update_rate;
+      _sdf->GetElement(_prefix + "Rate")->GetValue()->Get(update_rate);
       update_period_ = update_rate > 0.0 ? 1.0/update_rate : 0.0;
     }
 
     if (_sdf->HasElement(_prefix + "Period")) {
-      update_period_ = _sdf->GetElement(_prefix + "Period")->GetValueTime();
+      _sdf->GetElement(_prefix + "Period")->GetValue()->Get(update_period_);
     }
 
     if (_sdf->HasElement(_prefix + "Offset")) {
-      update_offset_ = _sdf->GetElement(_prefix + "Offset")->GetValueTime();
+      _sdf->GetElement(_prefix + "Offset")->GetValue()->Get(update_offset_);
     }
   }
 

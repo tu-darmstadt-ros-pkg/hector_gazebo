@@ -65,7 +65,7 @@ void GazeboRosGps::Load(physics::ModelPtr _model, sdf::ElementPtr _sdf)
   if (!_sdf->HasElement("robotNamespace"))
     namespace_.clear();
   else
-    namespace_ = _sdf->GetElement("robotNamespace")->GetValueString() + "/";
+    namespace_ = _sdf->GetElement("robotNamespace")->GetValue()->GetAsString();
 
   if (!_sdf->HasElement("bodyName"))
   {
@@ -73,7 +73,7 @@ void GazeboRosGps::Load(physics::ModelPtr _model, sdf::ElementPtr _sdf)
     link_name_ = link->GetName();
   }
   else {
-    link_name_ = _sdf->GetElement("bodyName")->GetValueString();
+    link_name_ = _sdf->GetElement("bodyName")->GetValue()->GetAsString();
     link = _model->GetLink(link_name_);
   }
 
@@ -83,50 +83,57 @@ void GazeboRosGps::Load(physics::ModelPtr _model, sdf::ElementPtr _sdf)
     return;
   }
 
-  if (!_sdf->HasElement("frameId"))
-    frame_id_ = "/world";
-  else
-    frame_id_ = _sdf->GetElement("frameId")->GetValueString();
+  // default parameters
+  frame_id_ = "/world";
+  fix_topic_ = "fix";
+  velocity_topic_ = "fix_velocity";
 
-  if (!_sdf->HasElement("topicName"))
-    fix_topic_ = "fix";
-  else
-    fix_topic_ = _sdf->GetElement("topicName")->GetValueString();
+  reference_latitude_  = DEFAULT_REFERENCE_LATITUDE;
+  reference_longitude_ = DEFAULT_REFERENCE_LONGITUDE;
+  reference_heading_   = DEFAULT_REFERENCE_HEADING * M_PI/180.0;
+  reference_altitude_  = DEFAULT_REFERENCE_ALTITUDE;
 
-  if (!_sdf->HasElement("velocityTopicName"))
-    velocity_topic_ = "fix_velocity";
-  else
-    velocity_topic_ = _sdf->GetElement("velocityTopicName")->GetValueString();
+  status_ = sensor_msgs::NavSatStatus::STATUS_FIX;
+  service_ = sensor_msgs::NavSatStatus::SERVICE_GPS;
 
-  if (!_sdf->HasElement("referenceLatitude"))
-    reference_latitude_ = DEFAULT_REFERENCE_LATITUDE;
-  else
-    reference_latitude_ = _sdf->GetElement("referenceLatitude")->GetValueDouble();
+  fix_.header.frame_id = frame_id_;
+  fix_.status.status  = status_;
+  fix_.status.service = service_;
+  velocity_.header.frame_id = frame_id_;
 
-  if (!_sdf->HasElement("referenceLongitude"))
-    reference_longitude_ = DEFAULT_REFERENCE_LONGITUDE;
-  else
-    reference_longitude_ = _sdf->GetElement("referenceLongitude")->GetValueDouble();
+  if (_sdf->HasElement("frameId"))
+    frame_id_ = _sdf->GetElement("frameId")->GetValue()->GetAsString();
 
-  if (!_sdf->HasElement("referenceHeading"))
-    reference_heading_ = DEFAULT_REFERENCE_HEADING * M_PI/180.0;
-  else
-    reference_heading_ = _sdf->GetElement("referenceHeading")->GetValueDouble() * M_PI/180.0;
+  if (_sdf->HasElement("topicName"))
+    fix_topic_ = _sdf->GetElement("topicName")->GetValue()->GetAsString();
 
-  if (!_sdf->HasElement("referenceAltitude"))
-    reference_altitude_ = DEFAULT_REFERENCE_ALTITUDE;
-  else
-    reference_altitude_ = _sdf->GetElement("referenceAltitude")->GetValueDouble();
+  if (_sdf->HasElement("velocityTopicName"))
+    velocity_topic_ = _sdf->GetElement("velocityTopicName")->GetValue()->GetAsString();
 
-  if (!_sdf->HasElement("status"))
-    status_ = sensor_msgs::NavSatStatus::STATUS_FIX;
-  else
-    status_ = _sdf->GetElement("status")->GetValueUInt();
+  if (_sdf->HasElement("referenceLatitude"))
+    _sdf->GetElement("referenceLatitude")->GetValue()->Get(reference_latitude_);
 
-  if (!_sdf->HasElement("service"))
-    service_ = sensor_msgs::NavSatStatus::SERVICE_GPS;
-  else
-    service_ = _sdf->GetElement("service")->GetValueUInt();
+  if (_sdf->HasElement("referenceLongitude"))
+    _sdf->GetElement("referenceLongitude")->GetValue()->Get(reference_longitude_);
+
+  if (_sdf->HasElement("referenceHeading"))
+    if (_sdf->GetElement("referenceHeading")->GetValue()->Get(reference_heading_))
+      reference_heading_ *= M_PI/180.0;
+
+  if (_sdf->HasElement("referenceAltitude"))
+    _sdf->GetElement("referenceAltitude")->GetValue()->Get(reference_altitude_);
+
+  if (_sdf->HasElement("status")) {
+    int temp;
+    _sdf->GetElement("status")->GetValue()->Get(temp);
+    status_ = temp;
+  }
+
+  if (_sdf->HasElement("service")) {
+    int temp;
+    _sdf->GetElement("service")->GetValue()->Get(temp);
+    service_ = temp;
+  }
 
   fix_.header.frame_id = frame_id_;
   fix_.status.status  = status_;
