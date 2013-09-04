@@ -101,7 +101,7 @@ void RTTPlugin::Load(physics::ModelPtr _parent, sdf::ElementPtr _sdf)
   // Load RTT component packages and libraries
   RTT::ComponentLoader::Instance()->import("rtt_ros", "");
   if (_sdf->HasElement("import")) {
-    const std::string& package = _sdf->GetElement("import")->GetValue()->GetAsString();
+    std::string package = _sdf->GetElement("import")->Get<std::string>();
 
     bool success = RTT::ComponentLoader::Instance()->import(package, "");
     if (!success) {
@@ -118,12 +118,14 @@ void RTTPlugin::Load(physics::ModelPtr _parent, sdf::ElementPtr _sdf)
     }
   }
   if (_sdf->HasElement("library")) {
-    RTT::ComponentLoader::Instance()->loadLibrary(_sdf->GetElement("library")->GetValue()->GetAsString());
+    RTT::ComponentLoader::Instance()->loadLibrary(_sdf->GetElement("library")->Get<std::string>());
   }
 
   // Create an instance of the component
-  std::string component = _sdf->GetElement("component")->GetValue()->GetAsString();
-  std::string name = _sdf->GetElement("name")->GetValue()->GetAsString();
+  std::string component;
+  if (_sdf->HasElement("component")) component = _sdf->GetElement("component")->Get<std::string>();
+  std::string name;
+  if (_sdf->HasElement("name")) name = _sdf->GetElement("name")->Get<std::string>();
   if (name.empty()) name = component;
 
   taskContext.reset(RTT::ComponentLoader::Instance()->loadComponent(name, component));
@@ -140,39 +142,41 @@ void RTTPlugin::Load(physics::ModelPtr _parent, sdf::ElementPtr _sdf)
   // load configuration settings from marshalling
 #ifdef PLUGINS_ENABLE_MARSHALLING
   if (_sdf->HasElement("configuration")) {
-    taskContext->getProvider<RTT::Marshalling>("marshalling")->loadProperties(_sdf->GetElement("configuration")->GetValue()->GetAsString());
+    taskContext->getProvider<RTT::Marshalling>("marshalling")->loadProperties(_sdf->GetElement("configuration")->Get<std::string>());
   }
 #endif
 
   // set TaskContext's properties
-  sdf::ElementPtr property = _sdf->GetElement("property");
-  while(property) {
-    std::string name = property->Get<std::string>("name");
-    RTT::base::PropertyBase *prop = taskContext->getProperty(name);
-    if (!prop) {
-      gzwarn << "Component '" << taskContext->getName() << "' has no property named '" << name << "'" << std::endl;
+  if (_sdf->HasElement("property")) {
+    sdf::ElementPtr property = _sdf->GetElement("property");
+    while(property) {
+      std::string name = property->Get<std::string>("name");
+      RTT::base::PropertyBase *prop = taskContext->getProperty(name);
+      if (!prop) {
+        gzwarn << "Component '" << taskContext->getName() << "' has no property named '" << name << "'" << std::endl;
+        property = property->GetNextElement("property");
+        continue;
+      }
+
+      if (prop->getType() == "string")
+        RTT::Property<std::string>(prop).set(property->Get<std::string>());
+      else if (prop->getType() == "double")
+        RTT::Property<double>(prop).set(property->Get<double>());
+      else if (prop->getType() == "float")
+        RTT::Property<float>(prop).set(property->Get<float>());
+      else if (prop->getType() == "int")
+        RTT::Property<int>(prop).set(property->Get<int>());
+      else if (prop->getType() == "uint")
+        RTT::Property<uint>(prop).set(property->Get<uint>());
+      else if (prop->getType() == "char")
+        RTT::Property<char>(prop).set(property->Get<char>());
+      else if (prop->getType() == "bool")
+        RTT::Property<bool>(prop).set(property->Get<bool>());
+      else
+        gzerr << "Property " << name << " has an unknown type. Will not use it." << std::endl;
+
       property = property->GetNextElement("property");
-      continue;
     }
-
-    if (prop->getType() == "string")
-      RTT::Property<std::string>(prop).set(property->Get<std::string>());
-    else if (prop->getType() == "double")
-      RTT::Property<double>(prop).set(property->Get<double>());
-    else if (prop->getType() == "float")
-      RTT::Property<float>(prop).set(property->Get<float>());
-    else if (prop->getType() == "int")
-      RTT::Property<int>(prop).set(property->Get<int>());
-    else if (prop->getType() == "uint")
-      RTT::Property<uint>(prop).set(property->Get<uint>());
-    else if (prop->getType() == "char")
-      RTT::Property<char>(prop).set(property->Get<char>());
-    else if (prop->getType() == "bool")
-      RTT::Property<bool>(prop).set(property->Get<bool>());
-    else
-      gzerr << "Property " << name << " has an unknown type. Will not use it." << std::endl;
-
-    property = property->GetNextElement("property");
   }
 
   // configure the TaskContext
@@ -184,7 +188,7 @@ void RTTPlugin::Load(physics::ModelPtr _parent, sdf::ElementPtr _sdf)
   // get robot namespace
   std::string robotNamespace;
   if (_sdf->HasElement("robotNamespace"))
-    robotNamespace = _sdf->GetElement("robotNamespace")->GetValue()->GetAsString();
+    robotNamespace = _sdf->GetElement("robotNamespace")->Get<std::string>();
 
   // create Streams
   sdf::ElementPtr port = _sdf->GetElement("port");
