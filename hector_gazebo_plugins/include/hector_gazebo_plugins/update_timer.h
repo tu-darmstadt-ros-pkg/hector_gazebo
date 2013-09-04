@@ -54,7 +54,7 @@ public:
     this->world_ = _world;
 
     if (_sdf->HasElement(_prefix + "Rate")) {
-      double update_rate;
+      double update_rate = 0.0;
       _sdf->GetElement(_prefix + "Rate")->GetValue()->Get(update_rate);
       update_period_ = update_rate > 0.0 ? 1.0/update_rate : 0.0;
     }
