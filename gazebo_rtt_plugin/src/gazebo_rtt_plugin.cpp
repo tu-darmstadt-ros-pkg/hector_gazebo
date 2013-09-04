@@ -37,6 +37,8 @@
   #include <rtt/marsh/Marshalling.hpp>
 #endif
 
+#include <rtt/internal/GlobalService.hpp>
+
 #ifndef ORO_ROS_PROTOCOL_ID
   #define ORO_ROS_PROTOCOL_ID 3
 #endif
@@ -97,9 +99,23 @@ void RTTPlugin::Load(physics::ModelPtr _parent, sdf::ElementPtr _sdf)
   this->world = _parent->GetWorld();
 
   // Load RTT component packages and libraries
-  RTT::ComponentLoader::Instance()->import("rtt_rosnode", "");
+  RTT::ComponentLoader::Instance()->import("rtt_ros", "");
   if (_sdf->HasElement("import")) {
-    RTT::ComponentLoader::Instance()->import(_sdf->GetElement("import")->GetValue()->GetAsString(), "");
+    const std::string& package = _sdf->GetElement("import")->GetValue()->GetAsString();
+
+    bool success = RTT::ComponentLoader::Instance()->import(package, "");
+    if (!success) {
+      RTT::ServicePtr ros_service = RTT::internal::GlobalService::Instance()->getService("ros");
+
+      if (ros_service) {
+        RTT::OperationCaller<bool(std::string)> import = ros_service->getOperation("import");
+        if (import.ready()) success = import(package);
+      }
+    }
+
+    if (!success) {
+      gzerr << "Could not import ROS package " << package << " using the ros.import service!" << std::endl;
+    }
   }
   if (_sdf->HasElement("library")) {
     RTT::ComponentLoader::Instance()->loadLibrary(_sdf->GetElement("library")->GetValue()->GetAsString());
