@@ -190,7 +190,7 @@ void RTTPlugin::Load(physics::ModelPtr _parent, sdf::ElementPtr _sdf)
       conn_policy.name_id = name;
     if (port->HasAttribute("queue_size") || port->HasElement("queue_size"))
       conn_policy.size = port->Get<int>("queue_size");
-    conn_policy.type = conn_policy.size > 1 ? RTT::ConnPolicy::BUFFER : RTT::ConnPolicy::DATA;
+    conn_policy.type = conn_policy.size > 1 ? RTT::ConnPolicy::buffer(0).type : RTT::ConnPolicy::data().type;
 
     conn_policy.name_id = ros::names::resolve(robotNamespace, conn_policy.name_id, false);
     port_interface->createStream(conn_policy);
