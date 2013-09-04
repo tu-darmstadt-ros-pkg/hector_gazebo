@@ -19,7 +19,7 @@
 
 
   <!-- Dependencies needed after this package is compiled. -->
-  <run_depend>gazebo_rtt_plugin</run_depend>
+  <!-- <run_depend>gazebo_rtt_plugin</run_depend> -->
   <run_depend>hector_gazebo_thermal_camera</run_depend>
   <run_depend>hector_gazebo_worlds</run_depend>
   <run_depend>hector_gazebo_plugins</run_depend>
