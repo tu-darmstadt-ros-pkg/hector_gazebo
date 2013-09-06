@@ -99,12 +99,14 @@ void RTTPlugin::Load(physics::ModelPtr _parent, sdf::ElementPtr _sdf)
   this->world = _parent->GetWorld();
 
   // Load RTT component packages and libraries
-  RTT::ComponentLoader::Instance()->import("rtt_ros", "");
   if (_sdf->HasElement("import")) {
     std::string package = _sdf->GetElement("import")->Get<std::string>();
 
-    bool success = RTT::ComponentLoader::Instance()->import(package, "");
+    bool success = false; /* RTT::ComponentLoader::Instance()->import(package, ""); */
     if (!success) {
+      if (!RTT::internal::GlobalService::Instance()->hasService("ros")) {
+        RTT::ComponentLoader::Instance()->import("rtt_ros", "");
+      }
       RTT::ServicePtr ros_service = RTT::internal::GlobalService::Instance()->getService("ros");
 
       if (ros_service) {
