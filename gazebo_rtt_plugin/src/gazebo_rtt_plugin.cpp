@@ -144,7 +144,11 @@ void RTTPlugin::Load(physics::ModelPtr _parent, sdf::ElementPtr _sdf)
   // load configuration settings from marshalling
 #ifdef PLUGINS_ENABLE_MARSHALLING
   if (_sdf->HasElement("configuration")) {
-    taskContext->getProvider<RTT::Marshalling>("marshalling")->loadProperties(_sdf->GetElement("configuration")->Get<std::string>());
+    boost::shared_ptr<RTT::Marshalling> marshalling = taskContext->getProvider<RTT::Marshalling>("marshalling");
+    if (marshalling)
+      marshalling->loadProperties(_sdf->GetElement("configuration")->Get<std::string>());
+    else
+      gzerr << "Could not load component configuration from " << _sdf->GetElement("configuration")->Get<std::string>() << std::endl;
   }
 #endif
 
