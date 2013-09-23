@@ -1,6 +1,6 @@
 <package>
   <name>gazebo_rtt_plugin</name>
-  <version>0.3.0</version>
+  <version>0.3.1</version>
   <description>gazebo_rtt_plugin allows to load and run <a href="http://www.orocos.org/">Orocos</a> Components as gazebo plugins</description>
   <maintainer email="meyer@fsr.tu-darmstadt.de">Johannes Meyer</maintainer>
 

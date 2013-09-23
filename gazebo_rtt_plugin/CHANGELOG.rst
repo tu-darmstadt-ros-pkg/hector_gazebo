@@ -2,8 +2,8 @@
 Changelog for package gazebo_rtt_plugin
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Forthcoming
------------
+0.3.1 (2013-09-23)
+------------------
 * fixed segfault if marshalling service is not available
   for some reason
 * only import packages using the ros.import() service
