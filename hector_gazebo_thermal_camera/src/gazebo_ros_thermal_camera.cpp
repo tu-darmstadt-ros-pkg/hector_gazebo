@@ -84,6 +84,13 @@ void GazeboRosThermalCamera_<Base>::Load(sensors::SensorPtr _parent, sdf::Elemen
   this->height_ = this->height;
   this->depth_ = this->depth;
   this->format_ = this->format;
+
+  this->image_connect_count_ = boost::shared_ptr<int>(new int);
+  *this->image_connect_count_ = 0;
+  this->image_connect_count_lock_ = boost::shared_ptr<boost::mutex>(new boost::mutex);
+  this->was_active_ = boost::shared_ptr<bool>(new bool);
+  *this->was_active_ = false;
+
   LoadImpl(_parent, _sdf);
   GazeboRosCameraUtils::Load(_parent, _sdf);
 }
@@ -102,13 +109,13 @@ void GazeboRosThermalCamera_<Base>::OnNewFrame(const unsigned char *_image,
 
   if (!this->parentSensor->IsActive())
   {
-    if (this->image_connect_count_ > 0)
+    if ((*this->image_connect_count_) > 0)
       // do this first so there's chance for sensor to run 1 frame after activate
       this->parentSensor->SetActive(true);
   }
   else
   {
-    if (this->image_connect_count_ > 0)
+    if ((*this->image_connect_count_) > 0)
     {
       common::Time cur_time = this->world_->GetSimTime();
       if (cur_time - this->last_update_time_ >= this->update_period_)
@@ -152,7 +159,7 @@ void GazeboRosThermalCamera_<Base>::PutCameraData(const unsigned char *_src)
   this->image_msg_.header.stamp.nsec = this->sensor_update_time_.nsec;
 
   /// don't bother if there are no subscribers
-  if (this->image_connect_count_ > 0)
+  if ((*this->image_connect_count_) > 0)
   {
     this->image_msg_.width = this->width_;
     this->image_msg_.height = this->height_;
