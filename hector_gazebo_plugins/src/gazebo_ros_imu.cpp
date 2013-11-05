@@ -231,13 +231,16 @@ void GazeboRosIMU::Update()
 
   // GetRelativeAngularVel() sometimes return nan?
   //rate  = link->GetRelativeAngularVel(); // get angular rate in body frame
-  math::Quaternion delta = pose.rot - orientation;
-  orientation = pose.rot;
   if (dt > 0.0) {
-    rate.x = 2.0 * (-orientation.x * delta.w + orientation.w * delta.x + orientation.z * delta.y - orientation.y * delta.z) / dt;
-    rate.y = 2.0 * (-orientation.y * delta.w - orientation.z * delta.x + orientation.w * delta.y + orientation.x * delta.z) / dt;
-    rate.z = 2.0 * (-orientation.z * delta.w + orientation.y * delta.x - orientation.x * delta.y + orientation.w * delta.z) / dt;
+//    math::Quaternion delta = pose.rot - orientation;
+//    rate.x = 2.0 * (-orientation.x * delta.w + orientation.w * delta.x + orientation.z * delta.y - orientation.y * delta.z) / dt;
+//    rate.y = 2.0 * (-orientation.y * delta.w - orientation.z * delta.x + orientation.w * delta.y + orientation.x * delta.z) / dt;
+//    rate.z = 2.0 * (-orientation.z * delta.w + orientation.y * delta.x - orientation.x * delta.y + orientation.w * delta.z) / dt;
+
+    math::Quaternion delta = (pose.rot * orientation.GetInverse()).GetLog();
+    rate = 2.0 * math::Vector3(delta.x, delta.y, delta.z) / dt;
   }
+  orientation = pose.rot;
 
   // get Gravity
   gravity       = world->GetPhysicsEngine()->GetGravity();
