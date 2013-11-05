@@ -130,12 +130,12 @@ void DiffDrivePlugin6W::Load(physics::ModelPtr _model, sdf::ElementPtr _sdf)
   if (_sdf->HasElement("torque"))
     _sdf->GetElement("torque")->GetValue()->Get(torque);
 
-  // start ros node
+  // Make sure the ROS node for Gazebo has already been initialized
   if (!ros::isInitialized())
   {
-    int argc = 0;
-    char** argv = NULL;
-    ros::init(argc,argv,"gazebo",ros::init_options::NoSigintHandler|ros::init_options::AnonymousName);
+    ROS_FATAL_STREAM("A ROS node for Gazebo has not been initialized, unable to load plugin. "
+      << "Load the Gazebo system plugin 'libgazebo_ros_api_plugin.so' in the gazebo_ros package)");
+    return;
   }
 
   rosnode_ = new ros::NodeHandle(namespace_);

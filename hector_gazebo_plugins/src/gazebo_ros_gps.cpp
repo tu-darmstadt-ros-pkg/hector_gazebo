@@ -27,7 +27,7 @@
 //=================================================================================================
 
 #include <hector_gazebo_plugins/gazebo_ros_gps.h>
-#include "physics/physics.hh"
+#include <gazebo/physics/physics.hh>
 
 // WGS84 constants
 static const double equatorial_radius = 6378137.0;
@@ -143,12 +143,12 @@ void GazeboRosGps::Load(physics::ModelPtr _model, sdf::ElementPtr _sdf)
   radius_north_ = prime_vertical_radius * (1 - excentrity2) * temp;
   radius_east_  = prime_vertical_radius * cos(reference_latitude_ * M_PI/180.0);
 
-  // start ros node
+  // Make sure the ROS node for Gazebo has already been initialized
   if (!ros::isInitialized())
   {
-    int argc = 0;
-    char** argv = NULL;
-    ros::init(argc,argv,"gazebo",ros::init_options::NoSigintHandler|ros::init_options::AnonymousName);
+    ROS_FATAL_STREAM("A ROS node for Gazebo has not been initialized, unable to load plugin. "
+      << "Load the Gazebo system plugin 'libgazebo_ros_api_plugin.so' in the gazebo_ros package)");
+    return;
   }
 
   node_handle_ = new ros::NodeHandle(namespace_);

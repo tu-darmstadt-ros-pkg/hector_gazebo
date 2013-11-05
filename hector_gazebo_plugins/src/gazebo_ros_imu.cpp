@@ -25,38 +25,10 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //=================================================================================================
-// This code is based on the original gazebo_ros_imu plugin by Sachin Chitta and John Hsu:
-/*
- *  Gazebo - Outdoor Multi-Robot Simulator
- *  Copyright (C) 2003
- *     Nate Koenig & Andrew Howard
- *
- *  This program is free software; you can redistribute it and/or modify
- *  it under the terms of the GNU General Public License as published by
- *  the Free Software Foundation; either version 2 of the License, or
- *  (at your option) any later version.
- *
- *  This program is distributed in the hope that it will be useful,
- *  but WITHOUT ANY WARRANTY; without even the implied warranty of
- *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- *  GNU General Public License for more details.
- *
- *  You should have received a copy of the GNU General Public License
- *  along with this program; if not, write to the Free Software
- *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
- *
- */
-/*
- * Desc: 3D position interface.
- * Author: Sachin Chitta and John Hsu
- * Date: 10 June 2008
- * SVN: $Id$
- */
-//=================================================================================================
 
 #include <hector_gazebo_plugins/gazebo_ros_imu.h>
-#include "common/Events.hh"
-#include "physics/physics.hh"
+#include <gazebo/common/Events.hh>
+#include <gazebo/physics/physics.hh>
 
 #include <ros/console.h>
 
@@ -164,12 +136,12 @@ void GazeboRosIMU::Load(physics::ModelPtr _model, sdf::ElementPtr _sdf)
   imuMsg.linear_acceleration_covariance[4] = accelModel.gaussian_noise.y*accelModel.gaussian_noise.y;
   imuMsg.linear_acceleration_covariance[8] = accelModel.gaussian_noise.z*accelModel.gaussian_noise.z;
 
-  // start ros node
+  // Make sure the ROS node for Gazebo has already been initialized
   if (!ros::isInitialized())
   {
-    int argc = 0;
-    char** argv = NULL;
-    ros::init(argc,argv,"gazebo",ros::init_options::NoSigintHandler|ros::init_options::AnonymousName);
+    ROS_FATAL_STREAM("A ROS node for Gazebo has not been initialized, unable to load plugin. "
+      << "Load the Gazebo system plugin 'libgazebo_ros_api_plugin.so' in the gazebo_ros package)");
+    return;
   }
 
   node_handle_ = new ros::NodeHandle(namespace_);
