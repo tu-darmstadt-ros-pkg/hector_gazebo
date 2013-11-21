@@ -105,13 +105,13 @@ namespace gazebo
       sensor_msgs::Imu imuMsg;
 
       /// \brief store link name
-      std::string link_name_;
+      std::string linkName;
 
       /// \brief frame id
-      std::string frame_id_;
+      std::string frameId;
 
       /// \brief topic name
-      std::string topic_;
+      std::string topicName;
 
       /// \brief Sensor models
       SensorModel3 accelModel;
@@ -133,7 +133,7 @@ namespace gazebo
       double GaussianKernel(double mu,double sigma);
 
       /// \brief for setting ROS name space
-      std::string namespace_;
+      std::string robotNamespace;
 
       /// \brief call back when using service
       bool ServiceCallback(std_srvs::Empty::Request &req,

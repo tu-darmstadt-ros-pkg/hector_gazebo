@@ -99,15 +99,15 @@ void RTTPlugin::Load(physics::ModelPtr _parent, sdf::ElementPtr _sdf)
   // Load RTT component packages and libraries
   RTT::ComponentLoader::Instance()->import("rtt_rosnode", "");
   if (_sdf->HasElement("import")) {
-    RTT::ComponentLoader::Instance()->import(_sdf->GetElement("import")->GetValue()->GetAsString(), "");
+    RTT::ComponentLoader::Instance()->import(_sdf->GetValueString("import"), "");
   }
   if (_sdf->HasElement("library")) {
-    RTT::ComponentLoader::Instance()->loadLibrary(_sdf->GetElement("library")->GetValue()->GetAsString());
+    RTT::ComponentLoader::Instance()->loadLibrary(_sdf->GetValueString("library"));
   }
 
   // Create an instance of the component
-  std::string component = _sdf->GetElement("component")->GetValue()->GetAsString();
-  std::string name = _sdf->GetElement("name")->GetValue()->GetAsString();
+  std::string component = _sdf->GetValueString("component");
+  std::string name = _sdf->GetValueString("name");
   if (name.empty()) name = component;
 
   taskContext.reset(RTT::ComponentLoader::Instance()->loadComponent(name, component));
@@ -124,14 +124,14 @@ void RTTPlugin::Load(physics::ModelPtr _parent, sdf::ElementPtr _sdf)
   // load configuration settings from marshalling
 #ifdef PLUGINS_ENABLE_MARSHALLING
   if (_sdf->HasElement("configuration")) {
-    taskContext->getProvider<RTT::Marshalling>("marshalling")->loadProperties(_sdf->GetElement("configuration")->GetValue()->GetAsString());
+    taskContext->getProvider<RTT::Marshalling>("marshalling")->loadProperties(_sdf->GetValueString("configuration"));
   }
 #endif
 
   // set TaskContext's properties
   sdf::ElementPtr property = _sdf->GetElement("property");
   while(property) {
-    std::string name = property->Get<std::string>("name");
+    std::string name = property->GetValueString("name");
     RTT::base::PropertyBase *prop = taskContext->getProperty(name);
     if (!prop) {
       gzwarn << "Component '" << taskContext->getName() << "' has no property named '" << name << "'" << std::endl;
@@ -140,19 +140,19 @@ void RTTPlugin::Load(physics::ModelPtr _parent, sdf::ElementPtr _sdf)
     }
 
     if (prop->getType() == "string")
-      RTT::Property<std::string>(prop).set(property->Get<std::string>());
+      RTT::Property<std::string>(prop).set(property->GetValueString());
     else if (prop->getType() == "double")
-      RTT::Property<double>(prop).set(property->Get<double>());
+      RTT::Property<double>(prop).set(property->GetValueDouble());
     else if (prop->getType() == "float")
-      RTT::Property<float>(prop).set(property->Get<float>());
+      RTT::Property<float>(prop).set(property->GetValueFloat());
     else if (prop->getType() == "int")
-      RTT::Property<int>(prop).set(property->Get<int>());
+      RTT::Property<int>(prop).set(property->GetValueInt());
     else if (prop->getType() == "uint")
-      RTT::Property<uint>(prop).set(property->Get<uint>());
+      RTT::Property<uint>(prop).set(property->GetValueUInt());
     else if (prop->getType() == "char")
-      RTT::Property<char>(prop).set(property->Get<char>());
+      RTT::Property<char>(prop).set(property->GetValueChar());
     else if (prop->getType() == "bool")
-      RTT::Property<bool>(prop).set(property->Get<bool>());
+      RTT::Property<bool>(prop).set(property->GetValueBool());
     else
       gzerr << "Property " << name << " has an unknown type. Will not use it." << std::endl;
 
@@ -166,14 +166,12 @@ void RTTPlugin::Load(physics::ModelPtr _parent, sdf::ElementPtr _sdf)
   }
 
   // get robot namespace
-  std::string robotNamespace;
-  if (_sdf->HasElement("robotNamespace"))
-    robotNamespace = _sdf->GetElement("robotNamespace")->GetValue()->GetAsString();
+  std::string robotNamespace = _sdf->GetValueString("robotNamespace");
 
   // create Streams
   sdf::ElementPtr port = _sdf->GetElement("port");
   while(port) {
-    std::string name = port->Get<std::string>("name");
+    std::string name = port->GetValueString("name");
     RTT::base::PortInterface *port_interface = taskContext->getPort(name);
     if (!port_interface) {
       gzwarn << "Component '" << taskContext->getName() << "' has no port named '" << name << "'" << std::endl;
@@ -185,11 +183,11 @@ void RTTPlugin::Load(physics::ModelPtr _parent, sdf::ElementPtr _sdf)
     conn_policy.transport = ORO_ROS_PROTOCOL_ID;
 
     if (port->HasAttribute("topic") || port->HasElement("topic"))
-      conn_policy.name_id = port->Get<std::string>("topic");
+      conn_policy.name_id = port->GetValueString("topic");
     else
       conn_policy.name_id = name;
     if (port->HasAttribute("queue_size") || port->HasElement("queue_size"))
-      conn_policy.size = port->Get<int>("queue_size");
+      conn_policy.size = boost::lexical_cast<int>(port->GetValueString("queue_size"));
     conn_policy.type = conn_policy.size > 1 ? RTT::ConnPolicy::BUFFER : RTT::ConnPolicy::DATA;
 
     conn_policy.name_id = ros::names::resolve(robotNamespace, conn_policy.name_id, false);
