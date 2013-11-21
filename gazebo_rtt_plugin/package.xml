@@ -21,10 +21,4 @@
   <!-- Dependencies needed after this package is compiled. -->
   <run_depend>gazebo_ros</run_depend>
 
-  <!-- Dependencies needed only for running tests. -->
-
-  <export>
-    <gazebo_ros plugin_path="${prefix}/lib"/>
-  </export>
-
 </package>

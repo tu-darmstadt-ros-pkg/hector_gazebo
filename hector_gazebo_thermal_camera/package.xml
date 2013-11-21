@@ -30,17 +30,4 @@
   <run_depend>driver_base</run_depend>
   <run_depend>gazebo_plugins</run_depend>
 
-  <!-- Dependencies needed only for running tests. -->
-  <!-- <test_depend>nodelet</test_depend> -->
-  <!-- <test_depend>gazebo_ros</test_depend> -->
-  <!-- <test_depend>image_transport</test_depend> -->
-  <!-- <test_depend>dynamic_reconfigure</test_depend> -->
-  <!-- <test_depend>driver_base</test_depend> -->
-  <!-- <test_depend>gazebo_plugins</test_depend> -->
-
-<export>
-    <cpp lflags="-Wl,-rpath,${prefix}/lib -L${prefix}/lib" cflags="-I${prefix}/include"/>
-    <gazebo_ros plugin_path="${prefix}/lib"/>
-</export>
-
 </package>

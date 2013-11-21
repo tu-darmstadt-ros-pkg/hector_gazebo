@@ -36,17 +36,4 @@
   <run_depend>nav_msgs</run_depend>
   <run_depend>tf</run_depend>
 
-  <!-- Dependencies needed only for running tests. -->
-  <!-- <test_depend>roscpp</test_depend> -->
-  <!-- <test_depend>gazebo_ros</test_depend> -->
-  <!-- <test_depend>std_msgs</test_depend> -->
-  <!-- <test_depend>geometry_msgs</test_depend> -->
-  <!-- <test_depend>nav_msgs</test_depend> -->
-  <!-- <test_depend>tf</test_depend> -->
-
-<export>
-    <cpp lflags="-Wl,-rpath,${prefix}/lib -L${prefix}/lib" cflags="-I${prefix}/include"/>
-    <gazebo_ros plugin_path="${prefix}/lib"/>
-</export>
-
 </package>
