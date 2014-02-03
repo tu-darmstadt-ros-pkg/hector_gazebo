@@ -62,6 +62,12 @@ void GazeboRosMagnetic::Load(physics::ModelPtr _model, sdf::ElementPtr _sdf)
   else
     namespace_.clear();
 
+  if (!_sdf->HasElement("topicName"))
+    topic_ = "magnetic";
+  else
+    topic_ = _sdf->GetElement("topicName")->Get<std::string>();
+
+
   if (_sdf->HasElement("bodyName"))
   {
     link_name_ = _sdf->GetElement("bodyName")->GetValue()->GetAsString();
