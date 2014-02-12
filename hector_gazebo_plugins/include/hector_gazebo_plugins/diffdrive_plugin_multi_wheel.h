@@ -122,13 +122,11 @@ namespace gazebo {
 
       std::vector<std::string> joint_names_[2];
 
-
       double wheel_separation_;
       double wheel_diameter_;
       double torque;
       double wheel_speed_[2];
 
-      //physics::JointPtr joints[2];
       std::vector<physics::JointPtr> joints_[2];
 
       // ROS STUFF

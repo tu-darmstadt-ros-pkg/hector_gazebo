@@ -123,9 +123,7 @@ namespace gazebo {
 
     //this->left_joint_names_ = "left_joint";
     if (!_sdf->HasElement("leftJoints")) {
-      //ROS_WARN("GazeboRosDiffDriveMultiWheel Plugin (ns = %s) missing <leftJoint>, defaults to \"%s\"",
-      //    this->robot_namespace_.c_str(), this->left_joint_name_.c_str());
-      gzthrow("Have to specify left side joint names!");
+      gzthrow("Have to specify space separated left side joint names via <leftJoints> tag!");
     } else {
       std::string joint_string = _sdf->GetElement("leftJoints")->Get<std::string>();
       boost::split( joint_names_[LEFT], joint_string, boost::is_any_of(" ") );
@@ -133,11 +131,9 @@ namespace gazebo {
 
     //this->right_joint_names_ = "right_joint";
     if (!_sdf->HasElement("rightJoints")) {
-      //ROS_WARN("GazeboRosDiffDriveMultiWheel Plugin (ns = %s) missing <rightJoint>, defaults to \"%s\"",
-      //    this->robot_namespace_.c_str(), this->right_joint_name_.c_str());
-      gzthrow("Have to specify right side joint names!");
+      gzthrow("Have to specify space separated right side joint names via <rightJoints> tag!");
     } else {
-      std::string joint_string = _sdf->GetElement("leftJoints")->Get<std::string>();
+      std::string joint_string = _sdf->GetElement("rightJoints")->Get<std::string>();
       boost::split( joint_names_[RIGHT], joint_string, boost::is_any_of(" ") );
     }
 
@@ -312,8 +308,8 @@ namespace gazebo {
     double vr = x_;
     double va = rot_;
 
-    wheel_speed_[LEFT] = vr + va * wheel_separation_ / 2.0;
-    wheel_speed_[RIGHT] = vr - va * wheel_separation_ / 2.0;
+    wheel_speed_[LEFT] = vr - va * wheel_separation_ / 2.0;
+    wheel_speed_[RIGHT] = vr + va * wheel_separation_ / 2.0;
   }
 
   void GazeboRosDiffDriveMultiWheel::cmdVelCallback(
