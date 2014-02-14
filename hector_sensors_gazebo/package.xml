@@ -19,8 +19,4 @@
   <run_depend>gazebo_plugins</run_depend>
   <run_depend>hector_gazebo_plugins</run_depend>
 
-  <export>
-    <metapackage/>
-  </export>
-
 </package>
