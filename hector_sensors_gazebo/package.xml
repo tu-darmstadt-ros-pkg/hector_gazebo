@@ -1,7 +1,7 @@
 <package>
   <name>hector_sensors_gazebo</name>
   <version>0.3.0</version>
-  <description>hector_sensors_gazebo depends on the necessary plugins for using the sensors from the</description>
+  <description>hector_sensors_gazebo depends on the necessary plugins for using the sensors from the hector_models repository.</description>
   <maintainer email="meyer@fsr.tu-darmstadt.de">Johannes Meyer</maintainer>
 
   <license>BSD</license>
@@ -14,13 +14,13 @@
   <!-- Dependencies which this package needs to build itself. -->
   <buildtool_depend>catkin</buildtool_depend>
 
-  <!-- Dependencies needed to compile this package. -->
-
   <!-- Dependencies needed after this package is compiled. -->
   <run_depend>hector_sensors_description</run_depend>
   <run_depend>gazebo_plugins</run_depend>
   <run_depend>hector_gazebo_plugins</run_depend>
 
-  <!-- Dependencies needed only for running tests. -->
+  <export>
+    <metapackage/>
+  </export>
 
 </package>
