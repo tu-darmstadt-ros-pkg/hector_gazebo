@@ -82,6 +82,9 @@ target_link_libraries(hector_gazebo_ros_gps ${GAZEBO_LIBRARIES})
 add_library(hector_gazebo_ros_sonar src/gazebo_ros_sonar.cpp)
 target_link_libraries(hector_gazebo_ros_sonar ${GAZEBO_LIBRARIES})
 
+add_library(hector_servo_plugin src/servo_plugin.cpp)
+target_link_libraries(hector_servo_plugin ${Boost_LIBRARIES} ${GAZEBO_LIBRARIES} ${catkin_LIBRARIES})
+
 #############
 ## Install ##
 #############
@@ -103,6 +106,7 @@ diffdrive_plugin_multi_wheel
   hector_gazebo_ros_magnetic
   hector_gazebo_ros_gps
   hector_gazebo_ros_sonar
+  hector_servo_plugin
   ARCHIVE DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
   LIBRARY DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
   RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
