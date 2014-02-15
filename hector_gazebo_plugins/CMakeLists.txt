@@ -60,12 +60,10 @@ catkin_package(
 ###########
 
 add_library(diffdrive_plugin_6w src/diffdrive_plugin_6w.cpp)
-target_link_libraries(diffdrive_plugin_6w ${Boost_LIBRARIES})
-target_link_libraries(diffdrive_plugin_6w ${GAZEBO_LIBRARIES})
+target_link_libraries(diffdrive_plugin_6w ${Boost_LIBRARIES} ${GAZEBO_LIBRARIES})
 
 add_library(diffdrive_plugin_multi_wheel src/diffdrive_plugin_multi_wheel.cpp)
-target_link_libraries(diffdrive_plugin_multi_wheel ${Boost_LIBRARIES})
-target_link_libraries(diffdrive_plugin_multi_wheel ${GAZEBO_LIBRARIES})
+target_link_libraries(diffdrive_plugin_multi_wheel ${Boost_LIBRARIES} ${GAZEBO_LIBRARIES} ${catkin_LIBRARIES})
 
 add_library(hector_gazebo_reset_plugin src/reset_plugin.cpp)
 target_link_libraries(hector_gazebo_reset_plugin ${GAZEBO_LIBRARIES})
