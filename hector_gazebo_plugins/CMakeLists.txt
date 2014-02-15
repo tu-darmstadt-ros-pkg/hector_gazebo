@@ -63,6 +63,10 @@ add_library(diffdrive_plugin_6w src/diffdrive_plugin_6w.cpp)
 target_link_libraries(diffdrive_plugin_6w ${Boost_LIBRARIES})
 target_link_libraries(diffdrive_plugin_6w ${GAZEBO_LIBRARIES})
 
+add_library(diffdrive_plugin_multi_wheel src/diffdrive_plugin_multi_wheel.cpp)
+target_link_libraries(diffdrive_plugin_multi_wheel ${Boost_LIBRARIES})
+target_link_libraries(diffdrive_plugin_multi_wheel ${GAZEBO_LIBRARIES})
+
 add_library(hector_gazebo_reset_plugin src/reset_plugin.cpp)
 target_link_libraries(hector_gazebo_reset_plugin ${GAZEBO_LIBRARIES})
 
@@ -95,6 +99,7 @@ install(DIRECTORY include/${PROJECT_NAME}/
 
 install(TARGETS
   diffdrive_plugin_6w
+diffdrive_plugin_multi_wheel
   hector_gazebo_reset_plugin
   hector_gazebo_ros_imu
   hector_gazebo_ros_magnetic
