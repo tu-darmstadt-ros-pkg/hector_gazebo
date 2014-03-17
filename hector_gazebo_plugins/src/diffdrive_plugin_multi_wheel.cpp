@@ -202,6 +202,25 @@ namespace gazebo {
       this->update_rate_ = _sdf->GetElement("updateRate")->Get<double>();
     }
 
+
+    this->publish_odometry_tf_ = true;
+    if (!_sdf->HasElement("publishOdometryTf")) {
+      ROS_WARN("GazeboRosDiffDriveMultiWheel Plugin (ns = %s) missing <publishOdometryTf>, defaults to %s",
+               this->robot_namespace_.c_str(), this->publish_odometry_tf_ ? "true" : "false");
+    } else {
+      this->publish_odometry_tf_ = _sdf->GetElement("publishOdometryTf")->Get<bool>();
+    }
+
+    this->publish_odometry_msg_ = true;
+    if (!_sdf->HasElement("publishOdometryMsg")) {
+      ROS_WARN("GazeboRosDiffDriveMultiWheel Plugin (ns = %s) missing <publishOdometryMsg>, defaults to %s",
+               this->robot_namespace_.c_str(), this->publish_odometry_msg_ ? "true" : "false");
+    } else {
+      this->publish_odometry_msg_ = _sdf->GetElement("publishOdometryMsg")->Get<bool>();
+    }
+
+
+
     // Initialize update rate stuff
     if (this->update_rate_ > 0.0) {
       this->update_period_ = 1.0 / this->update_rate_;
@@ -275,7 +294,9 @@ namespace gazebo {
       (current_time - last_update_time_).Double();
     if (seconds_since_last_update > update_period_) {
 
-      publishOdometry(seconds_since_last_update);
+      if (this->publish_odometry_tf_ || this->publish_odometry_msg_){
+        publishOdometry(seconds_since_last_update);
+      }
 
       // Update robot in case new velocities have been requested
       getWheelVelocities();
@@ -342,9 +363,12 @@ namespace gazebo {
     tf::Vector3 vt(pose.pos.x, pose.pos.y, pose.pos.z);
 
     tf::Transform base_footprint_to_odom(qt, vt);
-    transform_broadcaster_->sendTransform(
-        tf::StampedTransform(base_footprint_to_odom, current_time, 
-            odom_frame, base_footprint_frame));
+
+    if (this->publish_odometry_tf_){
+      transform_broadcaster_->sendTransform(
+            tf::StampedTransform(base_footprint_to_odom, current_time,
+                                 odom_frame, base_footprint_frame));
+    }
 
     // publish odom topic
     odom_.pose.pose.position.x = pose.pos.x;
@@ -375,7 +399,9 @@ namespace gazebo {
     odom_.header.frame_id = odom_frame;
     odom_.child_frame_id = base_footprint_frame;
 
-    odometry_publisher_.publish(odom_);
+    if (this->publish_odometry_msg_){
+      odometry_publisher_.publish(odom_);
+    }
   }
 
   GZ_REGISTER_MODEL_PLUGIN(GazeboRosDiffDriveMultiWheel)

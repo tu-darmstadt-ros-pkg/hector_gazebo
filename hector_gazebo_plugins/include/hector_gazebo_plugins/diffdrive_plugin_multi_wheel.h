@@ -162,6 +162,9 @@ namespace gazebo {
       double update_period_;
       common::Time last_update_time_;
 
+      bool publish_odometry_tf_;
+      bool publish_odometry_msg_;
+
   };
 
 }
