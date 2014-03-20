@@ -305,7 +305,7 @@ namespace gazebo {
 
       for (size_t side = 0; side < 2; ++side){
         for (size_t i = 0; i < joints_[side].size(); ++i){
-          joints_[side][i]->SetVelocity(0, wheel_speed_[side] / wheel_diameter_);
+          joints_[side][i]->SetVelocity(0, wheel_speed_[side] / (0.5 * wheel_diameter_));
         }
       }
 
