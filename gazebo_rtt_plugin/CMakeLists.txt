@@ -21,7 +21,7 @@ find_package(OROCOS-RTT COMPONENTS rtt-marshalling)
 add_definitions(-DRTT_STATIC)
 
 if(NOT OROCOS-RTT_FOUND)
-  message(WARNING "Orocos RTT was not found. Package ${PROJECT_NAME} will not be built.")
+  message(SEND_ERROR "Orocos RTT was not found. Package ${PROJECT_NAME} cannot be built.")
   return()
 else()
   include(${OROCOS-RTT_USE_FILE})
