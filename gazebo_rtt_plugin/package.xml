@@ -17,8 +17,10 @@
   <!-- Dependencies needed to compile this package. -->
   <build_depend>gazebo</build_depend>
   <build_depend>hector_gazebo_plugins</build_depend>
+  <build_depend>rtt</build_depend>
 
   <!-- Dependencies needed after this package is compiled. -->
   <run_depend>gazebo_ros</run_depend>
+  <run_depend>rtt</run_depend>
 
 </package>

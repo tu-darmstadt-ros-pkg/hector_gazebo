@@ -29,9 +29,9 @@
 #ifndef GAZEBO_RTT_PLUGIN_GAZEBO_RTT_PLUGIN_H
 #define GAZEBO_RTT_PLUGIN_GAZEBO_RTT_PLUGIN_H
 
-#include <gazebo.hh>
-#include <physics/physics.hh>
-#include <common/common.hh>
+#include <gazebo/gazebo.hh>
+#include <gazebo/physics/physics.hh>
+#include <gazebo/common/common.hh>
 
 #include <rtt/TaskContext.hpp>
 
