@@ -2,6 +2,9 @@
 Changelog for package hector_gazebo_worlds
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+0.3.3 (2014-05-27)
+------------------
+
 0.3.2 (2014-03-30)
 ------------------
 * added missing install rule

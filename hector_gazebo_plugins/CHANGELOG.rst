@@ -2,6 +2,9 @@
 Changelog for package hector_gazebo_plugins
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+0.3.3 (2014-05-27)
+------------------
+
 0.3.2 (2014-03-30)
 ------------------
 * diffdrive_plugin_multi_wheel: Fix wrong whell rotation calculation (Was only half speed of desired)

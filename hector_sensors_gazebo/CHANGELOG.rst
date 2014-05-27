@@ -2,6 +2,9 @@
 Changelog for package hector_sensors_gazebo
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+0.3.3 (2014-05-27)
+------------------
+
 0.3.2 (2014-03-30)
 ------------------
 * removed metapackage tag from hector_sensors_gazebo to not break packages depending on it

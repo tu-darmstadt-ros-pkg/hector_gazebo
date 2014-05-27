@@ -2,6 +2,11 @@
 Changelog for package hector_gazebo_thermal_camera
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+0.3.3 (2014-05-27)
+------------------
+* Fix bad bug with index access
+* Contributors: Stefan Kohlbrecher
+
 0.3.2 (2014-03-30)
 ------------------
 * added missing dependency to roscpp
