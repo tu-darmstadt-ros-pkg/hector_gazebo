@@ -116,7 +116,7 @@ namespace {
   template <typename T>
   static inline T SensorModelGaussianKernel(T mu, T sigma)
   {
-    // using Box-Muller transform to generate two independent standard normally disbributed normal variables
+    // using Box-Muller transform to generate two independent standard normally distributed normal variables
     // see wikipedia
     T U = (T)rand()/(T)RAND_MAX; // normalized uniform random variable
     T V = (T)rand()/(T)RAND_MAX; // normalized uniform random variable
@@ -136,7 +136,7 @@ namespace {
 template <typename T>
 T SensorModel_<T>::update(double dt)
 {
-  for(std::size_t i = 0; i < current_error_.size(); ++i) current_error_[i] = current_error_ = SensorModelInternalUpdate(current_drift_[i], drift[i], drift_frequency[i], offset[i], gaussian_noise[i], dt);
+  for(std::size_t i = 0; i < current_error_.size(); ++i) current_error_[i] = SensorModelInternalUpdate(current_drift_[i], drift[i], drift_frequency[i], offset[i], gaussian_noise[i], dt);
   return current_error_;
 }
 
@@ -159,8 +159,8 @@ math::Vector3 SensorModel_<math::Vector3>::update(double dt)
 template <typename T>
 void SensorModel_<T>::reset(const T& value)
 {
-  current_drift_ = T();
-  current_error_ = value;
+  current_drift_ = value;
+  current_error_ = T();
 }
 
 typedef SensorModel_<double> SensorModel;
