@@ -128,6 +128,13 @@ void GazeboRosIMU::Load(physics::ModelPtr _model, sdf::ElementPtr _sdf)
     }
   }
 
+  if (_sdf->HasElement("randomEngineSeed")) {
+    srand(_sdf->GetElement("randomEngineSeed")->Get<unsigned int>());
+  }
+  else {
+    srand(time(NULL));
+  }
+
   // fill in constant covariance matrix
   imuMsg.angular_velocity_covariance[0] = rateModel.gaussian_noise.x*rateModel.gaussian_noise.x;
   imuMsg.angular_velocity_covariance[4] = rateModel.gaussian_noise.y*rateModel.gaussian_noise.y;
