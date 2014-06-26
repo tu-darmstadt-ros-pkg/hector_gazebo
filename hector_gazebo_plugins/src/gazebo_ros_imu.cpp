@@ -257,14 +257,12 @@ void GazeboRosIMU::Update()
                  rateModel.getCurrentError().x, rateModel.getCurrentError().y, rateModel.getCurrentError().z,
                  headingModel.getCurrentError());
 
-  // apply offset error to orientation (pseudo AHRS)
-  double normalization_constant = (gravity_body + accelModel.getCurrentError()).GetLength() * gravity_body.GetLength();
-  double cos_alpha = (gravity_body + accelModel.getCurrentError()).Dot(gravity_body)/normalization_constant;
-  math::Vector3 normal_vector(gravity_body.Cross(accelModel.getCurrentError()));
-  normal_vector *= sqrt((1 - cos_alpha)/2)/normalization_constant;
-  math::Quaternion attitudeError(sqrt((1 + cos_alpha)/2), normal_vector.x, normal_vector.y, normal_vector.z);
-  math::Quaternion headingError(cos(headingModel.getCurrentError()/2),0,0,sin(headingModel.getCurrentError()/2));
+  // apply accelerometer and heading drift error to orientation (pseudo AHRS)
+  math::Vector3 accelDrift = pose.rot.RotateVector(accelModel.getCurrentDrift());
+  math::Quaternion attitudeError(1.0, 0.5 * accelDrift.y / gravity_length, 0.5 * -accelDrift.x / gravity_length, 0.0);
+  math::Quaternion headingError(cos(headingModel.getCurrentDrift()/2),0,0,sin(headingModel.getCurrentDrift()/2));
   pose.rot = attitudeError * pose.rot * headingError;
+  pose.rot.Normalize();
 
   // copy data into pose message
   imuMsg.header.frame_id = frame_id_;
