@@ -128,6 +128,13 @@ void GazeboRosIMU::Load(physics::ModelPtr _model, sdf::ElementPtr _sdf)
     }
   }
 
+  if (_sdf->HasElement("randomEngineSeed")) {
+    srand(_sdf->GetElement("randomEngineSeed")->Get<unsigned int>());
+  }
+  else {
+    srand(time(NULL));
+  }
+
   // fill in constant covariance matrix
   imuMsg.angular_velocity_covariance[0] = rateModel.gaussian_noise.x*rateModel.gaussian_noise.x;
   imuMsg.angular_velocity_covariance[4] = rateModel.gaussian_noise.y*rateModel.gaussian_noise.y;
@@ -261,8 +268,8 @@ void GazeboRosIMU::Update()
   double normalization_constant = (gravity_body + accelModel.getCurrentError()).GetLength() * gravity_body.GetLength();
   double cos_alpha = (gravity_body + accelModel.getCurrentError()).Dot(gravity_body)/normalization_constant;
   math::Vector3 normal_vector(gravity_body.Cross(accelModel.getCurrentError()));
-  normal_vector *= sqrt((1 - cos_alpha)/2)/normalization_constant;
-  math::Quaternion attitudeError(sqrt((1 + cos_alpha)/2), normal_vector.x, normal_vector.y, normal_vector.z);
+  normal_vector *= sqrt(std::abs((1 - cos_alpha)/2))/normalization_constant;
+  math::Quaternion attitudeError(sqrt(std::abs((1 + cos_alpha)/2)), normal_vector.x, normal_vector.y, normal_vector.z);
   math::Quaternion headingError(cos(headingModel.getCurrentError()/2),0,0,sin(headingModel.getCurrentError()/2));
   pose.rot = attitudeError * pose.rot * headingError;
 
