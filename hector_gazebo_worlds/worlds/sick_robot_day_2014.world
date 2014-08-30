@@ -23,7 +23,7 @@
                 </constraints>
             </ode>
         </physics>
-        <light type="directional" name="directional_light_1">
+<!--        <light type="directional" name="directional_light_1">
             <pose>0 20 20 0.1 0.1 0</pose>
             <diffuse>1 1 1 1</diffuse>
             <specular>1 1 1 1</specular>
@@ -31,6 +31,18 @@
                 <range>300</range>
             </attenuation>
             <direction>0.1 0.1 -1</direction>
+            <cast_shadows>false</cast_shadows>
+        </light>-->
+        <light type="point" name="point_light_1">
+            <pose>0 0 4 0.1 0.1 0</pose>
+            <diffuse>1 1 1 1</diffuse>
+            <specular>1 1 1 1</specular>
+            <attenuation>                
+              <range>300</range>
+              <constant>0.5</constant>
+              <linear>0.0</linear>
+            </attenuation>             
+            <direction>0.1 0.1 0</direction>
             <cast_shadows>false</cast_shadows>
         </light>
         <model name="plane_model">
@@ -120,6 +132,29 @@
                         <mesh>
                             <uri>file://sick_robot_day_2014_ring.dae</uri>
                             <scale>1 1 1</scale>
+                        </mesh>
+                    </geometry>
+                    <cast_shadows>false</cast_shadows>
+                </visual>
+            </link>
+            <static>true</static>
+        </model>
+        <model name="panel_no_1">
+            <link name="panel_no_1_link">
+                <pose>6 0 1.5 0 0 3.14</pose>
+                <collision name="panel_no_1_collision">
+                    <geometry>
+                        <mesh>
+                            <uri>file://sick_robot_panel.stl</uri>
+                            <scale>0.5 0.5 0.5</scale>
+                        </mesh>
+                    </geometry>
+                </collision>
+                <visual name="panel_no_1_visual">
+                    <geometry>
+                        <mesh>
+                            <uri>file://sick_robot_panel_1.dae</uri>
+                            <scale>0.5 0.5 0.5</scale>
                         </mesh>
                     </geometry>
                     <cast_shadows>false</cast_shadows>
