@@ -2,6 +2,12 @@
 Changelog for package hector_gazebo
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+0.3.4 (2014-09-01)
+------------------
+* Removed package gazebo_rtt_plugin
+  This package is obsolete. Use the rtt_gazebo stack instead.
+* Contributors: Johannes Meyer
+
 0.3.3 (2014-05-27)
 ------------------
 

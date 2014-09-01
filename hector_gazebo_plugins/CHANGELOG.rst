@@ -2,6 +2,14 @@
 Changelog for package hector_gazebo_plugins
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+0.3.4 (2014-09-01)
+------------------
+* replaced old copied license header in servo_plugin.cpp
+* simplified attitude error calculation in gazebo_ros_imu (fixes #12)
+* fixed calculation of vector-valued sensor errors and sensor error model resetting with non-zero initial drift
+* linking against catkin_libraries
+* Contributors: Johannes Meyer, Markus Achtelik
+
 0.3.3 (2014-05-27)
 ------------------
 

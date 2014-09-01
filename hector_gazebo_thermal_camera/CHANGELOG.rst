@@ -2,6 +2,9 @@
 Changelog for package hector_gazebo_thermal_camera
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+0.3.4 (2014-09-01)
+------------------
+
 0.3.3 (2014-05-27)
 ------------------
 * Fix bad bug with index access
