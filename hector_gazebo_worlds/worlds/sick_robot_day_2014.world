@@ -116,6 +116,30 @@
       </link>
       <static>true</static>
     </model>
+    <model name="sick_robot_day_2014_center">
+      <link name="sick_robot_day_2014_center">
+        <pose>0 0 0 0 0 0</pose>
+        <collision name="sick_robot_day_2014_center_collision">
+          <geometry>
+            <mesh>
+              <uri>file://sick_robot_day_2014_inner_block.stl</uri>
+              <scale>1 1 1</scale>
+            </mesh>
+          </geometry>
+        </collision>
+        <visual name="ssick_robot_day_2014_center">
+          <geometry>
+            <mesh>
+              <uri>file://sick_robot_day_2014_inner_block.dae</uri>
+              <scale>1 1 1</scale>
+            </mesh>
+          </geometry>
+          <cast_shadows>false</cast_shadows>
+        </visual>
+      </link>
+      <static>true</static>
+    </model>   
+    
     <model name="ring_no_1">
       <link name="ring_no_1_link">
         <pose>5.7 0 0.5 0 0 0</pose>
