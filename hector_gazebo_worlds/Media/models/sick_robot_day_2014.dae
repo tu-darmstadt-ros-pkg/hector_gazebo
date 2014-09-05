@@ -2,11 +2,11 @@
 <COLLADA xmlns="http://www.collada.org/2005/11/COLLADASchema" version="1.4.1">
   <asset>
     <contributor>
-      <author>Blender User</author>
+      <author>Stefan Kohlbrecher</author>
       <authoring_tool>Blender 2.71.0 commit date:2014-06-12, commit time:18:39, hash:169c95b</authoring_tool>
     </contributor>
-    <created>2014-08-28T18:11:51</created>
-    <modified>2014-08-28T18:11:51</modified>
+    <created>2014-09-05T19:53:56</created>
+    <modified>2014-09-05T19:53:56</modified>
     <unit name="meter" meter="1"/>
     <up_axis>Z_UP</up_axis>
   </asset>
