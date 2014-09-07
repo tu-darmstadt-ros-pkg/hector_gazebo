@@ -138,24 +138,14 @@
         </visual>
       </link>
       <static>true</static>
-    </model>   
-    <model name="target_no_1">
-      <link name="target_no_1_link">
-        <pose>5.95 0 0.0 0 0 3.1416</pose>
-        <!--
-        <collision name="panel_no_1_collision">
+    </model>
+    <model name="target_no_0">
+      <link name="target_no_0_link">
+        <pose>6.043906 0.001611 0.0 0 0 3.043185</pose>
+        <visual name="target_no_0_visual">https://www.facebook.com/
           <geometry>
             <mesh>
-              <uri>file://sick_robot_day_2014_target.stl</uri>
-              <scale>0.5 0.5 0.5</scale>
-            </mesh>
-          </geometry>
-        </collision>
-        -->
-        <visual name="target_no_1_visual">https://www.facebook.com/
-          <geometry>
-            <mesh>
-              <uri>file://sick_robot_day_2014_target_station_complete.dae</uri>
+              <uri>file://sick_robot_day_2014_target_station_complete_0.dae</uri>
               <scale>1 1 1</scale>
             </mesh>
          </geometry>
@@ -164,5 +154,37 @@
       </link>
       <static>true</static>
     </model>
+    <model name="target_no_5">
+      <link name="target_no_5_link">
+        <pose>5.525376 2.694268 0.0 0 0 -2.689556</pose>
+        <visual name="target_no_5_visual">https://www.facebook.com/
+          <geometry>
+            <mesh>
+              <uri>file://sick_robot_day_2014_target_station_complete_5.dae</uri>
+              <scale>1 1 1</scale>
+            </mesh>
+         </geometry>
+          <cast_shadows>false</cast_shadows>
+        </visual>
+      </link>
+      <static>true</static>
+    </model>
+    <!--
+    <model name="target_no_1">
+      <link name="target_no_1_link">
+        <pose>0 0 0.0 0 0 0</pose>
+        <visual name="target_no_1_visual">https://www.facebook.com/
+          <geometry>
+            <mesh>
+              <uri>file://sick_robot_day_2014_target_station_complete_2.dae</uri>
+              <scale>1 1 1</scale>
+            </mesh>
+         </geometry>
+          <cast_shadows>false</cast_shadows>
+        </visual>
+      </link>
+      <static>true</static>
+    </model>
+    -->
   </world>
 </sdf>
