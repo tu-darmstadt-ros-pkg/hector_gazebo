@@ -139,58 +139,9 @@
       </link>
       <static>true</static>
     </model>   
-    
-    <model name="ring_no_1">
-      <link name="ring_no_1_link">
-        <pose>5.7 0 0.5 0 0 0</pose>
-        <collision name="ring_no_1_collision">
-          <geometry>
-            <mesh>
-              <uri>file://sick_robot_day_2014_ring.stl</uri>
-              <scale>1 1 1</scale>
-            </mesh>
-          </geometry>
-        </collision>
-        <visual name="ring_no_1_visual">
-          <geometry>
-            <mesh>
-              <uri>file://sick_robot_day_2014_ring.dae</uri>
-              <scale>1 1 1</scale>
-            </mesh>
-          </geometry>
-          <cast_shadows>false</cast_shadows>
-        </visual>
-      </link>
-      <static>true</static>
-    </model>
-    <model name="panel_no_1">
-      <link name="panel_no_1_link">
-        <pose>6 0 1.5 0 0 3.1416</pose>
-        <!--
-        <collision name="panel_no_1_collision">
-          <geometry>
-            <mesh>
-              <uri>file://sick_robot_panel.stl</uri>
-              <scale>0.5 0.5 0.5</scale>
-            </mesh>
-          </geometry>
-        </collision>
-        -->
-        <visual name="panel_no_1_visual">
-          <geometry>
-            <mesh>
-              <uri>file://sick_robot_panel_1.dae</uri>
-              <scale>0.5 0.5 0.5</scale>
-            </mesh>
-          </geometry>
-          <cast_shadows>false</cast_shadows>
-        </visual>
-      </link>
-      <static>true</static>
-    </model>
     <model name="target_no_1">
       <link name="target_no_1_link">
-        <pose>5.95 0 0.25 0 0 3.1416</pose>
+        <pose>5.95 0 0.0 0 0 3.1416</pose>
         <!--
         <collision name="panel_no_1_collision">
           <geometry>
@@ -201,10 +152,10 @@
           </geometry>
         </collision>
         -->
-        <visual name="target_no_1_visual">
+        <visual name="target_no_1_visual">https://www.facebook.com/
           <geometry>
             <mesh>
-              <uri>file://sick_robot_day_2014_target.dae</uri>
+              <uri>file://sick_robot_day_2014_target_station_complete.dae</uri>
               <scale>1 1 1</scale>
             </mesh>
          </geometry>
