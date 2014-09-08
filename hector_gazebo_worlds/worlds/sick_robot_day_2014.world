@@ -99,7 +99,10 @@
         <collision name="sick_robot_day_2012_20m_collision">
           <geometry>
             <mesh>
+              <uri>file://sick_robot_day_2014_with_stations.dae</uri>
+              <!--Using below should be faster, as less geometry
               <uri>file://sick_robot_day_2014.dae</uri>
+              -->
               <scale>1 1 1</scale>
             </mesh>
           </geometry>
@@ -107,7 +110,7 @@
         <visual name="sick_robot_day_2012_20m">
           <geometry>
             <mesh>
-              <uri>file://sick_robot_day_2014.dae</uri>
+              <uri>file://sick_robot_day_2014_with_stations.dae</uri>
               <scale>1 1 1</scale>
             </mesh>
           </geometry>
@@ -122,7 +125,7 @@
         <collision name="sick_robot_day_2014_center_collision">
           <geometry>
             <mesh>
-              <uri>file://sick_robot_day_2014_inner_block.stl</uri>
+              <uri>file://sick_robot_day_2014_inner_block_with_stations.dae</uri>
               <scale>1 1 1</scale>
             </mesh>
           </geometry>
@@ -130,7 +133,7 @@
         <visual name="ssick_robot_day_2014_center">
           <geometry>
             <mesh>
-              <uri>file://sick_robot_day_2014_inner_block.dae</uri>
+              <uri>file://sick_robot_day_2014_inner_block_with_stations.dae</uri>
               <scale>1 1 1</scale>
             </mesh>
           </geometry>
@@ -139,6 +142,7 @@
       </link>
       <static>true</static>
     </model>
+    <!--    
     <model name="target_no_0">
       <link name="target_no_0_link">
         <pose>6.043906 0.001611 0.0 0 0 3.043185</pose>
@@ -169,6 +173,7 @@
       </link>
       <static>true</static>
     </model>
+    -->
     <!--
     <model name="target_no_1">
       <link name="target_no_1_link">
