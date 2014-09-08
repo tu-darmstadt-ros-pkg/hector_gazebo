@@ -33,13 +33,49 @@
       <direction>0.1 0.1 -1</direction>
       <cast_shadows>false</cast_shadows>
     </light> -->
-    <light type="point" name="point_light_1">
-      <pose>0 0 4 0.1 0.1 0</pose>
-      <diffuse>1 1 1 1</diffuse>
+    <light type="point" name="point_light_0">
+      <pose>3 0 1 0.1 0.1 0</pose>
+      <diffuse>0.7 0.7 0.7 1</diffuse>
       <specular>1 1 1 1</specular>
       <attenuation>
-        <range>300</range>
-        <constant>0.5</constant>
+        <range>30</range>
+        <constant>0.9</constant>
+        <linear>0.0</linear>
+      </attenuation>
+      <direction>0.1 0.1 0</direction>
+      <cast_shadows>false</cast_shadows>
+    </light>
+        <light type="point" name="point_light_1">
+      <pose>0 3 1 0.1 0.1 0</pose>
+      <diffuse>0.7 0.7 0.7 1</diffuse>
+      <specular>1 1 1 1</specular>
+      <attenuation>
+        <range>30</range>
+        <constant>0.9</constant>
+        <linear>0.0</linear>
+      </attenuation>
+      <direction>0.1 0.1 0</direction>
+      <cast_shadows>false</cast_shadows>
+    </light>
+        <light type="point" name="point_light_2">
+      <pose>-3 0 1 0.1 0.1 0</pose>
+      <diffuse>0.7 0.7 0.7 1</diffuse>
+      <specular>1 1 1 1</specular>
+      <attenuation>
+        <range>30</range>
+        <constant>0.9</constant>
+        <linear>0.0</linear>
+      </attenuation>
+      <direction>0.1 0.1 0</direction>
+      <cast_shadows>false</cast_shadows>
+    </light>
+        <light type="point" name="point_light_3">
+      <pose>0 -3 1 0.1 0.1 0</pose>
+      <diffuse>0.7 0.7 0.7 1</diffuse>
+      <specular>1 1 1 1</specular>
+      <attenuation>
+        <range>30</range>
+        <constant>0.9</constant>
         <linear>0.0</linear>
       </attenuation>
       <direction>0.1 0.1 0</direction>
