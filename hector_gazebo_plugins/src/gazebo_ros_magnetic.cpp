@@ -113,8 +113,8 @@ void GazeboRosMagnetic::Load(physics::ModelPtr _model, sdf::ElementPtr _sdf)
   // Note: Gazebo uses NorthWestUp coordinate system, heading and declination are compass headings
   magnetic_field_.header.frame_id = frame_id_;
   magnetic_field_world_.x = magnitude_ *  cos(inclination_) * cos(reference_heading_ - declination_);
-  magnetic_field_world_.y = magnitude_ *  sin(reference_heading_ - declination_);
-  magnetic_field_world_.z = magnitude_ * -sin(inclination_) * cos(reference_heading_ - declination_);
+  magnetic_field_world_.y = magnitude_ *  cos(inclination_) * sin(reference_heading_ - declination_);
+  magnetic_field_world_.z = magnitude_ * -sin(inclination_);
 
   sensor_model_.Load(_sdf);
 
