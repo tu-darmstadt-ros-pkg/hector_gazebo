@@ -251,16 +251,21 @@ void GazeboRosIMU::Update()
   // update sensor models
   accel = accel + accelModel.update(dt);
   rate  = rate  + rateModel.update(dt);
-  headingModel.update(dt);
-  ROS_DEBUG_NAMED("gazebo_ros_imu", "Current errors: accel = [%g %g %g], rate = [%g %g %g], heading = %g",
-                 accelModel.getCurrentError().x, accelModel.getCurrentError().y, accelModel.getCurrentError().z,
-                 rateModel.getCurrentError().x, rateModel.getCurrentError().y, rateModel.getCurrentError().z,
-                 headingModel.getCurrentError());
+  yawModel.update(dt);
+  ROS_DEBUG_NAMED("gazebo_ros_imu", "Current bias errors: accel = [%g %g %g], rate = [%g %g %g], yaw = %g",
+                 accelModel.getCurrentBias().x, accelModel.getCurrentBias().y, accelModel.getCurrentBias().z,
+                 rateModel.getCurrentBias().x, rateModel.getCurrentBias().y, rateModel.getCurrentBias().z,
+                 yawModel.getCurrentBias());
+  ROS_DEBUG_NAMED("gazebo_ros_imu", "Scale errors: accel = [%g %g %g], rate = [%g %g %g], yaw = %g",
+                 accelModel.getScaleError().x, accelModel.getScaleError().y, accelModel.getScaleError().z,
+                 rateModel.getScaleError().x, rateModel.getScaleError().y, rateModel.getScaleError().z,
+                 headingModel.getScaleError());
 
   // apply accelerometer and heading drift error to orientation (pseudo AHRS)
-  math::Vector3 accelDrift = pose.rot.RotateVector(accelModel.getCurrentDrift());
+  math::Vector3 accelDrift = pose.rot.RotateVector(accelModel.getCurrentBias());
+  double headingError = headingModel.getCurrentBias();
   math::Quaternion attitudeError(1.0, 0.5 * accelDrift.y / gravity_length, 0.5 * -accelDrift.x / gravity_length, 0.0);
-  math::Quaternion headingError(cos(headingModel.getCurrentDrift()/2),0,0,sin(headingModel.getCurrentDrift()/2));
+  math::Quaternion headingError(cos(headingError/2),0,0,sin(headingError/2));
   pose.rot = attitudeError * pose.rot * headingError;
   pose.rot.Normalize();
 

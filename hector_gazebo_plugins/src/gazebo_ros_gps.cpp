@@ -180,8 +180,11 @@ void GazeboRosGps::Update()
   math::Pose pose = link->GetWorldPose();
 
   gazebo::math::Vector3 velocity = velocity_error_model_(link->GetWorldLinearVel(), dt);
-  position_error_model_.setCurrentDrift(position_error_model_.getCurrentDrift() + velocity_error_model_.getCurrentError() * dt);
   gazebo::math::Vector3 position = position_error_model_(pose.pos, dt);
+
+  // An offset error in the velocity is integrated into the position error for the next timestep.
+  // Note: Usually GNSS receivers have almost no drift in the velocity signal.
+  position_error_model_.setCurrentDrift(position_error_model_.getCurrentDrift() + dt * velocity_error_model_.getCurrentDrift());
 
   fix_.header.stamp = ros::Time(sim_time.sec, sim_time.nsec);
   velocity_.header.stamp = fix_.header.stamp;

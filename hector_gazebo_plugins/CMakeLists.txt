@@ -8,8 +8,8 @@ find_package(catkin REQUIRED COMPONENTS roscpp std_msgs std_srvs geometry_msgs n
 include_directories(include ${catkin_INCLUDE_DIRS})
 
 ## Find gazebo
-include (FindPkgConfig)
-if (PKG_CONFIG_FOUND)
+include(FindPkgConfig)
+if(PKG_CONFIG_FOUND)
   pkg_check_modules(GAZEBO gazebo)
 endif()
 include_directories(${GAZEBO_INCLUDE_DIRS})

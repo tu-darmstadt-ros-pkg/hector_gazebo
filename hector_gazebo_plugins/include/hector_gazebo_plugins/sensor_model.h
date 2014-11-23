@@ -42,14 +42,16 @@ public:
 
   virtual void Load(sdf::ElementPtr _sdf, const std::string& prefix = std::string());
 
-  virtual T operator()(const T& value) const { return value + current_error_; }
-  virtual T operator()(const T& value, double dt) { return value + update(dt); }
+  virtual T operator()(const T& value) const { return value * scale_error + current_error_; }
+  virtual T operator()(const T& value, double dt) { return value * scale_error + update(dt); }
 
   virtual T update(double dt);
   virtual void reset(const T& value = T());
 
   virtual const T& getCurrentError() const { return current_error_; }
+  virtual T getCurrentBias() const { return current_drift_ + offset; }
   virtual const T& getCurrentDrift() const { return current_drift_; }
+  virtual const T& getScaleError() const { return scale_error; }
 
   virtual void setCurrentDrift(const T& new_drift) { current_drift_ = new_drift; }
 
@@ -61,6 +63,7 @@ public:
   T drift;
   T drift_frequency;
   T gaussian_noise;
+  T scale_error;
 
 private:
   T current_drift_;
@@ -74,7 +77,8 @@ SensorModel_<T>::SensorModel_()
   , drift_frequency()
   , gaussian_noise()
 {
-  drift_frequency = 1.0/3600.0;
+  drift_frequency = 1.0/3600.0; // time constant 1h
+  scale_error = 1.0;
   reset();
 }
 
@@ -86,24 +90,27 @@ SensorModel_<T>::~SensorModel_()
 template <typename T>
 void SensorModel_<T>::Load(sdf::ElementPtr _sdf, const std::string& prefix)
 {
-  std::string _offset, _drift, _drift_frequency, _gaussian_noise;
+  std::string _offset, _drift, _drift_frequency, _gaussian_noise, _scale_error;
 
   if (prefix.empty()) {
-    _offset          = "offset";
-    _drift           = "drift";
-    _drift_frequency = "driftFrequency";
-    _gaussian_noise  = "gaussianNoise";
+    _offset              = "offset";
+    _drift               = "drift";
+    _drift_frequency     = "driftFrequency";
+    _gaussian_noise      = "gaussianNoise";
+    _scale_error         = "scaleError";
   } else {
-    _offset          = prefix + "Offset";
-    _drift           = prefix + "Drift";
-    _drift_frequency = prefix + "DriftFrequency";
-    _gaussian_noise  = prefix + "GaussianNoise";
+    _offset              = prefix + "Offset";
+    _drift               = prefix + "Drift";
+    _drift_frequency     = prefix + "DriftFrequency";
+    _gaussian_noise      = prefix + "GaussianNoise";
+    _scale_error         = prefix + "ScaleError";
   }
 
-  if (_sdf->HasElement(_offset))          LoadImpl(_sdf->GetElement(_offset), offset);
-  if (_sdf->HasElement(_drift))           LoadImpl(_sdf->GetElement(_drift), drift);
-  if (_sdf->HasElement(_drift_frequency)) LoadImpl(_sdf->GetElement(_drift_frequency), drift_frequency);
-  if (_sdf->HasElement(_gaussian_noise))  LoadImpl(_sdf->GetElement(_gaussian_noise), gaussian_noise);
+  if (_sdf->HasElement(_offset))              LoadImpl(_sdf->GetElement(_offset), offset);
+  if (_sdf->HasElement(_drift))               LoadImpl(_sdf->GetElement(_drift), drift);
+  if (_sdf->HasElement(_drift_frequency))     LoadImpl(_sdf->GetElement(_drift_frequency), drift_frequency);
+  if (_sdf->HasElement(_gaussian_noise))      LoadImpl(_sdf->GetElement(_gaussian_noise), gaussian_noise);
+  if (_sdf->HasElement(_scale_error))         LoadImpl(_sdf->GetElement(_scale_error), scale_error);
 }
 
 template <typename T>
@@ -128,7 +135,8 @@ namespace {
   template <typename T>
   static inline T SensorModelInternalUpdate(T& current_drift, T drift, T drift_frequency, T offset, T gaussian_noise, double dt)
   {
-    current_drift = current_drift - dt * (current_drift * drift_frequency + SensorModelGaussianKernel(T(), sqrt(2*drift_frequency)*drift));
+    // current_drift = current_drift - dt * (current_drift * drift_frequency + SensorModelGaussianKernel(T(), sqrt(2*drift_frequency)*drift));
+    current_drift = exp(-dt * drift_frequency) * current_drift + dt * SensorModelGaussianKernel(T(), sqrt(2*drift_frequency)*drift);
     return offset + current_drift + SensorModelGaussianKernel(T(), gaussian_noise);
   }
 }
