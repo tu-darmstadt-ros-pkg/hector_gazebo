@@ -101,6 +101,11 @@ void GazeboRosIMU::Load(physics::ModelPtr _model, sdf::ElementPtr _sdf)
   if (_sdf->HasElement("topicName"))
     topic_ = _sdf->GetElement("topicName")->GetValue()->GetAsString();
 
+  if (_sdf->HasElement("biasTopicName"))
+    bias_topic_ = _sdf->GetElement("biasTopicName")->GetValue()->GetAsString();
+  else
+    bias_topic_ = (!topic_.empty() ? topic_ + "/bias" : "");
+
   if (_sdf->HasElement("serviceName"))
     serviceName = _sdf->GetElement("serviceName")->GetValue()->GetAsString();
   else
@@ -108,7 +113,7 @@ void GazeboRosIMU::Load(physics::ModelPtr _model, sdf::ElementPtr _sdf)
 
   accelModel.Load(_sdf, "accel");
   rateModel.Load(_sdf, "rate");
-  headingModel.Load(_sdf, "heading");
+  yawModel.Load(_sdf, "yaw");
 
   // also use old configuration variables from gazebo_ros_imu
   if (_sdf->HasElement("gaussianNoise")) {
@@ -122,9 +127,9 @@ void GazeboRosIMU::Load(physics::ModelPtr _model, sdf::ElementPtr _sdf)
   if (_sdf->HasElement("rpyOffset")) {
     sdf::Vector3 rpyOffset;
     if (_sdf->GetElement("rpyOffset")->GetValue()->Get(rpyOffset)) {
-      if (accelModel.offset.y == 0.0 && rpyOffset.x != 0.0) accelModel.offset.y = -rpyOffset.x * 9.8065;
-      if (accelModel.offset.x == 0.0 && rpyOffset.y != 0.0) accelModel.offset.x =  rpyOffset.y * 9.8065;
-      if (headingModel.offset == 0.0 && rpyOffset.z != 0.0) headingModel.offset =  rpyOffset.z;
+      if (accelModel.offset.y == 0.0 && rpyOffset.x != 0.0) accelModel.offset.y =  rpyOffset.x * 9.8065;
+      if (accelModel.offset.x == 0.0 && rpyOffset.y != 0.0) accelModel.offset.x = -rpyOffset.y * 9.8065;
+      if (yawModel.offset == 0.0 && rpyOffset.z != 0.0)     yawModel.offset     =  rpyOffset.z;
     }
   }
 
@@ -140,7 +145,7 @@ void GazeboRosIMU::Load(physics::ModelPtr _model, sdf::ElementPtr _sdf)
   if (!ros::isInitialized())
   {
     ROS_FATAL_STREAM("A ROS node for Gazebo has not been initialized, unable to load plugin. "
-      << "Load the Gazebo system plugin 'libgazebo_ros_api_plugin.so' in the gazebo_ros package)");
+      << "Load the Gazebo system plugin 'libgazebo_ros_api_plugin.so' in the gazebo_ros package.");
     return;
   }
 
@@ -149,6 +154,8 @@ void GazeboRosIMU::Load(physics::ModelPtr _model, sdf::ElementPtr _sdf)
   // if topic name specified as empty, do not publish (then what is this plugin good for?)
   if (!topic_.empty())
     pub_ = node_handle_->advertise<sensor_msgs::Imu>(topic_, 10);
+  if (!bias_topic_.empty())
+    bias_pub_ = node_handle_->advertise<sensor_msgs::Imu>(bias_topic_, 10);
 
 #ifdef DEBUG_OUTPUT
   debugPublisher = rosnode_->advertise<geometry_msgs::PoseStamped>(topic_ + "/pose", 10);
@@ -183,7 +190,7 @@ void GazeboRosIMU::Reset()
 
   accelModel.reset();
   rateModel.reset();
-  headingModel.reset();
+  yawModel.reset();
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -222,11 +229,16 @@ void GazeboRosIMU::Update()
   // Get Pose/Orientation
   math::Pose pose = link->GetWorldPose();
 
+  // get Gravity
+  gravity = world->GetPhysicsEngine()->GetGravity();
+  double gravity_length = gravity.GetLength();
+  ROS_DEBUG_NAMED("gazebo_ros_imu", "gravity_world = [%g %g %g]", gravity.x, gravity.y, gravity.z);
+
   // get Acceleration and Angular Rates
   // the result of GetRelativeLinearAccel() seems to be unreliable (sum of forces added during the current simulation step)?
   //accel = myBody->GetRelativeLinearAccel(); // get acceleration in body frame
   math::Vector3 temp = link->GetWorldLinearVel(); // get velocity in world frame
-  if (dt > 0.0) accel = pose.rot.RotateVectorReverse((temp - velocity) / dt);
+  if (dt > 0.0) accel = pose.rot.RotateVectorReverse((temp - velocity) / dt - gravity);
   velocity = temp;
 
   // GetRelativeAngularVel() sometimes return nan?
@@ -239,15 +251,6 @@ void GazeboRosIMU::Update()
     rate.z = 2.0 * (-orientation.z * delta.w + orientation.y * delta.x - orientation.x * delta.y + orientation.w * delta.z) / dt;
   }
 
-  // get Gravity
-  gravity       = world->GetPhysicsEngine()->GetGravity();
-  gravity_body  = orientation.RotateVectorReverse(gravity);
-  double gravity_length = gravity.GetLength();
-  ROS_DEBUG_NAMED("gazebo_ros_imu", "gravity_world = [%g %g %g]", gravity.x, gravity.y, gravity.z);
-
-  // add gravity vector to body acceleration
-  accel = accel - gravity_body;
-
   // update sensor models
   accel = accel + accelModel.update(dt);
   rate  = rate  + rateModel.update(dt);
@@ -259,15 +262,17 @@ void GazeboRosIMU::Update()
   ROS_DEBUG_NAMED("gazebo_ros_imu", "Scale errors: accel = [%g %g %g], rate = [%g %g %g], yaw = %g",
                  accelModel.getScaleError().x, accelModel.getScaleError().y, accelModel.getScaleError().z,
                  rateModel.getScaleError().x, rateModel.getScaleError().y, rateModel.getScaleError().z,
-                 headingModel.getScaleError());
+                 yawModel.getScaleError());
 
-  // apply accelerometer and heading drift error to orientation (pseudo AHRS)
+  // apply accelerometer and yaw drift error to orientation (pseudo AHRS)
   math::Vector3 accelDrift = pose.rot.RotateVector(accelModel.getCurrentBias());
-  double headingError = headingModel.getCurrentBias();
-  math::Quaternion attitudeError(1.0, 0.5 * accelDrift.y / gravity_length, 0.5 * -accelDrift.x / gravity_length, 0.0);
-  math::Quaternion headingError(cos(headingError/2),0,0,sin(headingError/2));
-  pose.rot = attitudeError * pose.rot * headingError;
-  pose.rot.Normalize();
+  double yawError = yawModel.getCurrentBias();
+  math::Quaternion orientationError(
+    math::Quaternion(cos(yawError/2), 0.0, 0.0, sin(yawError/2)) *                                         // yaw error
+    math::Quaternion(1.0, 0.5 * accelDrift.y / gravity_length, 0.5 * -accelDrift.x / gravity_length, 0.0)  // roll and pitch error
+  );
+  orientationError.Normalize();
+  pose.rot = orientationError * pose.rot;
 
   // copy data into pose message
   imuMsg.header.frame_id = frame_id_;
@@ -291,7 +296,7 @@ void GazeboRosIMU::Update()
   imuMsg.linear_acceleration.z    = accel.z;
 
   // fill in covariance matrix
-  imuMsg.orientation_covariance[8] = headingModel.gaussian_noise*headingModel.gaussian_noise;
+  imuMsg.orientation_covariance[8] = yawModel.gaussian_noise*yawModel.gaussian_noise;
   if (gravity_length > 0.0) {
     imuMsg.orientation_covariance[0] = accelModel.gaussian_noise.x*accelModel.gaussian_noise.x/(gravity_length*gravity_length);
     imuMsg.orientation_covariance[4] = accelModel.gaussian_noise.y*accelModel.gaussian_noise.y/(gravity_length*gravity_length);
@@ -303,6 +308,22 @@ void GazeboRosIMU::Update()
   // publish to ros
   pub_.publish(imuMsg);
   ROS_DEBUG_NAMED("gazebo_ros_imu", "Publishing IMU data at t = %f", cur_time.Double());
+
+  // publish bias
+  if (bias_pub_) {
+    biasMsg.header = imuMsg.header;
+    biasMsg.orientation.x = orientationError.x;
+    biasMsg.orientation.y = orientationError.y;
+    biasMsg.orientation.z = orientationError.z;
+    biasMsg.orientation.w = orientationError.w;
+    biasMsg.angular_velocity.x = rateModel.getCurrentBias().x;
+    biasMsg.angular_velocity.y = rateModel.getCurrentBias().y;
+    biasMsg.angular_velocity.z = rateModel.getCurrentBias().z;
+    biasMsg.linear_acceleration.x = accelModel.getCurrentBias().x;
+    biasMsg.linear_acceleration.y = accelModel.getCurrentBias().y;
+    biasMsg.linear_acceleration.z = accelModel.getCurrentBias().z;
+    bias_pub_.publish(biasMsg);
+  }
 
   // debug output
 #ifdef DEBUG_OUTPUT

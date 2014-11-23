@@ -71,9 +71,11 @@ namespace gazebo
       /// \brief pointer to ros node
       ros::NodeHandle* node_handle_;
       ros::Publisher pub_;
+      ros::Publisher bias_pub_;
 
       /// \brief ros message
       sensor_msgs::Imu imuMsg;
+      sensor_msgs::Imu biasMsg;
 
       /// \brief store link name
       std::string link_name_;
@@ -83,11 +85,12 @@ namespace gazebo
 
       /// \brief topic name
       std::string topic_;
+      std::string bias_topic_;
 
       /// \brief Sensor models
       SensorModel3 accelModel;
       SensorModel3 rateModel;
-      SensorModel headingModel;
+      SensorModel yawModel;
 
       /// \brief A mutex to lock access to fields that are used in message callbacks
       boost::mutex lock;
@@ -98,7 +101,6 @@ namespace gazebo
       math::Vector3 accel;
       math::Vector3 rate;
       math::Vector3 gravity;
-      math::Vector3 gravity_body;
 
       /// \brief Gaussian noise generator
       double GaussianKernel(double mu,double sigma);
