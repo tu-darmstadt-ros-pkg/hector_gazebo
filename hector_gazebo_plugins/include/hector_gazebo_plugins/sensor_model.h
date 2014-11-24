@@ -46,7 +46,8 @@ public:
   virtual T operator()(const T& value, double dt) { return value * scale_error + update(dt); }
 
   virtual T update(double dt);
-  virtual void reset(const T& value = T());
+  virtual void reset();
+  virtual void reset(const T& value);
 
   virtual const T& getCurrentError() const { return current_error_; }
   virtual T getCurrentBias() const { return current_drift_ + offset; }
@@ -111,6 +112,8 @@ void SensorModel_<T>::Load(sdf::ElementPtr _sdf, const std::string& prefix)
   if (_sdf->HasElement(_drift_frequency))     LoadImpl(_sdf->GetElement(_drift_frequency), drift_frequency);
   if (_sdf->HasElement(_gaussian_noise))      LoadImpl(_sdf->GetElement(_gaussian_noise), gaussian_noise);
   if (_sdf->HasElement(_scale_error))         LoadImpl(_sdf->GetElement(_scale_error), scale_error);
+
+  reset();
 }
 
 template <typename T>
@@ -162,6 +165,29 @@ math::Vector3 SensorModel_<math::Vector3>::update(double dt)
   current_error_.y = SensorModelInternalUpdate(current_drift_.y, drift.y, drift_frequency.y, offset.y, gaussian_noise.y, dt);
   current_error_.z = SensorModelInternalUpdate(current_drift_.z, drift.z, drift_frequency.z, offset.z, gaussian_noise.z, dt);
   return current_error_;
+}
+
+template <typename T>
+void SensorModel_<T>::reset()
+{
+  for(std::size_t i = 0; i < current_drift_.size(); ++i) current_drift_[i] = SensorModelGaussianKernel(T::value_type(), drift[i]);
+  current_error_ = T();
+}
+
+template <>
+void SensorModel_<double>::reset()
+{
+  current_drift_ = SensorModelGaussianKernel(0.0, drift);
+  current_error_ = 0.0;
+}
+
+template <>
+void SensorModel_<math::Vector3>::reset()
+{
+  current_drift_.x = SensorModelGaussianKernel(0.0, drift.x);
+  current_drift_.y = SensorModelGaussianKernel(0.0, drift.y);
+  current_drift_.z = SensorModelGaussianKernel(0.0, drift.z);
+  current_error_ = math::Vector3();
 }
 
 template <typename T>
