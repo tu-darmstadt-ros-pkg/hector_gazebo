@@ -254,8 +254,8 @@ void GazeboRosIMU::Update()
   }
 
   // update sensor models
-  accel = accel + accelModel.update(dt);
-  rate  = rate  + rateModel.update(dt);
+  accel = accelModel(accel, dt);
+  rate  = rateModel(rate, dt);
   yawModel.update(dt);
   ROS_DEBUG_NAMED("gazebo_ros_imu", "Current bias errors: accel = [%g %g %g], rate = [%g %g %g], yaw = %g",
                  accelModel.getCurrentBias().x, accelModel.getCurrentBias().y, accelModel.getCurrentBias().z,

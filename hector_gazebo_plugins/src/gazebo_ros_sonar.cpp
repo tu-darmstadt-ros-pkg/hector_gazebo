@@ -139,7 +139,7 @@ void GazeboRosSonar::Update()
 
   // add Gaussian noise (and limit to min/max range)
   if (range_.range < range_.max_range) {
-    range_.range += sensor_model_.update(dt);
+    range_.range = sensor_model_(range_.range, dt);
     if (range_.range < range_.min_range) range_.range = range_.min_range;
     if (range_.range > range_.max_range) range_.range = range_.max_range;
   }
