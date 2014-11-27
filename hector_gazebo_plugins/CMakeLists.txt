@@ -4,7 +4,7 @@ project(hector_gazebo_plugins)
 ## Find catkin macros and libraries
 ## if COMPONENTS list like find_package(catkin REQUIRED COMPONENTS xyz)
 ## is used, also find other catkin packages
-find_package(catkin REQUIRED COMPONENTS roscpp std_msgs std_srvs geometry_msgs nav_msgs tf)
+find_package(catkin REQUIRED COMPONENTS roscpp std_msgs std_srvs geometry_msgs nav_msgs tf dynamic_reconfigure)
 include_directories(include ${catkin_INCLUDE_DIRS})
 
 ## Find gazebo
@@ -39,6 +39,12 @@ generate_messages(
   DEPENDENCIES geometry_msgs
 )
 
+#add dynamic reconfigure api
+generate_dynamic_reconfigure_options(
+  cfg/SensorModel.cfg
+  cfg/GNSS.cfg
+)
+
 ###################################
 ## catkin specific configuration ##
 ###################################
@@ -70,16 +76,19 @@ target_link_libraries(hector_gazebo_reset_plugin ${GAZEBO_LIBRARIES} ${catkin_LI
 
 add_library(hector_gazebo_ros_imu src/gazebo_ros_imu.cpp)
 target_link_libraries(hector_gazebo_ros_imu ${Boost_LIBRARIES} ${GAZEBO_LIBRARIES} ${catkin_LIBRARIES})
-add_dependencies(hector_gazebo_ros_imu ${PROJECT_NAME}_generate_messages_cpp)
+add_dependencies(hector_gazebo_ros_imu ${PROJECT_NAME}_generate_messages_cpp ${PROJECT_NAME}_gencfg)
 
 add_library(hector_gazebo_ros_magnetic src/gazebo_ros_magnetic.cpp)
 target_link_libraries(hector_gazebo_ros_magnetic ${GAZEBO_LIBRARIES} ${catkin_LIBRARIES})
+add_dependencies(hector_gazebo_ros_magnetic ${PROJECT_NAME}_gencfg)
 
 add_library(hector_gazebo_ros_gps src/gazebo_ros_gps.cpp)
 target_link_libraries(hector_gazebo_ros_gps ${GAZEBO_LIBRARIES} ${catkin_LIBRARIES})
+add_dependencies(hector_gazebo_ros_gps ${PROJECT_NAME}_gencfg)
 
 add_library(hector_gazebo_ros_sonar src/gazebo_ros_sonar.cpp)
 target_link_libraries(hector_gazebo_ros_sonar ${GAZEBO_LIBRARIES} ${catkin_LIBRARIES})
+add_dependencies(hector_gazebo_ros_sonar ${PROJECT_NAME}_gencfg)
 
 add_library(hector_servo_plugin src/servo_plugin.cpp)
 target_link_libraries(hector_servo_plugin ${Boost_LIBRARIES} ${GAZEBO_LIBRARIES} ${catkin_LIBRARIES})

@@ -45,6 +45,12 @@
 #include <hector_gazebo_plugins/sensor_model.h>
 #include <hector_gazebo_plugins/update_timer.h>
 
+#include <dynamic_reconfigure/server.h>
+
+namespace dynamic_reconfigure {
+  template <class ConfigType> class Server;
+}
+
 namespace gazebo
 {
    class GazeboRosIMU : public ModelPlugin
@@ -128,6 +134,8 @@ namespace gazebo
 
       UpdateTimer updateTimer;
       event::ConnectionPtr updateConnection;
+
+      boost::shared_ptr<dynamic_reconfigure::Server<SensorModelConfig> > dynamic_reconfigure_server_accel_, dynamic_reconfigure_server_rate_, dynamic_reconfigure_server_yaw_;
    };
 }
 

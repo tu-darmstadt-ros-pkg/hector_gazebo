@@ -32,7 +32,12 @@
 #include <sdf/sdf.hh>
 #include <gazebo/math/Vector3.hh>
 
+#include <hector_gazebo_plugins/SensorModelConfig.h>
+#include <numeric>
+
 namespace gazebo {
+
+using hector_gazebo_plugins::SensorModelConfig;
 
 template <typename T>
 class SensorModel_ {
@@ -55,6 +60,8 @@ public:
   virtual const T& getScaleError() const { return scale_error; }
 
   virtual void setCurrentDrift(const T& new_drift) { current_drift_ = new_drift; }
+
+  virtual void dynamicReconfigureCallback(SensorModelConfig &config, uint32_t level);
 
 private:
   virtual bool LoadImpl(sdf::ElementPtr _element, T& _value);
@@ -195,6 +202,30 @@ void SensorModel_<T>::reset(const T& value)
 {
   current_drift_ = value;
   current_error_ = T();
+}
+
+namespace helpers {
+  template <typename T> struct scalar_value { static double toDouble(const T &orig) { return orig; } };
+  template <typename T> struct scalar_value<std::vector<T> > { static double toDouble(const std::vector<T> &orig) { return (double) std::accumulate(orig.begin(), orig.end()) / orig.size(); } };
+  template <> struct scalar_value<math::Vector3> { static double toDouble(const math::Vector3 &orig) { return (orig.x + orig.y + orig.z) / 3; } };
+}
+
+template <typename T>
+void SensorModel_<T>::dynamicReconfigureCallback(SensorModelConfig &config, uint32_t level)
+{
+  if (level == 1) {
+    gaussian_noise  = config.gaussian_noise;
+    offset          = config.offset;
+    drift           = config.drift;
+    drift_frequency = config.drift_frequency;
+    scale_error     = config.scale_error;
+  } else {
+    config.gaussian_noise  = helpers::scalar_value<T>::toDouble(gaussian_noise);
+    config.offset          = helpers::scalar_value<T>::toDouble(offset);
+    config.drift           = helpers::scalar_value<T>::toDouble(drift);
+    config.drift_frequency = helpers::scalar_value<T>::toDouble(drift_frequency);
+    config.scale_error     = helpers::scalar_value<T>::toDouble(scale_error);
+  }
 }
 
 typedef SensorModel_<double> SensorModel;

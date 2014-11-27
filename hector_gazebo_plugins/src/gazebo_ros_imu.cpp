@@ -31,6 +31,7 @@
 #include <gazebo/physics/physics.hh>
 
 #include <ros/console.h>
+#include <dynamic_reconfigure/server.h>
 
 namespace gazebo
 {
@@ -52,6 +53,10 @@ GazeboRosIMU::GazeboRosIMU()
 GazeboRosIMU::~GazeboRosIMU()
 {
   updateTimer.Disconnect(updateConnection);
+
+  dynamic_reconfigure_server_accel_.reset();
+  dynamic_reconfigure_server_rate_.reset();
+  dynamic_reconfigure_server_yaw_.reset();
 
   node_handle_->shutdown();
 #ifdef USE_CBQ
@@ -178,6 +183,16 @@ void GazeboRosIMU::Load(physics::ModelPtr _model, sdf::ElementPtr _sdf)
   // connect Update function
   updateTimer.Load(world, _sdf);
   updateConnection = updateTimer.Connect(boost::bind(&GazeboRosIMU::Update, this));
+
+  // setup dynamic_reconfigure servers
+  if (!topic_.empty()) {
+    dynamic_reconfigure_server_accel_.reset(new dynamic_reconfigure::Server<SensorModelConfig>(ros::NodeHandle(*node_handle_, topic_ + "/accel")));
+    dynamic_reconfigure_server_rate_.reset(new dynamic_reconfigure::Server<SensorModelConfig>(ros::NodeHandle(*node_handle_, topic_ + "/rate")));
+    dynamic_reconfigure_server_yaw_.reset(new dynamic_reconfigure::Server<SensorModelConfig>(ros::NodeHandle(*node_handle_, topic_ + "/yaw")));
+    dynamic_reconfigure_server_accel_->setCallback(boost::bind(&SensorModel3::dynamicReconfigureCallback, &accelModel, _1, _2));
+    dynamic_reconfigure_server_rate_->setCallback(boost::bind(&SensorModel3::dynamicReconfigureCallback, &rateModel, _1, _2));
+    dynamic_reconfigure_server_yaw_->setCallback(boost::bind(&SensorModel::dynamicReconfigureCallback, &yawModel, _1, _2));
+  }
 }
 
 void GazeboRosIMU::Reset()
