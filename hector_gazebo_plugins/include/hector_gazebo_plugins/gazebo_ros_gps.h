@@ -37,6 +37,9 @@
 #include <hector_gazebo_plugins/sensor_model.h>
 #include <hector_gazebo_plugins/update_timer.h>
 
+#include <dynamic_reconfigure/server.h>
+#include <hector_gazebo_plugins/GNSSConfig.h>
+
 namespace gazebo
 {
 
@@ -50,6 +53,9 @@ protected:
   virtual void Load(physics::ModelPtr _model, sdf::ElementPtr _sdf);
   virtual void Reset();
   virtual void Update();
+
+  typedef hector_gazebo_plugins::GNSSConfig GNSSConfig;
+  void dynamicReconfigureCallback(GNSSConfig &config, uint32_t level);
 
 private:
   /// \brief The parent World
@@ -75,8 +81,6 @@ private:
   double reference_longitude_;
   double reference_heading_;
   double reference_altitude_;
-  sensor_msgs::NavSatStatus::_status_type status_;
-  sensor_msgs::NavSatStatus::_service_type service_;
 
   double radius_north_;
   double radius_east_;
@@ -86,6 +90,9 @@ private:
 
   UpdateTimer updateTimer;
   event::ConnectionPtr updateConnection;
+
+  boost::shared_ptr<dynamic_reconfigure::Server<SensorModelConfig> > dynamic_reconfigure_server_position_, dynamic_reconfigure_server_velocity_;
+  boost::shared_ptr<dynamic_reconfigure::Server<GNSSConfig> > dynamic_reconfigure_server_status_;
 };
 
 } // namespace gazebo

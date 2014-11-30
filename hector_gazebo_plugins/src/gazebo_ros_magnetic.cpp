@@ -46,6 +46,9 @@ GazeboRosMagnetic::GazeboRosMagnetic()
 GazeboRosMagnetic::~GazeboRosMagnetic()
 {
   updateTimer.Disconnect(updateConnection);
+
+  dynamic_reconfigure_server_.reset();
+
   node_handle_->shutdown();
   delete node_handle_;
 }
@@ -128,6 +131,10 @@ void GazeboRosMagnetic::Load(physics::ModelPtr _model, sdf::ElementPtr _sdf)
 
   node_handle_ = new ros::NodeHandle(namespace_);
   publisher_ = node_handle_->advertise<geometry_msgs::Vector3Stamped>(topic_, 1);
+
+  // setup dynamic_reconfigure server
+  dynamic_reconfigure_server_.reset(new dynamic_reconfigure::Server<SensorModelConfig>(ros::NodeHandle(*node_handle_, topic_)));
+  dynamic_reconfigure_server_->setCallback(boost::bind(&SensorModel3::dynamicReconfigureCallback, &sensor_model_, _1, _2));
 
   Reset();
 

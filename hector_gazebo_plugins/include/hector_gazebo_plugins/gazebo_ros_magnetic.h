@@ -36,6 +36,8 @@
 #include <hector_gazebo_plugins/sensor_model.h>
 #include <hector_gazebo_plugins/update_timer.h>
 
+#include <dynamic_reconfigure/server.h>
+
 namespace gazebo
 {
 
@@ -77,6 +79,8 @@ private:
 
   UpdateTimer updateTimer;
   event::ConnectionPtr updateConnection;
+
+  boost::shared_ptr<dynamic_reconfigure::Server<SensorModelConfig> > dynamic_reconfigure_server_;
 };
 
 } // namespace gazebo

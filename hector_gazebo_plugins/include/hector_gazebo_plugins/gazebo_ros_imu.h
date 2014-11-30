@@ -47,10 +47,6 @@
 
 #include <dynamic_reconfigure/server.h>
 
-namespace dynamic_reconfigure {
-  template <class ConfigType> class Server;
-}
-
 namespace gazebo
 {
    class GazeboRosIMU : public ModelPlugin
