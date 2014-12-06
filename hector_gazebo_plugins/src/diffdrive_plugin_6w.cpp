@@ -237,7 +237,7 @@ void DiffDrivePlugin6W::Update()
     joints[REAR_RIGHT]->SetMaxForce(0, torque);
   }
 
-  //publish_odometry();
+  publish_odometry();
 }
 
 // NEW: Now uses the target velocities from the ROS message, not the Iface 
