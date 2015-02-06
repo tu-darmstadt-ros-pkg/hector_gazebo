@@ -1,0 +1,12 @@
+<?xml version="1.0"?>
+
+<launch>
+  
+  <arg name="args" default=""/>
+  
+  <include file="$(find hector_gazebo_worlds)/launch/start.launch">
+    <arg name="world" value="$(find hector_gazebo_worlds)/worlds/drc_final_qual_4_step_block.world"/>
+    <arg name="args" default="$(arg args)"/>
+  </include>
+
+</launch>
