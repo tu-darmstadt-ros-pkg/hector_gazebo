@@ -84,12 +84,32 @@
       </link>
       <static>true</static>
     </model>
-    <physics type='ode'>
-      <max_step_size>0.001</max_step_size>
-      <real_time_factor>1</real_time_factor>
+    <physics type="ode">
+      <gravity>0 0 -9.81</gravity>
+      <simbody>
+        <accuracy>0.005</accuracy>
+        <max_transient_velocity>0.005</max_transient_velocity>
+        <contact>
+          <stiffness>1e8</stiffness>
+          <dissipation>20.0</dissipation>
+        </contact>
+      </simbody>
+      <ode>
+        <solver>
+          <use_dynamic_moi_rescaling>true</use_dynamic_moi_rescaling>
+          <type>quick</type>
+          <iters>200</iters>
+          <sor>1.0</sor>
+        </solver>
+        <constraints>
+          <cfm>0.0</cfm>
+          <erp>0.2</erp>
+          <contact_max_correcting_vel>100.0</contact_max_correcting_vel>
+          <contact_surface_layer>0.0</contact_surface_layer>
+        </constraints>
+      </ode>
       <real_time_update_rate>1000</real_time_update_rate>
-      <gravity>0 0 -9.8</gravity>
-      <magnetic_field>5.5645e-06 2.28758e-05 -4.23884e-05</magnetic_field>
+      <max_step_size>0.001</max_step_size>
     </physics>
     <scene>
       <ambient>0.4 0.4 0.4 1</ambient>
