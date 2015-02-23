@@ -2,6 +2,9 @@
 Changelog for package hector_gazebo
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+0.3.5 (2015-02-23)
+------------------
+
 0.3.4 (2014-09-01)
 ------------------
 * Removed package gazebo_rtt_plugin
