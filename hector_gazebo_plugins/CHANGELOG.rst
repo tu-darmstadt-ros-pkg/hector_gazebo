@@ -4,6 +4,7 @@ Changelog for package hector_gazebo_plugins
 
 0.3.5 (2015-02-23)
 ------------------
+* fixed simulated IMU calibration
 * fill position_covariance in sensor_msgs/NavSatFix message from position error model in gazebo_ros_gps (fix #17)
 * added dynamic_reconfigure servers to gps, magneto and sonar plugins
   The GPS plugin allows to configure the status and server flags in the output message,

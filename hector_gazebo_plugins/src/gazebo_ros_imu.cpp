@@ -213,7 +213,7 @@ bool GazeboRosIMU::ServiceCallback(std_srvs::Empty::Request &req,
                                         std_srvs::Empty::Response &res)
 {
   boost::mutex::scoped_lock scoped_lock(lock);
-  rateModel.reset();
+  rateModel.reset(math::Vector3(0.0, 0.0, 0.0));
   return true;
 }
 
