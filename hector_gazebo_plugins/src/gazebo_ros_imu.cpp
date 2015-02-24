@@ -128,13 +128,18 @@ void GazeboRosIMU::Load(physics::ModelPtr _model, sdf::ElementPtr _sdf)
     }
   }
 
+  if (_sdf->HasElement("xyzOffset")) {
+    this->offset_.pos = _sdf->Get<math::Vector3>("xyzOffset");
+  } else {
+    ROS_INFO("imu plugin missing <xyzOffset>, defaults to 0s");
+    this->offset_.pos = math::Vector3(0, 0, 0);
+  }
+
   if (_sdf->HasElement("rpyOffset")) {
-    sdf::Vector3 rpyOffset;
-    if (_sdf->GetElement("rpyOffset")->GetValue()->Get(rpyOffset)) {
-      if (accelModel.offset.y == 0.0 && rpyOffset.x != 0.0) accelModel.offset.y =  rpyOffset.x * 9.8065;
-      if (accelModel.offset.x == 0.0 && rpyOffset.y != 0.0) accelModel.offset.x = -rpyOffset.y * 9.8065;
-      if (yawModel.offset == 0.0 && rpyOffset.z != 0.0)     yawModel.offset     =  rpyOffset.z;
-    }
+    this->offset_.rot = _sdf->Get<math::Vector3>("rpyOffset");
+  } else {
+    ROS_INFO("imu plugin missing <rpyOffset>, defaults to 0s");
+    this->offset_.rot = math::Vector3(0, 0, 0);
   }
 
   // fill in constant covariance matrix
@@ -242,6 +247,9 @@ void GazeboRosIMU::Update()
 
   // Get Pose/Orientation
   math::Pose pose = link->GetWorldPose();
+  // math::Vector3 pos = pose.pos + this->offset_.pos;
+  math::Quaternion rot = this->offset_.rot * pose.rot;
+  rot.Normalize();
 
   // get Gravity
   gravity = world->GetPhysicsEngine()->GetGravity();
@@ -252,14 +260,14 @@ void GazeboRosIMU::Update()
   // the result of GetRelativeLinearAccel() seems to be unreliable (sum of forces added during the current simulation step)?
   //accel = myBody->GetRelativeLinearAccel(); // get acceleration in body frame
   math::Vector3 temp = link->GetWorldLinearVel(); // get velocity in world frame
-  if (dt > 0.0) accel = pose.rot.RotateVectorReverse((temp - velocity) / dt - gravity);
+  if (dt > 0.0) accel = rot.RotateVectorReverse((temp - velocity) / dt - gravity);
   velocity = temp;
 
   // GetRelativeAngularVel() sometimes return nan?
   //rate  = link->GetRelativeAngularVel(); // get angular rate in body frame
-//  math::Quaternion delta = pose.rot - orientation;
-  math::Quaternion delta = orientation.GetInverse() * pose.rot;
-  orientation = pose.rot;
+//  math::Quaternion delta = rot - orientation;
+  math::Quaternion delta = this->orientation.GetInverse() * rot;
+  this->orientation = rot;
   if (dt > 0.0) {
     rate = 2.0 * acos(delta.w) * math::Vector3(delta.x, delta.y, delta.z).Normalize() / dt;
 //    rate.x = 2.0 * (-orientation.x * delta.w + orientation.w * delta.x + orientation.z * delta.y - orientation.y * delta.z) / dt;
@@ -280,26 +288,16 @@ void GazeboRosIMU::Update()
                  rateModel.getScaleError().x, rateModel.getScaleError().y, rateModel.getScaleError().z,
                  yawModel.getScaleError());
 
-  // apply accelerometer and yaw drift error to orientation (pseudo AHRS)
-  math::Vector3 accelDrift = pose.rot.RotateVector(accelModel.getCurrentBias());
-  double yawError = yawModel.getCurrentBias();
-  math::Quaternion orientationError(
-    math::Quaternion(cos(yawError/2), 0.0, 0.0, sin(yawError/2)) *                                         // yaw error
-    math::Quaternion(1.0, 0.5 * accelDrift.y / gravity_length, 0.5 * -accelDrift.x / gravity_length, 0.0)  // roll and pitch error
-  );
-  orientationError.Normalize();
-  pose.rot = orientationError * pose.rot;
-
   // copy data into pose message
   imuMsg.header.frame_id = frame_id_;
   imuMsg.header.stamp.sec = cur_time.sec;
   imuMsg.header.stamp.nsec = cur_time.nsec;
 
   // orientation quaternion
-  imuMsg.orientation.x = pose.rot.x;
-  imuMsg.orientation.y = pose.rot.y;
-  imuMsg.orientation.z = pose.rot.z;
-  imuMsg.orientation.w = pose.rot.w;
+  imuMsg.orientation.x = rot.x;
+  imuMsg.orientation.y = rot.y;
+  imuMsg.orientation.z = rot.z;
+  imuMsg.orientation.w = rot.w;
 
   // pass angular rates
   imuMsg.angular_velocity.x    = rate.x;
@@ -328,10 +326,6 @@ void GazeboRosIMU::Update()
   // publish bias
   if (bias_pub_) {
     biasMsg.header = imuMsg.header;
-    biasMsg.orientation.x = orientationError.x;
-    biasMsg.orientation.y = orientationError.y;
-    biasMsg.orientation.z = orientationError.z;
-    biasMsg.orientation.w = orientationError.w;
     biasMsg.angular_velocity.x = rateModel.getCurrentBias().x;
     biasMsg.angular_velocity.y = rateModel.getCurrentBias().y;
     biasMsg.angular_velocity.z = rateModel.getCurrentBias().z;
