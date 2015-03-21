@@ -89,6 +89,9 @@ namespace gazebo
       std::string topic_;
       std::string bias_topic_;
 
+      /// \brief allow specifying constant xyz and rpy offsets
+      math::Pose offset_;
+
       /// \brief Sensor models
       SensorModel3 accelModel;
       SensorModel3 rateModel;
