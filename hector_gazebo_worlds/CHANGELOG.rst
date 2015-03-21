@@ -2,6 +2,9 @@
 Changelog for package hector_gazebo_worlds
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+0.3.6 (2015-03-21)
+------------------
+
 0.3.5 (2015-02-23)
 ------------------
 * Change drc qual 4 settings to be same as current Atlas default

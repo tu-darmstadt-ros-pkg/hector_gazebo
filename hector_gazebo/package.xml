@@ -1,6 +1,6 @@
 <package>
   <name>hector_gazebo</name>
-  <version>0.3.5</version>
+  <version>0.3.6</version>
   <description>hector_gazebo provides packages related to to simulation of robots using gazebo (gazebo plugins, world files etc.)</description>
   <maintainer email="meyer@fsr.tu-darmstadt.de">Johannes Meyer</maintainer>
 

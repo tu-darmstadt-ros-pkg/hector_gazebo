@@ -2,6 +2,21 @@
 Changelog for package hector_gazebo_plugins
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+0.3.6 (2015-03-21)
+------------------
+* allow negative offsets in SensorModel dynamic_reconfigure config
+* fixed sporadic NaN values in gazebo_ros_imu's angular_velocity output (fix #20)
+* reintroduced orientation bias due to accelerometer and yaw sensor drift
+  This orientation bias was removed in 74b21b7, but there is no need for this.
+  The IMU can have a mounting offset and a bias error. To remove the bias error, set the accelerationDrift and yawDrift parameters to 0.
+* interpret parameters xyzOffset and rpyOffset as pure mounting offsets and not as induced by accelerometer bias (fix #18)
+  Obviously the SDF conversion assumes that all sensor plugins interpret the `<xyzOffset>` and `<rpyOffset>` parameters in the same way as an
+  additional sensor link which is connected with a static joint to the real parent frame. I was not aware that this is a requirement.
+  hector_gazebo_ros_imu interpreted the roll and pitch part of `<rpyOffset>` as an orientation offset caused by a (small) accelerometer bias.
+  This patch completely removes the bias error on the orientation output in the Imu message and the orientation quaternion in the bias message
+  is set to zero.
+* Contributors: Johannes Meyer
+
 0.3.5 (2015-02-23)
 ------------------
 * fixed simulated IMU calibration
