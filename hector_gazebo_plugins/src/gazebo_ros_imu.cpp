@@ -261,7 +261,7 @@ void GazeboRosIMU::Update()
   math::Quaternion delta = orientation.GetInverse() * pose.rot;
   orientation = pose.rot;
   if (dt > 0.0) {
-    rate = 2.0 * acos(delta.w) * math::Vector3(delta.x, delta.y, delta.z).Normalize() / dt;
+    rate = 2.0 * acos(std::max(std::min(delta.w, 1.0), -1.0)) * math::Vector3(delta.x, delta.y, delta.z).Normalize() / dt;
 //    rate.x = 2.0 * (-orientation.x * delta.w + orientation.w * delta.x + orientation.z * delta.y - orientation.y * delta.z) / dt;
 //    rate.y = 2.0 * (-orientation.y * delta.w - orientation.z * delta.x + orientation.w * delta.y + orientation.x * delta.z) / dt;
 //    rate.z = 2.0 * (-orientation.z * delta.w + orientation.y * delta.x - orientation.x * delta.y + orientation.w * delta.z) / dt;
