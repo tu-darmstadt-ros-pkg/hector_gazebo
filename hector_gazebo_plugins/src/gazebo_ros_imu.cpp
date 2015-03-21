@@ -263,16 +263,13 @@ void GazeboRosIMU::Update()
   if (dt > 0.0) accel = rot.RotateVectorReverse((temp - velocity) / dt - gravity);
   velocity = temp;
 
-  // GetRelativeAngularVel() sometimes return nan?
-  //rate  = link->GetRelativeAngularVel(); // get angular rate in body frame
-//  math::Quaternion delta = rot - orientation;
+  // calculate angular velocity from delta quaternion
+  // note: link->GetRelativeAngularVel() sometimes return nan?
+  // rate  = link->GetRelativeAngularVel(); // get angular rate in body frame
   math::Quaternion delta = this->orientation.GetInverse() * rot;
   this->orientation = rot;
   if (dt > 0.0) {
     rate = 2.0 * acos(delta.w) * math::Vector3(delta.x, delta.y, delta.z).Normalize() / dt;
-//    rate.x = 2.0 * (-orientation.x * delta.w + orientation.w * delta.x + orientation.z * delta.y - orientation.y * delta.z) / dt;
-//    rate.y = 2.0 * (-orientation.y * delta.w - orientation.z * delta.x + orientation.w * delta.y + orientation.x * delta.z) / dt;
-//    rate.z = 2.0 * (-orientation.z * delta.w + orientation.y * delta.x - orientation.x * delta.y + orientation.w * delta.z) / dt;
   }
 
   // update sensor models
@@ -287,6 +284,17 @@ void GazeboRosIMU::Update()
                  accelModel.getScaleError().x, accelModel.getScaleError().y, accelModel.getScaleError().z,
                  rateModel.getScaleError().x, rateModel.getScaleError().y, rateModel.getScaleError().z,
                  yawModel.getScaleError());
+
+
+  // apply accelerometer and yaw drift error to orientation (pseudo AHRS)
+  math::Vector3 accelDrift = pose.rot.RotateVector(accelModel.getCurrentBias());
+  double yawError = yawModel.getCurrentBias();
+  math::Quaternion orientationError(
+    math::Quaternion(cos(yawError/2), 0.0, 0.0, sin(yawError/2)) *                                         // yaw error
+    math::Quaternion(1.0, 0.5 * accelDrift.y / gravity_length, 0.5 * -accelDrift.x / gravity_length, 0.0)  // roll and pitch error
+  );
+  orientationError.Normalize();
+  rot = orientationError * rot;
 
   // copy data into pose message
   imuMsg.header.frame_id = frame_id_;
@@ -326,6 +334,10 @@ void GazeboRosIMU::Update()
   // publish bias
   if (bias_pub_) {
     biasMsg.header = imuMsg.header;
+    biasMsg.orientation.x = orientationError.x;
+    biasMsg.orientation.y = orientationError.y;
+    biasMsg.orientation.z = orientationError.z;
+    biasMsg.orientation.w = orientationError.w;
     biasMsg.angular_velocity.x = rateModel.getCurrentBias().x;
     biasMsg.angular_velocity.y = rateModel.getCurrentBias().y;
     biasMsg.angular_velocity.z = rateModel.getCurrentBias().z;
