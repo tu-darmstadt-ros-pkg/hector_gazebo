@@ -8,12 +8,18 @@ find_package(catkin REQUIRED COMPONENTS nodelet image_transport dynamic_reconfig
 include_directories(include ${catkin_INCLUDE_DIRS})
 
 ## Find gazebo
-include (FindPkgConfig)
-if (PKG_CONFIG_FOUND)
-  pkg_check_modules(GAZEBO gazebo)
-endif()
+find_package(gazebo REQUIRED)
 include_directories(${GAZEBO_INCLUDE_DIRS})
 link_directories(${GAZEBO_LIBRARY_DIRS})
+
+## Find OGRE and OGRE-Paging (required for CameraPlugin.hh in Gazebo 5)
+include (FindPkgConfig)
+if (PKG_CONFIG_FOUND)
+  pkg_check_modules(OGRE OGRE)
+  pkg_check_modules(OGRE-Paging OGRE-Paging)
+endif()
+include_directories(${OGRE_INCLUDE_DIRS} ${OGRE-Paging_INCLUDE_DIRS})
+link_directories(${OGRE_LIBRARY_DIRS} ${OGRE-Paging_LIBRARY_DIRS})
 
 ## Find Boost
 find_package(Boost REQUIRED COMPONENTS thread)
