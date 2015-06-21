@@ -4,7 +4,15 @@ project(hector_gazebo_thermal_camera)
 ## Find catkin macros and libraries
 ## if COMPONENTS list like find_package(catkin REQUIRED COMPONENTS xyz)
 ## is used, also find other catkin packages
-find_package(catkin REQUIRED COMPONENTS nodelet image_transport dynamic_reconfigure driver_base gazebo_plugins)
+find_package(catkin REQUIRED COMPONENTS 
+  nodelet 
+  image_transport 
+  dynamic_reconfigure 
+  driver_base 
+  gazebo_msgs
+  gazebo_plugins
+)
+
 include_directories(include ${catkin_INCLUDE_DIRS})
 
 ## Find gazebo
