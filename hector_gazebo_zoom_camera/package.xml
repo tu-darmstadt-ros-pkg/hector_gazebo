@@ -1,0 +1,23 @@
+<?xml version="1.0"?>
+<package>
+  <name>hector_gazebo_zoom_camera</name>
+  <version>0.0.0</version>
+  <description>The hector_gazebo_zoom_camera package</description>
+
+  <author email="kohlbrecher@sim.tu-darmstadt.de">Stefan Kohlbrecher</author>
+
+  <maintainer email="kohlbrecher@sim.tu-darmstadt.de">Stefan Kohlbrecher</maintainer>
+
+  <license>BSD, Apache 2.0</license>
+
+  <buildtool_depend>catkin</buildtool_depend>
+  <build_depend>gazebo_plugins</build_depend>
+  <build_depend>gazebo_ros</build_depend>
+  <build_depend>roscpp</build_depend>
+  <run_depend>gazebo_plugins</run_depend>
+  <run_depend>gazebo_ros</run_depend>
+  <run_depend>roscpp</run_depend>
+
+  <export>
+  </export>
+</package>
