@@ -16,6 +16,8 @@ link_directories(${GAZEBO_LIBRARY_DIRS})
 find_package(Boost REQUIRED COMPONENTS thread)
 include_directories(${Boost_INCLUDE_DIRS})
 
+set(CMAKE_CXX_FLAGS "-std=c++11 ${CMAKE_CXX_FLAGS}")
+
 #######################################
 ## Declare ROS messages and services ##
 #######################################

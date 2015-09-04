@@ -12,6 +12,8 @@ find_package(gazebo REQUIRED)
 include_directories(${GAZEBO_INCLUDE_DIRS})
 link_directories(${GAZEBO_LIBRARY_DIRS})
 
+set(CMAKE_CXX_FLAGS "-std=c++11 ${CMAKE_CXX_FLAGS}")
+
 ## Find OGRE and OGRE-Paging (required for CameraPlugin.hh in Gazebo 5)
 include (FindPkgConfig)
 if (PKG_CONFIG_FOUND)
