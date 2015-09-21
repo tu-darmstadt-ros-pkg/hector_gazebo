@@ -135,7 +135,96 @@ void GazeboRosZoomCamera::fovCallback(const std_msgs::Float64::ConstPtr& msg)
 {
   double new_fov = default_fov_ * msg->data;
   std::cout << "new_fov: " << new_fov << "\n";
+
   this->camera_->SetHFOV(new_fov);
+
+  // Have to set this var manually as only set when reading sdf params
+  // of gazebo_ros_camera_utils. Gets set to proper value few lines below
+  this->focal_length_ = 0;
+
+  // Below code copied from Init (which is private)
+  // Doing things nicer would require some refactoring in
+  // gazebo_ros_camera_utils
+  double computed_focal_length =
+    (static_cast<double>(this->width_)) /
+    (2.0 * tan(this->camera_->GetHFOV().Radian() / 2.0));
+
+  if (this->focal_length_ == 0)
+  {
+    this->focal_length_ = computed_focal_length;
+  }
+  else
+  {
+    // check against float precision
+    if (!gazebo::math::equal(this->focal_length_, computed_focal_length))
+    {
+      ROS_WARN("The <focal_length>[%f] you have provided for camera_ [%s]"
+               " is inconsistent with specified image_width [%d] and"
+               " HFOV [%f].   Please double check to see that"
+               " focal_length = width_ / (2.0 * tan(HFOV/2.0)),"
+               " the explected focal_lengtth value is [%f],"
+               " please update your camera_ model description accordingly.",
+                this->focal_length_, this->parentSensor_->GetName().c_str(),
+                this->width_, this->camera_->GetHFOV().Radian(),
+                computed_focal_length);
+    }
+  }
+
+  // fill CameraInfo
+  sensor_msgs::CameraInfo camera_info_msg;
+
+  camera_info_msg.header.frame_id = this->frame_name_;
+
+  camera_info_msg.height = this->height_;
+  camera_info_msg.width  = this->width_;
+  // distortion
+#if ROS_VERSION_MINIMUM(1, 3, 0)
+  camera_info_msg.distortion_model = "plumb_bob";
+  camera_info_msg.D.resize(5);
+#endif
+  camera_info_msg.D[0] = this->distortion_k1_;
+  camera_info_msg.D[1] = this->distortion_k2_;
+  camera_info_msg.D[2] = this->distortion_k3_;
+  camera_info_msg.D[3] = this->distortion_t1_;
+  camera_info_msg.D[4] = this->distortion_t2_;
+  // original camera_ matrix
+  camera_info_msg.K[0] = this->focal_length_;
+  camera_info_msg.K[1] = 0.0;
+  camera_info_msg.K[2] = this->cx_;
+  camera_info_msg.K[3] = 0.0;
+  camera_info_msg.K[4] = this->focal_length_;
+  camera_info_msg.K[5] = this->cy_;
+  camera_info_msg.K[6] = 0.0;
+  camera_info_msg.K[7] = 0.0;
+  camera_info_msg.K[8] = 1.0;
+  // rectification
+  camera_info_msg.R[0] = 1.0;
+  camera_info_msg.R[1] = 0.0;
+  camera_info_msg.R[2] = 0.0;
+  camera_info_msg.R[3] = 0.0;
+  camera_info_msg.R[4] = 1.0;
+  camera_info_msg.R[5] = 0.0;
+  camera_info_msg.R[6] = 0.0;
+  camera_info_msg.R[7] = 0.0;
+  camera_info_msg.R[8] = 1.0;
+  // camera_ projection matrix (same as camera_ matrix due
+  // to lack of distortion/rectification) (is this generated?)
+  camera_info_msg.P[0] = this->focal_length_;
+  camera_info_msg.P[1] = 0.0;
+  camera_info_msg.P[2] = this->cx_;
+  camera_info_msg.P[3] = -this->focal_length_ * this->hack_baseline_;
+  camera_info_msg.P[4] = 0.0;
+  camera_info_msg.P[5] = this->focal_length_;
+  camera_info_msg.P[6] = this->cy_;
+  camera_info_msg.P[7] = 0.0;
+  camera_info_msg.P[8] = 0.0;
+  camera_info_msg.P[9] = 0.0;
+  camera_info_msg.P[10] = 1.0;
+  camera_info_msg.P[11] = 0.0;
+
+  this->camera_info_manager_->setCameraInfo(camera_info_msg);
+
+
 }
 
 
