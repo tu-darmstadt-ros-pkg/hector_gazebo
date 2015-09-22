@@ -116,6 +116,14 @@ namespace gazebo
     {
       odometry_rate_ = sdf->GetElement("odometryRate")->Get<double>();
     } 
+
+    this->publish_odometry_tf_ = true;
+    if (!sdf->HasElement("publishOdometryTf")) {
+      ROS_WARN("PlanarMovePlugin Plugin (ns = %s) missing <publishOdometryTf>, defaults to %s",
+               this->robot_namespace_.c_str(), this->publish_odometry_tf_ ? "true" : "false");
+    } else {
+      this->publish_odometry_tf_ = sdf->GetElement("publishOdometryTf")->Get<bool>();
+    }
  
     last_odom_publish_time_ = parent_->GetWorld()->GetSimTime();
     last_odom_pose_ = parent_->GetWorldPose();
@@ -139,7 +147,9 @@ namespace gazebo
         robot_namespace_.c_str());
 
     tf_prefix_ = tf::getPrefixParam(*rosnode_);
-    transform_broadcaster_.reset(new tf::TransformBroadcaster());
+
+    if (publish_odometry_tf_)
+      transform_broadcaster_.reset(new tf::TransformBroadcaster());
 
     // subscribe to the odometry topic
     ros::SubscribeOptions so =
@@ -240,9 +250,13 @@ namespace gazebo
     tf::Vector3 vt(pose.pos.x, pose.pos.y, pose.pos.z);
 
     tf::Transform base_footprint_to_odom(qt, vt);
-    transform_broadcaster_->sendTransform(
-        tf::StampedTransform(base_footprint_to_odom, current_time, odom_frame,
-            base_footprint_frame));
+
+    //Do not publish odom tf if disabled via sdf parameters
+    if (transform_broadcaster_.get()){
+      transform_broadcaster_->sendTransform(
+          tf::StampedTransform(base_footprint_to_odom, current_time, odom_frame,
+              base_footprint_frame));
+    }
 
     // publish odom topic
     odom_.pose.pose.position.x = pose.pos.x;

@@ -83,6 +83,7 @@ namespace gazebo {
       std::string odometry_frame_;
       std::string robot_base_frame_;
       double odometry_rate_;
+      bool publish_odometry_tf_;
 
       // Custom Callback Queue
       ros::CallbackQueue queue_;
