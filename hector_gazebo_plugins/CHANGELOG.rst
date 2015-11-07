@@ -2,6 +2,11 @@
 Changelog for package hector_gazebo_plugins
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+0.4.0 (2015-11-07)
+------------------
+* Added proper dependencies for jade and gazebo5. Now compiles and works for gazebo5
+* Contributors: L0g1x
+
 0.3.7 (2015-11-07)
 ------------------
 * gazebo_ros_force_based_move: Disable odom tf publishing if set in sdf params
