@@ -2,6 +2,13 @@
 Changelog for package hector_gazebo_plugins
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+0.3.7 (2015-11-07)
+------------------
+* gazebo_ros_force_based_move: Disable odom tf publishing if set in sdf params
+* gazebo_ros_force_based_move: Add plugin for applying forces based on cmd_vel input (allows simulation of tracked vehicles)
+* hector_gazebo_plugins/hector_gazebo_thermal_camera: switch to cmake configuration for gazebo and added OGRE include directories required for CameraPlugin.hh
+* Contributors: Johannes Meyer, kohlbrecher
+
 0.3.6 (2015-03-21)
 ------------------
 * allow negative offsets in SensorModel dynamic_reconfigure config
