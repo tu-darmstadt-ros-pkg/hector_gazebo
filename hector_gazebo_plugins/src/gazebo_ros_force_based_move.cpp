@@ -88,6 +88,24 @@ namespace gazebo
     {
       odometry_frame_ = sdf->GetElement("odometryFrame")->Get<std::string>();
     }
+    
+    
+    torque_yaw_velocity_p_gain_ = 100.0;
+    force_x_velocity_p_gain_ = 10000.0;
+    force_y_velocity_p_gain_ = 10000.0;
+    
+    if (sdf->HasElement("yaw_velocity_p_gain"))
+      (sdf->GetElement("yaw_velocity_p_gain")->GetValue()->Get(torque_yaw_velocity_p_gain_));
+
+    if (sdf->HasElement("x_velocity_p_gain"))
+      (sdf->GetElement("x_velocity_p_gain")->GetValue()->Get(force_x_velocity_p_gain_));
+
+    if (sdf->HasElement("y_velocity_p_gain"))
+      (sdf->GetElement("y_velocity_p_gain")->GetValue()->Get(force_y_velocity_p_gain_));
+      
+    ROS_INFO_STREAM("ForceBasedMove using gains: yaw: " << torque_yaw_velocity_p_gain_ <<
+                                                 " x: " << force_x_velocity_p_gain_ <<
+                                                 " y: " << force_y_velocity_p_gain_ << "\n");
 
     robot_base_frame_ = "base_footprint";
     if (!sdf->HasElement("robotBaseFrame")) 
@@ -181,14 +199,14 @@ namespace gazebo
 
     double error = angular_vel.z - rot_;
 
-    link_->AddTorque(math::Vector3(0.0, 0.0, -error * 100.0));
+    link_->AddTorque(math::Vector3(0.0, 0.0, -error * torque_yaw_velocity_p_gain_));
 
     float yaw = pose.rot.GetYaw();
 
     math::Vector3 linear_vel = parent_->GetRelativeLinearVel();
 
-    link_->AddRelativeForce(math::Vector3((x_ - linear_vel.x)* 10000,
-                                          (y_ - linear_vel.y)* 10000,
+    link_->AddRelativeForce(math::Vector3((x_ - linear_vel.x)* force_x_velocity_p_gain_,
+                                          (y_ - linear_vel.y)* force_y_velocity_p_gain_,
                                           0.0));
     //parent_->PlaceOnNearestEntityBelow();
     //parent_->SetLinearVel(math::Vector3(
