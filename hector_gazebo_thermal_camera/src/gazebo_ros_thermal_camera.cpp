@@ -174,20 +174,22 @@ void GazeboRosThermalCamera_<Base>::PutCameraData(const unsigned char *_src)
     size_t img_index = 0;
 
     for (size_t i = 0; i < size; i = i+2){
-      uint16_t temp = 0;
+      float temp = 0;
       if ((_src[img_index] >254) && (_src[img_index+1] < 1) && (_src[img_index+2] < 1)){
         //RGB [255,0,0] translates to white (white hot)
-        temp = (273.15 + 100);
+        temp = (273.15 + 100.0);
 
       }else{
         //Everything else is written to the MONO18 output image much darker
-        uint16_t pixel_temp = (_src[img_index] + _src[img_index+1] + _src[img_index+2]) / 3;
-        temp = (pixel_temp*0.05 + 273.15);
+        float pixel_temp = (_src[img_index] + _src[img_index+1] + _src[img_index+2]) / 3.0;
+        temp = 273.15 + (pixel_temp*0.05);
       }
       float faktor = 25;
-      temp = faktor * temp;
-      data[i]= (uint8_t)(temp << 8);
-      data[i+1]= (uint8_t) temp;
+      uint16_t temp_16 = (uint16_t) (faktor * temp);
+
+      data[i]= (uint8_t) temp_16;
+      data[i+1]= (uint8_t)(temp_16 >> 8);
+
       img_index += 3;
     }
 
