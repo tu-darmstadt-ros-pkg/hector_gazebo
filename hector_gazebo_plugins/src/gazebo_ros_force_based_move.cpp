@@ -150,6 +150,8 @@ namespace gazebo
     rot_ = 0;
     alive_ = true;
 
+    odom_transform_.setIdentity();
+
     // Ensure that ROS has been initialized and subscribe to cmd_vel
     if (!ros::isInitialized()) 
     {
@@ -277,6 +279,7 @@ namespace gazebo
     }
 
     // publish odom topic
+    /*
     odom_.pose.pose.position.x = pose.pos.x;
     odom_.pose.pose.position.y = pose.pos.y;
 
@@ -284,6 +287,7 @@ namespace gazebo
     odom_.pose.pose.orientation.y = pose.rot.y;
     odom_.pose.pose.orientation.z = pose.rot.z;
     odom_.pose.pose.orientation.w = pose.rot.w;
+    */
     odom_.pose.covariance[0] = 0.00001;
     odom_.pose.covariance[7] = 0.00001;
     odom_.pose.covariance[14] = 1000000000000.0;
@@ -291,7 +295,19 @@ namespace gazebo
     odom_.pose.covariance[28] = 1000000000000.0;
     odom_.pose.covariance[35] = 0.001;
 
+
+    math::Vector3 angular_vel = parent_->GetRelativeAngularVel();
+    math::Vector3 linear_vel = parent_->GetRelativeLinearVel();
+
+    odom_transform_= odom_transform_ * this->getTransformForMotion(linear_vel.x, angular_vel.z, step_time);
+
+    tf::poseTFToMsg(odom_transform_, odom_.pose.pose);
+    odom_.twist.twist.angular.z = angular_vel.z;
+    odom_.twist.twist.linear.x  = linear_vel.x;
+
+
     // get velocity in /odom frame
+    /*
     math::Vector3 linear;
     linear.x = (pose.pos.x - last_odom_pose_.pos.x) / step_time;
     linear.y = (pose.pos.y - last_odom_pose_.pos.y) / step_time;
@@ -311,16 +327,58 @@ namespace gazebo
     }
     last_odom_pose_ = pose;
 
+
     // convert velocity to child_frame_id (aka base_footprint)
     float yaw = pose.rot.GetYaw();
     odom_.twist.twist.linear.x = cosf(yaw) * linear.x + sinf(yaw) * linear.y;
     odom_.twist.twist.linear.y = cosf(yaw) * linear.y - sinf(yaw) * linear.x;
+    */
 
     odom_.header.stamp = current_time;
     odom_.header.frame_id = odom_frame;
     odom_.child_frame_id = base_footprint_frame;
 
     odometry_pub_.publish(odom_);
+  }
+
+
+  tf::Transform GazeboRosForceBasedMove::getTransformForMotion(double linear_vel_x, double angular_vel, double timeSeconds) const
+  {
+    tf::Transform tmp;
+    tmp.setIdentity();
+
+    /*
+    if (linear_vel_x == 0.0) {
+      //if we turn in place, we don't have any translation
+      float rotation = angular_vel * timeSeconds;
+      tmp.setRotation(tf::createQuaternionFromRPY(0.0, 0.0, rotation));
+    }else{
+    */
+
+      //If we don't have a y component
+
+        if (std::abs(angular_vel) < 0.0001) {
+          //Drive straight
+          tmp.setOrigin(tf::Vector3(static_cast<double>(linear_vel_x*timeSeconds), 0.0, 0.0));
+        } else {
+          //Walk on circular arc
+          double distChange = linear_vel_x * timeSeconds;
+          double angleChange = angular_vel * timeSeconds;
+
+          double arcRadius = distChange / angleChange;
+
+          //std::cout << "d: " << distChange << " a: " << angleChange << " radius: " << arcRadius <<" \n";
+
+          tmp.setOrigin(tf::Vector3(std::sin(angleChange) * arcRadius,
+                                    arcRadius - std::cos(angleChange) * arcRadius,
+                                    0.0));
+          tmp.setRotation(tf::createQuaternionFromYaw(angleChange));
+       }
+
+        std::cout << "tx: " << tmp.getOrigin().x() << " ty: " << tmp.getOrigin().y() << "\n";
+    //}
+
+    return tmp;
   }
 
   GZ_REGISTER_MODEL_PLUGIN(GazeboRosForceBasedMove)
