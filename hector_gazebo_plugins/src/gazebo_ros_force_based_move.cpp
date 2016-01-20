@@ -264,19 +264,20 @@ namespace gazebo
       tf::resolve(tf_prefix_, robot_base_frame_);
 
     // getting data for base_footprint to odom transform
-    math::Pose pose = this->parent_->GetWorldPose();
+    //math::Pose pose = this->parent_->GetWorldPose();
 
-    tf::Quaternion qt(pose.rot.x, pose.rot.y, pose.rot.z, pose.rot.w);
-    tf::Vector3 vt(pose.pos.x, pose.pos.y, pose.pos.z);
+    //tf::Quaternion qt(pose.rot.x, pose.rot.y, pose.rot.z, pose.rot.w);
+    //tf::Vector3 vt(pose.pos.x, pose.pos.y, pose.pos.z);
 
-    tf::Transform base_footprint_to_odom(qt, vt);
+    //tf::Transform base_footprint_to_odom(qt, vt);
+
 
     //Do not publish odom tf if disabled via sdf parameters
-    if (transform_broadcaster_.get()){
-      transform_broadcaster_->sendTransform(
-          tf::StampedTransform(base_footprint_to_odom, current_time, odom_frame,
-              base_footprint_frame));
-    }
+    //if (transform_broadcaster_.get()){
+    //  transform_broadcaster_->sendTransform(
+    //      tf::StampedTransform(base_footprint_to_odom, current_time, odom_frame,
+    //          base_footprint_frame));
+    //}
 
     // publish odom topic
     /*
@@ -338,6 +339,13 @@ namespace gazebo
     odom_.header.frame_id = odom_frame;
     odom_.child_frame_id = base_footprint_frame;
 
+    if (transform_broadcaster_.get()){
+      transform_broadcaster_->sendTransform(
+          tf::StampedTransform(odom_transform_, current_time, odom_frame,
+              base_footprint_frame));
+    }
+
+
     odometry_pub_.publish(odom_);
   }
 
@@ -347,36 +355,22 @@ namespace gazebo
     tf::Transform tmp;
     tmp.setIdentity();
 
-    /*
-    if (linear_vel_x == 0.0) {
-      //if we turn in place, we don't have any translation
-      float rotation = angular_vel * timeSeconds;
-      tmp.setRotation(tf::createQuaternionFromRPY(0.0, 0.0, rotation));
-    }else{
-    */
 
-      //If we don't have a y component
+    if (std::abs(angular_vel) < 0.0001) {
+      //Drive straight
+      tmp.setOrigin(tf::Vector3(static_cast<double>(linear_vel_x*timeSeconds), 0.0, 0.0));
+    } else {
+      //Follow circular arc
+      double distChange = linear_vel_x * timeSeconds;
+      double angleChange = angular_vel * timeSeconds;
 
-        if (std::abs(angular_vel) < 0.0001) {
-          //Drive straight
-          tmp.setOrigin(tf::Vector3(static_cast<double>(linear_vel_x*timeSeconds), 0.0, 0.0));
-        } else {
-          //Walk on circular arc
-          double distChange = linear_vel_x * timeSeconds;
-          double angleChange = angular_vel * timeSeconds;
+      double arcRadius = distChange / angleChange;
 
-          double arcRadius = distChange / angleChange;
-
-          //std::cout << "d: " << distChange << " a: " << angleChange << " radius: " << arcRadius <<" \n";
-
-          tmp.setOrigin(tf::Vector3(std::sin(angleChange) * arcRadius,
-                                    arcRadius - std::cos(angleChange) * arcRadius,
-                                    0.0));
-          tmp.setRotation(tf::createQuaternionFromYaw(angleChange));
-       }
-
-        std::cout << "tx: " << tmp.getOrigin().x() << " ty: " << tmp.getOrigin().y() << "\n";
-    //}
+      tmp.setOrigin(tf::Vector3(std::sin(angleChange) * arcRadius,
+                                arcRadius - std::cos(angleChange) * arcRadius,
+                                0.0));
+      tmp.setRotation(tf::createQuaternionFromYaw(angleChange));
+    }
 
     return tmp;
   }
