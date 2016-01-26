@@ -269,6 +269,28 @@ namespace gazebo
     odom_transform_= odom_transform_ * this->getTransformForMotion(linear_vel.x, angular_vel.z, step_time);
 
     tf::poseTFToMsg(odom_transform_, odom_.pose.pose);
+
+    if (true){
+      // getting data for base_footprint to odom transform
+      math::Pose pose = this->parent_->GetWorldPose();
+
+      tf::Quaternion qt(pose.rot.x, pose.rot.y, pose.rot.z, pose.rot.w);
+      tf::Vector3 vt(pose.pos.x, pose.pos.y, pose.pos.z);
+
+      tf::Transform base_footprint_to_odom(qt, vt);
+
+      odom_transform_ = base_footprint_to_odom;
+
+      odom_.pose.pose.position.x = pose.pos.x;
+      odom_.pose.pose.position.y = pose.pos.y;
+
+      odom_.pose.pose.orientation.x = pose.rot.x;
+      odom_.pose.pose.orientation.y = pose.rot.y;
+      odom_.pose.pose.orientation.z = pose.rot.z;
+      odom_.pose.pose.orientation.w = pose.rot.w;
+    }
+
+
     odom_.twist.twist.angular.z = angular_vel.z;
     odom_.twist.twist.linear.x  = linear_vel.x;
 
@@ -305,6 +327,8 @@ namespace gazebo
     }else{
       odom_.twist.covariance[35] = 100.0;
     }
+
+
 
 
 
