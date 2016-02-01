@@ -57,7 +57,7 @@ GazeboRosSonar::~GazeboRosSonar()
 void GazeboRosSonar::Load(sensors::SensorPtr _sensor, sdf::ElementPtr _sdf)
 {
   // Get then name of the parent sensor
-  sensor_ = boost::dynamic_pointer_cast<sensors::RaySensor>(_sensor);
+  sensor_ = std::dynamic_pointer_cast<sensors::RaySensor>(_sensor);
   if (!sensor_)
   {
     gzthrow("GazeboRosSonar requires a Ray Sensor as its parent");
@@ -65,7 +65,7 @@ void GazeboRosSonar::Load(sensors::SensorPtr _sensor, sdf::ElementPtr _sdf)
   }
 
   // Get the world name.
-  std::string worldName = sensor_->GetWorldName();
+  std::string worldName = sensor_->WorldName();
   world = physics::get_world(worldName);
 
   // default parameters
@@ -87,9 +87,9 @@ void GazeboRosSonar::Load(sensors::SensorPtr _sensor, sdf::ElementPtr _sdf)
 
   range_.header.frame_id = frame_id_;
   range_.radiation_type = sensor_msgs::Range::ULTRASOUND;
-  range_.field_of_view = std::min(fabs((sensor_->GetAngleMax() - sensor_->GetAngleMin()).Radian()), fabs((sensor_->GetVerticalAngleMax() - sensor_->GetVerticalAngleMin()).Radian()));
-  range_.max_range = sensor_->GetRangeMax();
-  range_.min_range = sensor_->GetRangeMin();
+  range_.field_of_view = std::min(fabs((sensor_->AngleMax() - sensor_->AngleMin()).Radian()), fabs((sensor_->VerticalAngleMax() - sensor_->VerticalAngleMin()).Radian()));
+  range_.max_range = sensor_->RangeMax();
+  range_.min_range = sensor_->RangeMin();
 
   // Make sure the ROS node for Gazebo has already been initialized
   if (!ros::isInitialized())
@@ -138,9 +138,9 @@ void GazeboRosSonar::Update()
 
   // find ray with minimal range
   range_.range = std::numeric_limits<sensor_msgs::Range::_range_type>::max();
-  int num_ranges = sensor_->GetLaserShape()->GetSampleCount() * sensor_->GetLaserShape()->GetVerticalSampleCount();
+  int num_ranges = sensor_->LaserShape()->GetSampleCount() * sensor_->LaserShape()->GetVerticalSampleCount();
   for(int i = 0; i < num_ranges; ++i) {
-    double ray = sensor_->GetLaserShape()->GetRange(i);
+    double ray = sensor_->LaserShape()->GetRange(i);
     if (ray < range_.range) range_.range = ray;
   }
 
