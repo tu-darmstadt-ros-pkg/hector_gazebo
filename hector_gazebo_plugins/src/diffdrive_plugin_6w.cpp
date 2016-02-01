@@ -228,13 +228,13 @@ void DiffDrivePlugin6W::Update()
     joints[MID_RIGHT]->SetVelocity(0, wheelSpeed[1] / (wheelDiam / 2.0));
     joints[REAR_RIGHT]->SetVelocity(0, wheelSpeed[1] / (wheelDiam / 2.0));
 
-    joints[FRONT_LEFT]->SetMaxForce(0, torque);
-    joints[MID_LEFT]->SetMaxForce(0, torque);
-    joints[REAR_LEFT]->SetMaxForce(0, torque);
+    joints[FRONT_LEFT]->SetEffortLimit(0, torque);
+    joints[MID_LEFT]->SetEffortLimit(0, torque);
+    joints[REAR_LEFT]->SetEffortLimit(0, torque);
 
-    joints[FRONT_RIGHT]->SetMaxForce(0, torque);
-    joints[MID_RIGHT]->SetMaxForce(0, torque);
-    joints[REAR_RIGHT]->SetMaxForce(0, torque);
+    joints[FRONT_RIGHT]->SetEffortLimit(0, torque);
+    joints[MID_RIGHT]->SetEffortLimit(0, torque);
+    joints[REAR_RIGHT]->SetEffortLimit(0, torque);
   }
 
   //publish_odometry();
