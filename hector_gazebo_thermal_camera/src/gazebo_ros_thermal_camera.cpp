@@ -163,24 +163,33 @@ void GazeboRosThermalCamera_<Base>::PutCameraData(const unsigned char *_src)
   {
     this->image_msg_.width = this->width_;
     this->image_msg_.height = this->height_;
-    this->image_msg_.encoding = sensor_msgs::image_encodings::MONO8;
-    this->image_msg_.step = this->image_msg_.width;
+    this->image_msg_.encoding = sensor_msgs::image_encodings::MONO16;
+    this->image_msg_.step = 2*this->image_msg_.width;
 
-    size_t size = this->width_ * this->height_;
+    size_t size = 2 * this->width_ * this->height_;
 
     std::vector<uint8_t>& data (this->image_msg_.data);
     data.resize(size);
 
     size_t img_index = 0;
 
-    for (size_t i = 0; i < size; ++i){
+    for (size_t i = 0; i < size; i = i+2){
+      float temp = 0;
       if ((_src[img_index] >254) && (_src[img_index+1] < 1) && (_src[img_index+2] < 1)){
         //RGB [255,0,0] translates to white (white hot)
-        data[i]= 255;
+        temp = (273.15 + 100.0);
+
       }else{
-        //Everything else is written to the MONO8 output image much darker
-        data[i]= (_src[img_index] + _src[img_index+1] + _src[img_index+2]) /8 ;
+        //Everything else is written to the MONO18 output image much darker
+        float pixel_temp = (_src[img_index] + _src[img_index+1] + _src[img_index+2]) / 3.0;
+        temp = 273.15 + (pixel_temp*0.05);
       }
+      float faktor = 25;
+      uint16_t temp_16 = (uint16_t) (faktor * temp);
+
+      data[i]= (uint8_t) temp_16;
+      data[i+1]= (uint8_t)(temp_16 >> 8);
+
       img_index += 3;
     }
 
