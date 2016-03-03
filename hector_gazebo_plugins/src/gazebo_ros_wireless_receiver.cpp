@@ -26,22 +26,36 @@
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //=================================================================================================
 
-#include <hector_gazebo_plugins/gazebo_ros_sonar.h>
+#include <hector_gazebo_plugins/gazebo_ros_wireless_receiver.h>
 #include <gazebo/common/Events.hh>
 #include <gazebo/physics/physics.hh>
-#include <gazebo/sensors/RaySensor.hh>
+
+#include "gazebo/math/Rand.hh"
+#include "gazebo/msgs/msgs.hh"
+#include "gazebo/sensors/SensorFactory.hh"
+#include "gazebo/sensors/SensorManager.hh"
+#include "gazebo/sensors/WirelessReceiver.hh"
+#include "gazebo/sensors/WirelessTransmitter.hh"
+#include "gazebo/transport/Node.hh"
+#include "gazebo/transport/Publisher.hh"
+
+#include <sensor_msgs/Range.h>
 
 #include <limits>
 
+using namespace gazebo;
+using namespace sensors;
+
+
 namespace gazebo {
 
-GazeboRosSonar::GazeboRosSonar()
+GazeboRosWirelessReceiver::GazeboRosWirelessReceiver()
 {
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 // Destructor
-GazeboRosSonar::~GazeboRosSonar()
+GazeboRosWirelessReceiver::~GazeboRosWirelessReceiver()
 {
   updateTimer.Disconnect(updateConnection);
   sensor_->SetActive(false);
@@ -54,25 +68,25 @@ GazeboRosSonar::~GazeboRosSonar()
 
 ////////////////////////////////////////////////////////////////////////////////
 // Load the controller
-void GazeboRosSonar::Load(sensors::SensorPtr _sensor, sdf::ElementPtr _sdf)
+void GazeboRosWirelessReceiver::Load(sensors::SensorPtr _sensor, sdf::ElementPtr _sdf)
 {
   // Get then name of the parent sensor
-  sensor_ = boost::dynamic_pointer_cast<sensors::RaySensor>(_sensor);
+  sensor_ = boost::dynamic_pointer_cast<sensors::WirelessReceiver>(_sensor);
   if (!sensor_)
   {
-    gzthrow("GazeboRosSonar requires a Ray Sensor as its parent");
+    gzthrow("GazeboRosWirelessReceiver requires a WirelessReceiver Sensor as its parent");
     return;
   }
 
   // Get the world name.
-  std::string worldName = sensor_->GetWorldName();
-  world = physics::get_world(worldName);
+  // std::string worldName = sensor_->GetWorldName();
+  // world = physics::get_world(worldName);
   
 
   // default parameters
   namespace_.clear();
-  topic_ = "sonar";
-  frame_id_ = "/sonar_link";
+  topic_ = "WirelessReceiver";
+  frame_id_ = "/WirelessReceiver_link";
 
   // load parameters
   if (_sdf->HasElement("robotNamespace"))
@@ -86,11 +100,7 @@ void GazeboRosSonar::Load(sensors::SensorPtr _sensor, sdf::ElementPtr _sdf)
 
   sensor_model_.Load(_sdf);
 
-  range_.header.frame_id = frame_id_;
-  range_.radiation_type = sensor_msgs::Range::ULTRASOUND;
-  range_.field_of_view = std::min(fabs((sensor_->GetAngleMax() - sensor_->GetAngleMin()).Radian()), fabs((sensor_->GetVerticalAngleMax() - sensor_->GetVerticalAngleMin()).Radian()));
-  range_.max_range = sensor_->GetRangeMax();
-  range_.min_range = sensor_->GetRangeMin();
+
 
   // Make sure the ROS node for Gazebo has already been initialized
   if (!ros::isInitialized())
@@ -101,6 +111,7 @@ void GazeboRosSonar::Load(sensors::SensorPtr _sensor, sdf::ElementPtr _sdf)
   }
 
   node_handle_ = new ros::NodeHandle(namespace_);
+  //publisher_ = node_handle_->advertise<msgs::WirelessNodes>(topic_, 1);
   publisher_ = node_handle_->advertise<sensor_msgs::Range>(topic_, 1);
 
   // setup dynamic_reconfigure server
@@ -112,13 +123,13 @@ void GazeboRosSonar::Load(sensors::SensorPtr _sensor, sdf::ElementPtr _sdf)
   // connect Update function
   updateTimer.setUpdateRate(10.0);
   updateTimer.Load(world, _sdf);
-  updateConnection = updateTimer.Connect(boost::bind(&GazeboRosSonar::Update, this));
+  updateConnection = updateTimer.Connect(boost::bind(&GazeboRosWirelessReceiver::Update, this));
 
   // activate RaySensor
   sensor_->SetActive(true);
 }
 
-void GazeboRosSonar::Reset()
+void GazeboRosWirelessReceiver::Reset()
 {
   updateTimer.Reset();
   sensor_model_.reset();
@@ -126,36 +137,69 @@ void GazeboRosSonar::Reset()
 
 ////////////////////////////////////////////////////////////////////////////////
 // Update the controller
-void GazeboRosSonar::Update()
+void GazeboRosWirelessReceiver::Update()
 {
-  common::Time sim_time = world->GetSimTime();
-  double dt = updateTimer.getTimeSinceLastUpdate().Double();
-
+  
   // activate RaySensor if it is not yet active
   if (!sensor_->IsActive()) sensor_->SetActive(true);
 
-  range_.header.stamp.sec  = (world->GetSimTime()).sec;
-  range_.header.stamp.nsec = (world->GetSimTime()).nsec;
+  std::string txEssid;
+  //msgs::WirelessNodes msg;
 
-  // find ray with minimal range
-  range_.range = std::numeric_limits<sensor_msgs::Range::_range_type>::max();
-  int num_ranges = sensor_->GetLaserShape()->GetSampleCount() * sensor_->GetLaserShape()->GetVerticalSampleCount();
-  for(int i = 0; i < num_ranges; ++i) {
-    double ray = sensor_->GetLaserShape()->GetRange(i);
-    if (ray < range_.range) range_.range = ray;
+  double rxPower;
+  double txFreq;
+
+  this->referencePose =
+      this->pose + this->parentEntity.lock()->GetWorldPose();
+
+  math::Pose myPos = this->referencePose;
+  Sensor_V sensors = SensorManager::Instance()->GetSensors();
+  for (Sensor_V::iterator it = sensors.begin(); it != sensors.end(); ++it)
+  {
+    if ((*it)->GetType() == "wireless_transmitter")
+    {
+      boost::shared_ptr<gazebo::sensors::WirelessTransmitter> transmitter =
+          boost::static_pointer_cast<WirelessTransmitter>(*it);
+
+      txFreq = transmitter->GetFreq();
+      rxPower = transmitter->GetSignalStrength(myPos, this->GetGain());
+
+      // Discard if the frequency received is out of our frequency range,
+      // or if the received signal strengh is lower than the sensivity
+      if ((txFreq < this->GetMinFreqFiltered()) ||
+          (txFreq > this->GetMaxFreqFiltered()) ||
+          (rxPower < this->GetSensitivity()))
+      {
+        continue;
+      }
+
+      txEssid = transmitter->GetESSID();
+
+      // msgs::WirelessNode *wirelessNode = msg.add_node();
+      // wirelessNode->set_essid(txEssid);
+      // wirelessNode->set_frequency(txFreq);
+      // wirelessNode->set_signal_level(rxPower);
+    }
   }
+  // if (msg.node_size() > 0)
+  // {
+  //   this->pub->Publish(msg);
+  // }
 
-  // add Gaussian noise (and limit to min/max range)
-  if (range_.range < range_.max_range) {
-    range_.range = sensor_model_(range_.range, dt);
-    if (range_.range < range_.min_range) range_.range = range_.min_range;
-    if (range_.range > range_.max_range) range_.range = range_.max_range;
-  }
+  sensor_msgs::Range range_msg;
+  range_msg.header.frame_id = "/base_link";
+  range_msg.header.stamp = ros::Time::now();
+  double dist = 3.0;
+  range_msg.radiation_type = 0;
+  range_msg.field_of_view = 2.0/dist; 
+  range_msg.min_range = 0.4;
+  range_msg.max_range = 10;
+  range_msg.range = dist;
+  publisher_.publish(range_msg);
 
-  publisher_.publish(range_);
 }
 
 // Register this plugin with the simulator
-GZ_REGISTER_SENSOR_PLUGIN(GazeboRosSonar)
+GZ_REGISTER_SENSOR_PLUGIN(GazeboRosWirelessReceiver)
 
 } // namespace gazebo
