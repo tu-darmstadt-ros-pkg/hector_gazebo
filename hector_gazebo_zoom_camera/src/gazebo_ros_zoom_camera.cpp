@@ -134,9 +134,10 @@ void GazeboRosZoomCamera::QueueThread()
 void GazeboRosZoomCamera::fovCallback(const std_msgs::Float64::ConstPtr& msg)
 {
   double new_fov = default_fov_ * msg->data;
+
   std::cout << "new_fov: " << new_fov << "\n";
 
-  this->camera_->SetHFOV(new_fov);
+  this->camera_->SetHFOV(ignition::math::Angle(new_fov));
 
   // Have to set this var manually as only set when reading sdf params
   // of gazebo_ros_camera_utils. Gets set to proper value few lines below

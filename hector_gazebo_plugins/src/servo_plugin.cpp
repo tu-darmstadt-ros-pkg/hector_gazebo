@@ -200,19 +200,19 @@ void ServoPlugin::Update()
       }
     }
 
-    servo[FIRST].joint->SetMaxForce(0, maximumTorque);
+    servo[FIRST].joint->SetEffortLimit(0, maximumTorque);
     if (countOfServos > 1) {
-      servo[SECOND].joint->SetMaxForce(0, maximumTorque);
+      servo[SECOND].joint->SetEffortLimit(0, maximumTorque);
       if (countOfServos > 2) {
-        servo[THIRD].joint->SetMaxForce(0, maximumTorque);
+        servo[THIRD].joint->SetEffortLimit(0, maximumTorque);
       }
     }
   } else {
-    servo[FIRST].joint->SetMaxForce(0, 0.0);
+    servo[FIRST].joint->SetEffortLimit(0, 0.0);
     if (countOfServos > 1) {
-      servo[SECOND].joint->SetMaxForce(0, 0.0);
+      servo[SECOND].joint->SetEffortLimit(0, 0.0);
       if (countOfServos > 2) {
-        servo[THIRD].joint->SetMaxForce(0, 0.0);
+        servo[THIRD].joint->SetEffortLimit(0, 0.0);
       }
     }
   }
