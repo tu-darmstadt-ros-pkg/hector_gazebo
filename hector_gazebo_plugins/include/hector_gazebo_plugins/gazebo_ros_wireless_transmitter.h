@@ -26,8 +26,8 @@
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //=================================================================================================
 
-#ifndef HECTOR_GAZEBO_PLUGINS_GAZEBO_ROS_WIRELESS_RECEIVER_H
-#define HECTOR_GAZEBO_PLUGINS_GAZEBO_ROS_WIRELESS_RECEIVER_H
+#ifndef HECTOR_GAZEBO_PLUGINS_GAZEBO_ROS_WIRELESS_TRANSMITTER_H
+#define HECTOR_GAZEBO_PLUGINS_GAZEBO_ROS_WIRELESS_TRANSMITTER_H
 
 #include <gazebo/common/Plugin.hh>
 
@@ -40,15 +40,15 @@
 #include <std_msgs/Float64.h>
 
 #include <dynamic_reconfigure/server.h>
-#include <gazebo/sensors/WirelessReceiver.hh>
+#include <gazebo/sensors/WirelessTransmitter.hh>
 namespace gazebo
 {
 
-class GazeboRosWirelessReceiver : public SensorPlugin
+class GazeboRosWirelessTransmitter : public SensorPlugin
 {
 public:
-  GazeboRosWirelessReceiver();
-  virtual ~GazeboRosWirelessReceiver();
+  GazeboRosWirelessTransmitter();
+  virtual ~GazeboRosWirelessTransmitter();
 
 protected:
   virtual void Load(sensors::SensorPtr _sensor, sdf::ElementPtr _sdf);
@@ -59,15 +59,15 @@ private:
   /// \brief The parent World
   physics::WorldPtr world;
 
-  sensors::WirelessReceiverPtr sensor_;
+  sensors::WirelessTransmitterPtr sensor_;
 
   ros::NodeHandle* node_handle_;
-  ros::Publisher publisher_;
+  // ros::Publisher publisher_;
 
-  ros::Publisher publisher2_;
+  // ros::Publisher publisher2_;
 
-  sensor_msgs::Range range_;
-  std_msgs::Float64 gain_;
+  // sensor_msgs::Range range_;
+  // std_msgs::Float64 gain_;
 
   std::string namespace_;
   std::string topic_;

@@ -26,23 +26,23 @@
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //=================================================================================================
 
-#include <hector_gazebo_plugins/gazebo_ros_wireless_receiver.h>
+#include <hector_gazebo_plugins/gazebo_ros_wireless_transmitter.h>
 #include <gazebo/common/Events.hh>
 #include <gazebo/physics/physics.hh>
-#include <gazebo/sensors/WirelessReceiver.hh>
+#include <gazebo/sensors/WirelessTransmitter.hh>
 
 
 #include <limits>
 
 namespace gazebo {
 
-GazeboRosWirelessReceiver::GazeboRosWirelessReceiver()
+GazeboRosWirelessTransmitter::GazeboRosWirelessTransmitter()
 {
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 // Destructor
-GazeboRosWirelessReceiver::~GazeboRosWirelessReceiver()
+GazeboRosWirelessTransmitter::~GazeboRosWirelessTransmitter()
 {
   updateTimer.Disconnect(updateConnection);
   sensor_->SetActive(false);
@@ -55,13 +55,13 @@ GazeboRosWirelessReceiver::~GazeboRosWirelessReceiver()
 
 ////////////////////////////////////////////////////////////////////////////////
 // Load the controller
-void GazeboRosWirelessReceiver::Load(sensors::SensorPtr _sensor, sdf::ElementPtr _sdf)
+void GazeboRosWirelessTransmitter::Load(sensors::SensorPtr _sensor, sdf::ElementPtr _sdf)
 {
   // Get then name of the parent sensor
-  sensor_ = boost::dynamic_pointer_cast<sensors::WirelessReceiver>(_sensor);
+  sensor_ = boost::dynamic_pointer_cast<sensors::WirelessTransmitter>(_sensor);
   if (!sensor_)
   {
-    gzthrow("GazeboRosWirelessReceiver requires a WirelessReceiver Sensor as its parent");
+    gzthrow("GazeboRosWirelessTransmitter requires a WirelessTransmitter Sensor as its parent");
     return;
   }
 
@@ -87,16 +87,16 @@ void GazeboRosWirelessReceiver::Load(sensors::SensorPtr _sensor, sdf::ElementPtr
 
   sensor_model_.Load(_sdf);
 
-  range_.header.frame_id = frame_id_;
-  range_.radiation_type = sensor_msgs::Range::ULTRASOUND;
+  // range_.header.frame_id = frame_id_;
+  // range_.radiation_type = sensor_msgs::Range::ULTRASOUND;
 
   // range_.field_of_view = std::min(fabs((sensor_->GetAngleMax() - sensor_->GetAngleMin()).Radian()), fabs((sensor_->GetVerticalAngleMax() - sensor_->GetVerticalAngleMin()).Radian()));
   // range_.max_range = sensor_->GetRangeMax();
   // range_.min_range = sensor_->GetRangeMin();
 
-  range_.field_of_view = 0.5;
-  range_.max_range = 5;
-  range_.min_range = 0.2;
+  // range_.field_of_view = 0.5;
+  // range_.max_range = 5;
+  // range_.min_range = 0.2;
 
   // Make sure the ROS node for Gazebo has already been initialized
   if (!ros::isInitialized())
@@ -107,8 +107,8 @@ void GazeboRosWirelessReceiver::Load(sensors::SensorPtr _sensor, sdf::ElementPtr
   }
 
   node_handle_ = new ros::NodeHandle(namespace_);
-  publisher_ = node_handle_->advertise<sensor_msgs::Range>(topic_, 1);
-  publisher2_ = node_handle_->advertise<std_msgs::Float64>(topic_+"float", 1);
+  // publisher_ = node_handle_->advertise<sensor_msgs::Range>(topic_, 1);
+  // publisher2_ = node_handle_->advertise<std_msgs::Float64>(topic_+"float", 1);
   // setup dynamic_reconfigure server
   dynamic_reconfigure_server_.reset(new dynamic_reconfigure::Server<SensorModelConfig>(ros::NodeHandle(*node_handle_, topic_)));
   dynamic_reconfigure_server_->setCallback(boost::bind(&SensorModel::dynamicReconfigureCallback, &sensor_model_, _1, _2));
@@ -118,13 +118,13 @@ void GazeboRosWirelessReceiver::Load(sensors::SensorPtr _sensor, sdf::ElementPtr
   // connect Update function
   updateTimer.setUpdateRate(10.0);
   updateTimer.Load(world, _sdf);
-  updateConnection = updateTimer.Connect(boost::bind(&GazeboRosWirelessReceiver::Update, this));
+  updateConnection = updateTimer.Connect(boost::bind(&GazeboRosWirelessTransmitter::Update, this));
 
   // activate RaySensor
   sensor_->SetActive(true);
 }
 
-void GazeboRosWirelessReceiver::Reset()
+void GazeboRosWirelessTransmitter::Reset()
 {
   updateTimer.Reset();
   sensor_model_.reset();
@@ -132,7 +132,7 @@ void GazeboRosWirelessReceiver::Reset()
 
 ////////////////////////////////////////////////////////////////////////////////
 // Update the controller
-void GazeboRosWirelessReceiver::Update()
+void GazeboRosWirelessTransmitter::Update()
 {
   common::Time sim_time = world->GetSimTime();
   double dt = updateTimer.getTimeSinceLastUpdate().Double();
@@ -140,8 +140,8 @@ void GazeboRosWirelessReceiver::Update()
   // activate RaySensor if it is not yet active
   if (!sensor_->IsActive()) sensor_->SetActive(true);
 
-  range_.header.stamp.sec  = (world->GetSimTime()).sec;
-  range_.header.stamp.nsec = (world->GetSimTime()).nsec;
+  // range_.header.stamp.sec  = (world->GetSimTime()).sec;
+  // range_.header.stamp.nsec = (world->GetSimTime()).nsec;
 
   // find ray with minimal range
   // range_.range = std::numeric_limits<sensor_msgs::Range::_range_type>::max();
@@ -151,28 +151,26 @@ void GazeboRosWirelessReceiver::Update()
   //   if (ray < range_.range) range_.range = ray;
   // }
 
-  double gain = sensor_->GetGain();
-  double sensitivity = sensor_->GetSensitivity();
-  std::string essid = sensor_->GetName();
+  // range_.range = 3;
 
-  range_.range = gain;
+  // // add Gaussian noise (and limit to min/max range)
+  // if (range_.range < range_.max_range) {
+  //   range_.range = sensor_model_(range_.range, dt);
+  //   if (range_.range < range_.min_range) range_.range = range_.min_range;
+  //   if (range_.range > range_.max_range) range_.range = range_.max_range;
+  // }
+  // publisher_.publish(range_);
 
-  // add Gaussian noise (and limit to min/max range)
-  if (range_.range < range_.max_range) {
-    range_.range = sensor_model_(range_.range, dt);
-    if (range_.range < range_.min_range) range_.range = range_.min_range;
-    if (range_.range > range_.max_range) range_.range = range_.max_range;
-  }
-  publisher_.publish(range_);
-
-
-  gain_.data = gain;
-  publisher2_.publish(gain_);
+  // double gain = sensor_->GetGain();
+  // double sensitivity = sensor_->GetSensitivity();
+  // std::string essid = sensor_->GetName();
+  // gain_.data = gain;
+  // publisher2_.publish(gain_);
 
 
 }
 
 // Register this plugin with the simulator
-GZ_REGISTER_SENSOR_PLUGIN(GazeboRosWirelessReceiver)
+GZ_REGISTER_SENSOR_PLUGIN(GazeboRosWirelessTransmitter)
 
 } // namespace gazebo
