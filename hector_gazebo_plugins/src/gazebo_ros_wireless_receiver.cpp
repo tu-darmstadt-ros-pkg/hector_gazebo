@@ -29,10 +29,30 @@
 #include <hector_gazebo_plugins/gazebo_ros_wireless_receiver.h>
 #include <gazebo/common/Events.hh>
 #include <gazebo/physics/physics.hh>
-#include <gazebo/sensors/WirelessReceiver.hh>
-
+#include <gazebo/sensors/Sensor.hh>
 
 #include <limits>
+
+//todo add by myself
+#include "gazebo/physics/Base.hh"
+#include "gazebo/physics/PhysicsTypes.hh"
+#include "gazebo/physics/WorldState.hh"
+#include "gazebo/gazebo.hh"
+
+
+
+
+//add by myself
+// #include "gazebo/math/Rand.hh"
+// #include "gazebo/msgs/msgs.hh"
+// #include "gazebo/sensors/SensorFactory.hh"
+// #include "gazebo/sensors/SensorManager.hh"
+// #include "gazebo/sensors/WirelessReceiver.hh"
+// #include "gazebo/sensors/WirelessTransmitter.hh"
+// #include "gazebo/transport/Node.hh"
+// #include "gazebo/transport/Publisher.hh"
+
+using namespace std;
 
 namespace gazebo {
 
@@ -58,7 +78,7 @@ GazeboRosWirelessReceiver::~GazeboRosWirelessReceiver()
 void GazeboRosWirelessReceiver::Load(sensors::SensorPtr _sensor, sdf::ElementPtr _sdf)
 {
   // Get then name of the parent sensor
-  sensor_ = boost::dynamic_pointer_cast<sensors::WirelessReceiver>(_sensor);
+  sensor_ = boost::dynamic_pointer_cast<sensors::Sensor>(_sensor);
   if (!sensor_)
   {
     gzthrow("GazeboRosWirelessReceiver requires a WirelessReceiver Sensor as its parent");
@@ -68,7 +88,8 @@ void GazeboRosWirelessReceiver::Load(sensors::SensorPtr _sensor, sdf::ElementPtr
   // Get the world name.
   std::string worldName = sensor_->GetWorldName();
   world = physics::get_world(worldName);
-  
+  std::string parentName = sensor_->GetParentName();
+  parentEntity = world->GetEntity(parentName);
 
   // default parameters
   namespace_.clear();
@@ -87,16 +108,6 @@ void GazeboRosWirelessReceiver::Load(sensors::SensorPtr _sensor, sdf::ElementPtr
 
   sensor_model_.Load(_sdf);
 
-  range_.header.frame_id = frame_id_;
-  range_.radiation_type = sensor_msgs::Range::ULTRASOUND;
-
-  // range_.field_of_view = std::min(fabs((sensor_->GetAngleMax() - sensor_->GetAngleMin()).Radian()), fabs((sensor_->GetVerticalAngleMax() - sensor_->GetVerticalAngleMin()).Radian()));
-  // range_.max_range = sensor_->GetRangeMax();
-  // range_.min_range = sensor_->GetRangeMin();
-
-  range_.field_of_view = 0.5;
-  range_.max_range = 5;
-  range_.min_range = 0.2;
 
   // Make sure the ROS node for Gazebo has already been initialized
   if (!ros::isInitialized())
@@ -107,8 +118,10 @@ void GazeboRosWirelessReceiver::Load(sensors::SensorPtr _sensor, sdf::ElementPtr
   }
 
   node_handle_ = new ros::NodeHandle(namespace_);
-  publisher_ = node_handle_->advertise<sensor_msgs::Range>(topic_, 1);
-  publisher2_ = node_handle_->advertise<std_msgs::Float64>(topic_+"float", 1);
+  transmitter_pub_ = node_handle_->advertise<sensor_msgs::PointCloud>(topic_+"/transmitter", 1);
+  rss_pub_ = node_handle_->advertise<sensor_msgs::PointCloud>(topic_+"/rss", 1);
+  AoA_pub_ = node_handle_->advertise<sensor_msgs::PointCloud>(topic_+"/AoA", 1);
+  receiver_pub_ = node_handle_->advertise<geometry_msgs::PoseStamped>(topic_ + "/receiver", 1);
   // setup dynamic_reconfigure server
   dynamic_reconfigure_server_.reset(new dynamic_reconfigure::Server<SensorModelConfig>(ros::NodeHandle(*node_handle_, topic_)));
   dynamic_reconfigure_server_->setCallback(boost::bind(&SensorModel::dynamicReconfigureCallback, &sensor_model_, _1, _2));
@@ -140,35 +153,107 @@ void GazeboRosWirelessReceiver::Update()
   // activate RaySensor if it is not yet active
   if (!sensor_->IsActive()) sensor_->SetActive(true);
 
-  range_.header.stamp.sec  = (world->GetSimTime()).sec;
-  range_.header.stamp.nsec = (world->GetSimTime()).nsec;
+  //receiver's pose int the ground
+  math::Pose referencePose =
+      sensor_->GetPose() + this->parentEntity->GetWorldPose();
 
-  // find ray with minimal range
-  // range_.range = std::numeric_limits<sensor_msgs::Range::_range_type>::max();
-  // int num_ranges = sensor_->GetLaserShape()->GetSampleCount() * sensor_->GetLaserShape()->GetVerticalSampleCount();
-  // for(int i = 0; i < num_ranges; ++i) {
-  //   double ray = sensor_->GetLaserShape()->GetRange(i);
-  //   if (ray < range_.range) range_.range = ray;
+  receiver_pose_.header.frame_id = "/world";
+  receiver_pose_.header.stamp.sec =  (world->GetSimTime()).sec;
+  receiver_pose_.header.stamp.nsec =  (world->GetSimTime()).nsec;
+  receiver_pose_.pose.position.x = referencePose.pos.x;
+  receiver_pose_.pose.position.y = referencePose.pos.y;
+  receiver_pose_.pose.position.z = referencePose.pos.z;
+  receiver_pose_.pose.orientation.w = referencePose.rot.w;
+  receiver_pose_.pose.orientation.x = referencePose.rot.x;
+  receiver_pose_.pose.orientation.y = referencePose.rot.y;
+  receiver_pose_.pose.orientation.z = referencePose.rot.z;
+  receiver_pub_.publish(receiver_pose_);
+
+
+  transmitters_.header.frame_id = "/world";
+  transmitters_.header.stamp.sec =  (world->GetSimTime()).sec;
+  transmitters_.header.stamp.nsec =  (world->GetSimTime()).nsec;
+
+  AoA_.header.frame_id = "/baselink"; //todo
+  AoA_.header.stamp.sec =  (world->GetSimTime()).sec;
+  AoA_.header.stamp.nsec =  (world->GetSimTime()).nsec;
+
+  rss_.header.frame_id = "/world";
+  rss_.header.stamp.sec =  (world->GetSimTime()).sec;
+  rss_.header.stamp.nsec =  (world->GetSimTime()).nsec;
+
+  transmitters_.points.clear();
+  transmitters_.channels.clear();
+  rss_.points.clear();
+  rss_.channels.clear();
+  AoA_.points.clear();
+  AoA_.channels.clear();
+
+  //math::Pose myPose = sensor_->GetPose();//the pose to the baselink
+  cout << "referencePose: " << referencePose.pos << "  " << referencePose.rot << endl;
+  physics::Model_V models = this->world->GetModels();
+  for(physics::Model_V::iterator it = models.begin(); it != models.end(); it++)
+  {
+    std::string name = (*it)->GetName();
+    //std::cout << "name: " << name << std::endl;
+    if( name.compare(0, 15, "wireless_router") == 0 )
+    {                                                                              
+      math::Pose model_pose = (*it)->GetWorldPose();
+      cout << "model pose: " << model_pose.pos << "  " << model_pose.rot << endl;
+      math::Pose relative_pose = -referencePose + model_pose; //router coordinator to receiver coordinator
+      cout << "relative: " << relative_pose.pos << "  " << relative_pose.rot << endl;
+
+      geometry_msgs::Point32 p;
+      p.x = model_pose.pos.x;
+      p.y = model_pose.pos.y;
+      p.z = model_pose.pos.z;
+      transmitters_.points.push_back(p);
+
+      geometry_msgs::Point32 relative_p;
+      relative_p.x = relative_pose.pos.x;
+      relative_p.y = relative_pose.pos.y;
+      relative_p.z = relative_pose.pos.z;
+      AoA_.points.push_back(relative_p);
+
+      double dist = relative_pose.pos.GetLength();
+      geometry_msgs::Point32 dist_p;
+      dist_p.x = dist;
+      rss_.points.push_back(dist_p);
+    }
+  }                       
+  AoA_pub_.publish(AoA_);
+  transmitter_pub_.publish(transmitters_);
+  rss_pub_.publish(rss_);
+
+  // math::Pose myPos = this->referencePose;
+  // Sensor_V sensors = SensorManager::Instance()->GetSensors();
+  // for (Sensor_V::iterator it = sensors.begin(); it != sensors.end(); ++it)
+  // {
+  //   if ((*it)->GetType() == "wireless_transmitter")
+  //   {
+  //     boost::shared_ptr<gazebo::sensors::WirelessTransmitter> transmitter =
+  //         boost::static_pointer_cast<WirelessTransmitter>(*it);
+
+  //     txFreq = transmitter->GetFreq();
+  //     rxPower = transmitter->GetSignalStrength(myPos, this->GetGain());
+
+  //     // Discard if the frequency received is out of our frequency range,
+  //     // or if the received signal strengh is lower than the sensivity
+  //     if ((txFreq < this->GetMinFreqFiltered()) ||
+  //         (txFreq > this->GetMaxFreqFiltered()) ||
+  //         (rxPower < this->GetSensitivity()))
+  //     {
+  //       continue;
+  //     }
+
+  //     txEssid = transmitter->GetESSID();
+
+  //     msgs::WirelessNode *wirelessNode = msg.add_node();
+  //     wirelessNode->set_essid(txEssid);
+  //     wirelessNode->set_frequency(txFreq);
+  //     wirelessNode->set_signal_level(rxPower);
+  //   }
   // }
-
-  double gain = sensor_->GetGain();
-  double sensitivity = sensor_->GetSensitivity();
-  std::string essid = sensor_->GetName();
-
-  range_.range = gain;
-
-  // add Gaussian noise (and limit to min/max range)
-  if (range_.range < range_.max_range) {
-    range_.range = sensor_model_(range_.range, dt);
-    if (range_.range < range_.min_range) range_.range = range_.min_range;
-    if (range_.range > range_.max_range) range_.range = range_.max_range;
-  }
-  publisher_.publish(range_);
-
-
-  gain_.data = gain;
-  publisher2_.publish(gain_);
-
 
 }
 

@@ -34,13 +34,14 @@
 #include <ros/callback_queue.h>
 #include <ros/ros.h>
 
-#include <sensor_msgs/Range.h>
+#include <sensor_msgs/PointCloud.h>
+#include <geometry_msgs/PoseStamped.h>
 #include <hector_gazebo_plugins/sensor_model.h>
 #include <hector_gazebo_plugins/update_timer.h>
-#include <std_msgs/Float64.h>
+
 
 #include <dynamic_reconfigure/server.h>
-#include <gazebo/sensors/WirelessReceiver.hh>
+#include <gazebo/sensors/Sensor.hh>
 namespace gazebo
 {
 
@@ -59,15 +60,22 @@ private:
   /// \brief The parent World
   physics::WorldPtr world;
 
-  sensors::WirelessReceiverPtr sensor_;
+  sensors::SensorPtr sensor_;
 
   ros::NodeHandle* node_handle_;
-  ros::Publisher publisher_;
 
-  ros::Publisher publisher2_;
+  ros::Publisher transmitter_pub_;
+  ros::Publisher rss_pub_;
+  ros::Publisher AoA_pub_;
+  ros::Publisher receiver_pub_;
+  //ros::Publisher publisher2_;
+  sensor_msgs::PointCloud transmitters_;//positon of transmitter
+  sensor_msgs::PointCloud rss_; //rss value of transmitter, here is the distance 
+  sensor_msgs::PointCloud AoA_;//angle of arrival 
+  geometry_msgs::PoseStamped receiver_pose_;
 
-  sensor_msgs::Range range_;
-  std_msgs::Float64 gain_;
+    /// \brief Parent entity of this sensor
+  physics::EntityPtr parentEntity;
 
   std::string namespace_;
   std::string topic_;
