@@ -33,24 +33,11 @@
 
 #include <limits>
 
-//todo add by myself
 #include "gazebo/physics/Base.hh"
 #include "gazebo/physics/PhysicsTypes.hh"
 #include "gazebo/physics/WorldState.hh"
 #include "gazebo/gazebo.hh"
 
-
-
-
-//add by myself
-// #include "gazebo/math/Rand.hh"
-// #include "gazebo/msgs/msgs.hh"
-// #include "gazebo/sensors/SensorFactory.hh"
-// #include "gazebo/sensors/SensorManager.hh"
-// #include "gazebo/sensors/WirelessReceiver.hh"
-// #include "gazebo/sensors/WirelessTransmitter.hh"
-// #include "gazebo/transport/Node.hh"
-// #include "gazebo/transport/Publisher.hh"
 
 using namespace std;
 
@@ -81,7 +68,7 @@ void GazeboRosWirelessReceiver::Load(sensors::SensorPtr _sensor, sdf::ElementPtr
   sensor_ = boost::dynamic_pointer_cast<sensors::Sensor>(_sensor);
   if (!sensor_)
   {
-    gzthrow("GazeboRosWirelessReceiver requires a WirelessReceiver Sensor as its parent");
+    gzthrow("GazeboRosWirelessReceiver requires a Sensor as its parent");
     return;
   }
 
@@ -93,8 +80,8 @@ void GazeboRosWirelessReceiver::Load(sensors::SensorPtr _sensor, sdf::ElementPtr
 
   // default parameters
   namespace_.clear();
-  topic_ = "sonar";
-  frame_id_ = "/sonar_link";
+  topic_ = "wireless_receiver";
+  frame_id_ = "/wireless_receiver";
 
   // load parameters
   if (_sdf->HasElement("robotNamespace"))
@@ -153,9 +140,31 @@ void GazeboRosWirelessReceiver::Update()
   // activate RaySensor if it is not yet active
   if (!sensor_->IsActive()) sensor_->SetActive(true);
 
-  //receiver's pose int the ground
-  math::Pose referencePose =
+  //receiver's pose in the world
+  math::Pose referencePose = 
       sensor_->GetPose() + this->parentEntity->GetWorldPose();
+  cout << "sensor_ pose: " 
+       << sensor_->GetPose().pos.x << " "
+       << sensor_->GetPose().pos.y << " "
+       << sensor_->GetPose().pos.z << " "
+       << sensor_->GetPose().rot.x << " "
+       << sensor_->GetPose().rot.y << " "
+       << sensor_->GetPose().rot.z << endl;
+
+  cout << "world pose: " 
+      << this->parentEntity->GetWorldPose().pos.x << " "
+      << this->parentEntity->GetWorldPose().pos.y << " "
+      << this->parentEntity->GetWorldPose().pos.z << " "
+      << this->parentEntity->GetWorldPose().rot.x << " "
+      << this->parentEntity->GetWorldPose().rot.y << " "
+      << this->parentEntity->GetWorldPose().rot.z << endl;
+  cout << "reference pose: " 
+    << referencePose.pos.x << " "
+    << referencePose.pos.y << " "
+    << referencePose.pos.z << " "
+    << referencePose.rot.x << " "
+    << referencePose.rot.y << " "
+    << referencePose.rot.z << endl;
 
   receiver_pose_.header.frame_id = "/world";
   receiver_pose_.header.stamp.sec =  (world->GetSimTime()).sec;
@@ -174,11 +183,11 @@ void GazeboRosWirelessReceiver::Update()
   transmitters_.header.stamp.sec =  (world->GetSimTime()).sec;
   transmitters_.header.stamp.nsec =  (world->GetSimTime()).nsec;
 
-  AoA_.header.frame_id = "/baselink"; //todo
+  AoA_.header.frame_id = "/wireless_receiver"; //todo
   AoA_.header.stamp.sec =  (world->GetSimTime()).sec;
   AoA_.header.stamp.nsec =  (world->GetSimTime()).nsec;
 
-  rss_.header.frame_id = "/world";
+  rss_.header.frame_id = "/wireless_receiver";
   rss_.header.stamp.sec =  (world->GetSimTime()).sec;
   rss_.header.stamp.nsec =  (world->GetSimTime()).nsec;
 
@@ -190,18 +199,36 @@ void GazeboRosWirelessReceiver::Update()
   AoA_.channels.clear();
 
   //math::Pose myPose = sensor_->GetPose();//the pose to the baselink
-  cout << "referencePose: " << referencePose.pos << "  " << referencePose.rot << endl;
+  //cout << "referencePose: " << referencePose.pos << "  " << referencePose.rot << endl;
   physics::Model_V models = this->world->GetModels();
   for(physics::Model_V::iterator it = models.begin(); it != models.end(); it++)
   {
     std::string name = (*it)->GetName();
-    //std::cout << "name: " << name << std::endl;
+    
     if( name.compare(0, 15, "wireless_router") == 0 )
     {                                                                              
+      //std::cout << "name: " << name << std::endl;
       math::Pose model_pose = (*it)->GetWorldPose();
-      cout << "model pose: " << model_pose.pos << "  " << model_pose.rot << endl;
-      math::Pose relative_pose = -referencePose + model_pose; //router coordinator to receiver coordinator
-      cout << "relative: " << relative_pose.pos << "  " << relative_pose.rot << endl;
+      //cout << "model pose: " << model_pose.pos << "  " << model_pose.rot << endl;
+      // cout << "model pose: " 
+      // << model_pose.pos.x << " "
+      // << model_pose.pos.y << " "
+      // << model_pose.pos.z << " "
+      // << model_pose.rot.x << " "
+      // << model_pose.rot.y << " "
+      // << model_pose.rot.z << endl;
+
+      //todo 
+      math::Pose relative_pose = -(referencePose - model_pose);//router coordinator to receiver coordinator
+      //cout << "relative: " << relative_pose.pos << "  " << relative_pose.rot << endl;
+
+      // cout << "relative pose: " 
+      // << relative_pose.pos.x << " "
+      // << relative_pose.pos.y << " "
+      // << relative_pose.pos.z << " "
+      // << relative_pose.rot.x << " "
+      // << relative_pose.rot.y << " "
+      // << relative_pose.rot.z << endl;
 
       geometry_msgs::Point32 p;
       p.x = model_pose.pos.x;
@@ -209,51 +236,36 @@ void GazeboRosWirelessReceiver::Update()
       p.z = model_pose.pos.z;
       transmitters_.points.push_back(p);
 
+      //test 
+      // math::Pose test_pose;
+      // test_pose.pos.x = model_pose.pos.x - referencePose.pos.x;
+      // test_pose.pos.y = model_pose.pos.y - referencePose.pos.y;
+      // test_pose.pos.z = model_pose.pos.z - referencePose.pos.z;
+      // double test_dist = test_pose.pos.GetLength();
+      
+
+      double dist = relative_pose.pos.GetLength();
+      geometry_msgs::Point32 dist_p;
+      dist_p.x = dist;//dist; //todo
+      rss_.points.push_back(dist_p);
+      // cout << test_dist << " <-> " << dist << endl;
+      // cout << "(" << relative_pose.pos.x << " " << relative_pose.pos.y << " " << relative_pose.pos.z << ") "
+      //      <<  "--(" << test_pose.pos.x << " " << test_pose.pos.y << " " << test_pose.pos.z << ") " << endl;
+      
+
+      relative_pose.pos.Normalize();//only direction
       geometry_msgs::Point32 relative_p;
       relative_p.x = relative_pose.pos.x;
       relative_p.y = relative_pose.pos.y;
       relative_p.z = relative_pose.pos.z;
       AoA_.points.push_back(relative_p);
-
-      double dist = relative_pose.pos.GetLength();
-      geometry_msgs::Point32 dist_p;
-      dist_p.x = dist;
-      rss_.points.push_back(dist_p);
     }
-  }                       
+  }   
+  cout << endl;
+
   AoA_pub_.publish(AoA_);
   transmitter_pub_.publish(transmitters_);
   rss_pub_.publish(rss_);
-
-  // math::Pose myPos = this->referencePose;
-  // Sensor_V sensors = SensorManager::Instance()->GetSensors();
-  // for (Sensor_V::iterator it = sensors.begin(); it != sensors.end(); ++it)
-  // {
-  //   if ((*it)->GetType() == "wireless_transmitter")
-  //   {
-  //     boost::shared_ptr<gazebo::sensors::WirelessTransmitter> transmitter =
-  //         boost::static_pointer_cast<WirelessTransmitter>(*it);
-
-  //     txFreq = transmitter->GetFreq();
-  //     rxPower = transmitter->GetSignalStrength(myPos, this->GetGain());
-
-  //     // Discard if the frequency received is out of our frequency range,
-  //     // or if the received signal strengh is lower than the sensivity
-  //     if ((txFreq < this->GetMinFreqFiltered()) ||
-  //         (txFreq > this->GetMaxFreqFiltered()) ||
-  //         (rxPower < this->GetSensitivity()))
-  //     {
-  //       continue;
-  //     }
-
-  //     txEssid = transmitter->GetESSID();
-
-  //     msgs::WirelessNode *wirelessNode = msg.add_node();
-  //     wirelessNode->set_essid(txEssid);
-  //     wirelessNode->set_frequency(txFreq);
-  //     wirelessNode->set_signal_level(rxPower);
-  //   }
-  // }
 
 }
 

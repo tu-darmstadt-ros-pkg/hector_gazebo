@@ -42,6 +42,7 @@
 
 #include <dynamic_reconfigure/server.h>
 #include <gazebo/sensors/Sensor.hh>
+
 namespace gazebo
 {
 
@@ -68,13 +69,13 @@ private:
   ros::Publisher rss_pub_;
   ros::Publisher AoA_pub_;
   ros::Publisher receiver_pub_;
-  //ros::Publisher publisher2_;
+
   sensor_msgs::PointCloud transmitters_;//positon of transmitter
   sensor_msgs::PointCloud rss_; //rss value of transmitter, here is the distance 
   sensor_msgs::PointCloud AoA_;//angle of arrival 
   geometry_msgs::PoseStamped receiver_pose_;
 
-    /// \brief Parent entity of this sensor
+  /// \brief Parent entity of this sensor
   physics::EntityPtr parentEntity;
 
   std::string namespace_;
