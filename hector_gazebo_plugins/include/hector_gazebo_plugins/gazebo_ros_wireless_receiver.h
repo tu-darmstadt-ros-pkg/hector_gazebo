@@ -82,7 +82,8 @@ private:
   std::string topic_;
   std::string frame_id_;
 
-  SensorModel sensor_model_;
+  SensorModel rss_sensor_model_;
+  SensorModel3 AoA_sensor_model_;
 
   UpdateTimer updateTimer;
   event::ConnectionPtr updateConnection;

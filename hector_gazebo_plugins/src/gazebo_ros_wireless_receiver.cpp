@@ -93,7 +93,10 @@ void GazeboRosWirelessReceiver::Load(sensors::SensorPtr _sensor, sdf::ElementPtr
   if (_sdf->HasElement("topicName"))
     topic_ = _sdf->GetElement("topicName")->GetValue()->GetAsString();
 
-  sensor_model_.Load(_sdf);
+
+
+  rss_sensor_model_.Load(_sdf, "rss");
+  AoA_sensor_model_.Load(_sdf, "AoA");
 
 
   // Make sure the ROS node for Gazebo has already been initialized
@@ -111,7 +114,8 @@ void GazeboRosWirelessReceiver::Load(sensors::SensorPtr _sensor, sdf::ElementPtr
   receiver_pub_ = node_handle_->advertise<geometry_msgs::PoseStamped>(topic_ + "/receiver", 1);
   // setup dynamic_reconfigure server
   dynamic_reconfigure_server_.reset(new dynamic_reconfigure::Server<SensorModelConfig>(ros::NodeHandle(*node_handle_, topic_)));
-  dynamic_reconfigure_server_->setCallback(boost::bind(&SensorModel::dynamicReconfigureCallback, &sensor_model_, _1, _2));
+  dynamic_reconfigure_server_->setCallback(boost::bind(&SensorModel::dynamicReconfigureCallback, &rss_sensor_model_, _1, _2));
+  dynamic_reconfigure_server_->setCallback(boost::bind(&SensorModel3::dynamicReconfigureCallback, &AoA_sensor_model_, _1, _2));
 
   Reset();
 
@@ -127,7 +131,8 @@ void GazeboRosWirelessReceiver::Load(sensors::SensorPtr _sensor, sdf::ElementPtr
 void GazeboRosWirelessReceiver::Reset()
 {
   updateTimer.Reset();
-  sensor_model_.reset();
+  rss_sensor_model_.reset();
+  AoA_sensor_model_.reset();
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -143,28 +148,6 @@ void GazeboRosWirelessReceiver::Update()
   //receiver's pose in the world
   math::Pose referencePose = 
       sensor_->GetPose() + this->parentEntity->GetWorldPose();
-  cout << "sensor_ pose: " 
-       << sensor_->GetPose().pos.x << " "
-       << sensor_->GetPose().pos.y << " "
-       << sensor_->GetPose().pos.z << " "
-       << sensor_->GetPose().rot.x << " "
-       << sensor_->GetPose().rot.y << " "
-       << sensor_->GetPose().rot.z << endl;
-
-  cout << "world pose: " 
-      << this->parentEntity->GetWorldPose().pos.x << " "
-      << this->parentEntity->GetWorldPose().pos.y << " "
-      << this->parentEntity->GetWorldPose().pos.z << " "
-      << this->parentEntity->GetWorldPose().rot.x << " "
-      << this->parentEntity->GetWorldPose().rot.y << " "
-      << this->parentEntity->GetWorldPose().rot.z << endl;
-  cout << "reference pose: " 
-    << referencePose.pos.x << " "
-    << referencePose.pos.y << " "
-    << referencePose.pos.z << " "
-    << referencePose.rot.x << " "
-    << referencePose.rot.y << " "
-    << referencePose.rot.z << endl;
 
   receiver_pose_.header.frame_id = "/world";
   receiver_pose_.header.stamp.sec =  (world->GetSimTime()).sec;
@@ -230,21 +213,22 @@ void GazeboRosWirelessReceiver::Update()
       // << relative_pose.rot.y << " "
       // << relative_pose.rot.z << endl;
 
+
+
       geometry_msgs::Point32 p;
       p.x = model_pose.pos.x;
       p.y = model_pose.pos.y;
       p.z = model_pose.pos.z;
       transmitters_.points.push_back(p);
 
-      //test 
-      // math::Pose test_pose;
-      // test_pose.pos.x = model_pose.pos.x - referencePose.pos.x;
-      // test_pose.pos.y = model_pose.pos.y - referencePose.pos.y;
-      // test_pose.pos.z = model_pose.pos.z - referencePose.pos.z;
-      // double test_dist = test_pose.pos.GetLength();
-      
+
+    
+      //add noise 
+      // gazebo::math::Vector3 distance = velocity_error_model_(link->GetWorldLinearVel(), dt);
+      // gazebo::math::Vector3 position = position_error_model_(pose.pos, dt);
 
       double dist = relative_pose.pos.GetLength();
+      dist = rss_sensor_model_(dist, dt);
       geometry_msgs::Point32 dist_p;
       dist_p.x = dist;//dist; //todo
       rss_.points.push_back(dist_p);
@@ -254,14 +238,15 @@ void GazeboRosWirelessReceiver::Update()
       
 
       relative_pose.pos.Normalize();//only direction
+      math::Vector3 dir  = AoA_sensor_model_(relative_pose.pos, dt);
       geometry_msgs::Point32 relative_p;
-      relative_p.x = relative_pose.pos.x;
-      relative_p.y = relative_pose.pos.y;
-      relative_p.z = relative_pose.pos.z;
+      relative_p.x = dir.x;
+      relative_p.y = dir.y;
+      relative_p.z = dir.z;
+
       AoA_.points.push_back(relative_p);
     }
   }   
-  cout << endl;
 
   AoA_pub_.publish(AoA_);
   transmitter_pub_.publish(transmitters_);
