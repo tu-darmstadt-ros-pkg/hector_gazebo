@@ -122,166 +122,13 @@
         <kinematic>0</kinematic>
         <gravity>1</gravity>
       </link>
-      <pose>-0.430802 1 0 0 -0 0</pose>
-    </model>
-    <model name='wireless_router'>
-      <link name='link'>
-        <pose>0 0 0.115 0 -0 0</pose>
-        <inertial>
-          <mass>0.5</mass>
-          <inertia>
-            <ixx>1</ixx>
-            <ixy>0</ixy>
-            <ixz>0</ixz>
-            <iyy>1</iyy>
-            <iyz>0</iyz>
-            <izz>1</izz>
-          </inertia>
-        </inertial>
-        <collision name='collision'>
-          <geometry>
-            <mesh>
-              <uri>model://wireless_router/meshes/Wireless Router_v4.stl</uri>
-              <scale>0.01 0.01 0.01</scale>
-            </mesh>
-          </geometry>
-          <max_contacts>10</max_contacts>
-          <surface>
-            <bounce/>
-            <friction>
-              <ode/>
-            </friction>
-            <contact>
-              <ode/>
-            </contact>
-          </surface>
-        </collision>
-        <visual name='visual'>
-          <geometry>
-            <mesh>
-              <uri>model://wireless_router/meshes/Wireless Router_v4.stl</uri>
-              <scale>0.01 0.01 0.01</scale>
-            </mesh>
-          </geometry>
-        </visual>
-        <velocity_decay>
-          <linear>0</linear>
-          <angular>0</angular>
-        </velocity_decay>
-        <self_collide>0</self_collide>
-        <kinematic>0</kinematic>
-        <gravity>1</gravity>
-      </link>
-      <pose>9 -7.50233 0 0 -0 0</pose>
-      <static>0</static>
-    </model>
-    <model name='wireless_router_0'>
-      <link name='link'>
-        <pose>0 0 0.115 0 -0 0</pose>
-        <inertial>
-          <mass>0.5</mass>
-          <inertia>
-            <ixx>1</ixx>
-            <ixy>0</ixy>
-            <ixz>0</ixz>
-            <iyy>1</iyy>
-            <iyz>0</iyz>
-            <izz>1</izz>
-          </inertia>
-        </inertial>
-        <collision name='collision'>
-          <geometry>
-            <mesh>
-              <uri>model://wireless_router/meshes/Wireless Router_v4.stl</uri>
-              <scale>0.01 0.01 0.01</scale>
-            </mesh>
-          </geometry>
-          <max_contacts>10</max_contacts>
-          <surface>
-            <bounce/>
-            <friction>
-              <ode/>
-            </friction>
-            <contact>
-              <ode/>
-            </contact>
-          </surface>
-        </collision>
-        <visual name='visual'>
-          <geometry>
-            <mesh>
-              <uri>model://wireless_router/meshes/Wireless Router_v4.stl</uri>
-              <scale>0.01 0.01 0.01</scale>
-            </mesh>
-          </geometry>
-        </visual>
-        <velocity_decay>
-          <linear>0</linear>
-          <angular>0</angular>
-        </velocity_decay>
-        <self_collide>0</self_collide>
-        <kinematic>0</kinematic>
-        <gravity>1</gravity>
-      </link>
-      <pose>-10 -8.50868 0 0 -0 0</pose>
-      <static>0</static>
-    </model>
-    <model name='wireless_router_1'>
-      <link name='link'>
-        <pose>0 0 0.115 0 -0 0</pose>
-        <inertial>
-          <mass>0.5</mass>
-          <inertia>
-            <ixx>1</ixx>
-            <ixy>0</ixy>
-            <ixz>0</ixz>
-            <iyy>1</iyy>
-            <iyz>0</iyz>
-            <izz>1</izz>
-          </inertia>
-        </inertial>
-        <collision name='collision'>
-          <geometry>
-            <mesh>
-              <uri>model://wireless_router/meshes/Wireless Router_v4.stl</uri>
-              <scale>0.01 0.01 0.01</scale>
-            </mesh>
-          </geometry>
-          <max_contacts>10</max_contacts>
-          <surface>
-            <bounce/>
-            <friction>
-              <ode/>
-            </friction>
-            <contact>
-              <ode/>
-            </contact>
-          </surface>
-        </collision>
-        <visual name='visual'>
-          <geometry>
-            <mesh>
-              <uri>model://wireless_router/meshes/Wireless Router_v4.stl</uri>
-              <scale>0.01 0.01 0.01</scale>
-            </mesh>
-          </geometry>
-        </visual>
-        <velocity_decay>
-          <linear>0</linear>
-          <angular>0</angular>
-        </velocity_decay>
-        <self_collide>0</self_collide>
-        <kinematic>0</kinematic>
-        <gravity>1</gravity>
-      </link>
-      <pose>9 11 0 0 -0 0</pose>
-      <static>0</static>
+      <pose>0 0 0 0 -0 0</pose>
     </model>
     <model name='wireless_router_2'>
       <link name='link'>
-        <pose>0 0 0.115 0 -0 0</pose>
+        <pose>0 0 0.02 0 -0 0</pose>
         <inertial>
-          <mass>0.5</mass>
+          <mass>0.05977</mass>
           <inertia>
             <ixx>1</ixx>
             <ixy>0</ixy>
@@ -294,8 +141,7 @@
         <collision name='collision'>
           <geometry>
             <mesh>
-              <uri>model://wireless_router/meshes/Wireless Router_v4.stl</uri>
-              <scale>0.01 0.01 0.01</scale>
+              <uri>model://wireless_router/meshes/wireless_microreceiver.dae</uri>
             </mesh>
           </geometry>
           <max_contacts>10</max_contacts>
@@ -312,8 +158,7 @@
         <visual name='visual'>
           <geometry>
             <mesh>
-              <uri>model://wireless_router/meshes/Wireless Router_v4.stl</uri>
-              <scale>0.01 0.01 0.01</scale>
+              <uri>model://wireless_router/meshes/wireless_microreceiver.dae</uri>
             </mesh>
           </geometry>
         </visual>
@@ -325,14 +170,14 @@
         <kinematic>0</kinematic>
         <gravity>1</gravity>
       </link>
-      <pose>-10 11 0 0 -0 0</pose>
+      <pose>-7 -11 0 0 -0 0</pose>
       <static>0</static>
     </model>
     <model name='wireless_router_3'>
       <link name='link'>
-        <pose>0 0 0.115 0 -0 0</pose>
+        <pose>0 0 0.02 0 -0 0</pose>
         <inertial>
-          <mass>0.5</mass>
+          <mass>0.05977</mass>
           <inertia>
             <ixx>1</ixx>
             <ixy>0</ixy>
@@ -345,8 +190,7 @@
         <collision name='collision'>
           <geometry>
             <mesh>
-              <uri>model://wireless_router/meshes/Wireless Router_v4.stl</uri>
-              <scale>0.01 0.01 0.01</scale>
+              <uri>model://wireless_router/meshes/wireless_microreceiver.dae</uri>
             </mesh>
           </geometry>
           <max_contacts>10</max_contacts>
@@ -363,8 +207,7 @@
         <visual name='visual'>
           <geometry>
             <mesh>
-              <uri>model://wireless_router/meshes/Wireless Router_v4.stl</uri>
-              <scale>0.01 0.01 0.01</scale>
+              <uri>model://wireless_router/meshes/wireless_microreceiver.dae</uri>
             </mesh>
           </geometry>
         </visual>
@@ -376,14 +219,14 @@
         <kinematic>0</kinematic>
         <gravity>1</gravity>
       </link>
-      <pose>9 3 0 0 -0 0</pose>
+      <pose>1 -11 0 0 -0 0</pose>
       <static>0</static>
     </model>
     <model name='wireless_router_4'>
       <link name='link'>
-        <pose>0 0 0.115 0 -0 0</pose>
+        <pose>0 0 0.02 0 -0 0</pose>
         <inertial>
-          <mass>0.5</mass>
+          <mass>0.05977</mass>
           <inertia>
             <ixx>1</ixx>
             <ixy>0</ixy>
@@ -396,8 +239,7 @@
         <collision name='collision'>
           <geometry>
             <mesh>
-              <uri>model://wireless_router/meshes/Wireless Router_v4.stl</uri>
-              <scale>0.01 0.01 0.01</scale>
+              <uri>model://wireless_router/meshes/wireless_microreceiver.dae</uri>
             </mesh>
           </geometry>
           <max_contacts>10</max_contacts>
@@ -414,8 +256,7 @@
         <visual name='visual'>
           <geometry>
             <mesh>
-              <uri>model://wireless_router/meshes/Wireless Router_v4.stl</uri>
-              <scale>0.01 0.01 0.01</scale>
+              <uri>model://wireless_router/meshes/wireless_microreceiver.dae</uri>
             </mesh>
           </geometry>
         </visual>
@@ -427,14 +268,14 @@
         <kinematic>0</kinematic>
         <gravity>1</gravity>
       </link>
-      <pose>2 11 0 0 -0 0</pose>
+      <pose>7.40508 -11 0 0 -0 0</pose>
       <static>0</static>
     </model>
     <model name='wireless_router_5'>
       <link name='link'>
-        <pose>0 0 0.115 0 -0 0</pose>
+        <pose>0 0 0.02 0 -0 0</pose>
         <inertial>
-          <mass>0.5</mass>
+          <mass>0.05977</mass>
           <inertia>
             <ixx>1</ixx>
             <ixy>0</ixy>
@@ -447,8 +288,7 @@
         <collision name='collision'>
           <geometry>
             <mesh>
-              <uri>model://wireless_router/meshes/Wireless Router_v4.stl</uri>
-              <scale>0.01 0.01 0.01</scale>
+              <uri>model://wireless_router/meshes/wireless_microreceiver.dae</uri>
             </mesh>
           </geometry>
           <max_contacts>10</max_contacts>
@@ -465,8 +305,7 @@
         <visual name='visual'>
           <geometry>
             <mesh>
-              <uri>model://wireless_router/meshes/Wireless Router_v4.stl</uri>
-              <scale>0.01 0.01 0.01</scale>
+              <uri>model://wireless_router/meshes/wireless_microreceiver.dae</uri>
             </mesh>
           </geometry>
         </visual>
@@ -478,14 +317,14 @@
         <kinematic>0</kinematic>
         <gravity>1</gravity>
       </link>
-      <pose>1 -8 0 0 -0 0</pose>
+      <pose>11 -7.58686 0 0 -0 0</pose>
       <static>0</static>
     </model>
     <model name='wireless_router_6'>
       <link name='link'>
-        <pose>0 0 0.115 0 -0 0</pose>
+        <pose>0 0 0.02 0 -0 0</pose>
         <inertial>
-          <mass>0.5</mass>
+          <mass>0.05977</mass>
           <inertia>
             <ixx>1</ixx>
             <ixy>0</ixy>
@@ -498,8 +337,7 @@
         <collision name='collision'>
           <geometry>
             <mesh>
-              <uri>model://wireless_router/meshes/Wireless Router_v4.stl</uri>
-              <scale>0.01 0.01 0.01</scale>
+              <uri>model://wireless_router/meshes/wireless_microreceiver.dae</uri>
             </mesh>
           </geometry>
           <max_contacts>10</max_contacts>
@@ -516,8 +354,7 @@
         <visual name='visual'>
           <geometry>
             <mesh>
-              <uri>model://wireless_router/meshes/Wireless Router_v4.stl</uri>
-              <scale>0.01 0.01 0.01</scale>
+              <uri>model://wireless_router/meshes/wireless_microreceiver.dae</uri>
             </mesh>
           </geometry>
         </visual>
@@ -529,17 +366,360 @@
         <kinematic>0</kinematic>
         <gravity>1</gravity>
       </link>
-      <pose>-10 0 0 0 -0 0</pose>
+      <pose>11.4225 -2.49473 0 0 -0 0</pose>
+      <static>0</static>
+    </model>
+    <model name='wireless_router_7'>
+      <link name='link'>
+        <pose>0 0 0.02 0 -0 0</pose>
+        <inertial>
+          <mass>0.05977</mass>
+          <inertia>
+            <ixx>1</ixx>
+            <ixy>0</ixy>
+            <ixz>0</ixz>
+            <iyy>1</iyy>
+            <iyz>0</iyz>
+            <izz>1</izz>
+          </inertia>
+        </inertial>
+        <collision name='collision'>
+          <geometry>
+            <mesh>
+              <uri>model://wireless_router/meshes/wireless_microreceiver.dae</uri>
+            </mesh>
+          </geometry>
+          <max_contacts>10</max_contacts>
+          <surface>
+            <bounce/>
+            <friction>
+              <ode/>
+            </friction>
+            <contact>
+              <ode/>
+            </contact>
+          </surface>
+        </collision>
+        <visual name='visual'>
+          <geometry>
+            <mesh>
+              <uri>model://wireless_router/meshes/wireless_microreceiver.dae</uri>
+            </mesh>
+          </geometry>
+        </visual>
+        <velocity_decay>
+          <linear>0</linear>
+          <angular>0</angular>
+        </velocity_decay>
+        <self_collide>0</self_collide>
+        <kinematic>0</kinematic>
+        <gravity>1</gravity>
+      </link>
+      <pose>11.4293 4 0 0 -0 0</pose>
+      <static>0</static>
+    </model>
+    <model name='wireless_router_8'>
+      <link name='link'>
+        <pose>0 0 0.02 0 -0 0</pose>
+        <inertial>
+          <mass>0.05977</mass>
+          <inertia>
+            <ixx>1</ixx>
+            <ixy>0</ixy>
+            <ixz>0</ixz>
+            <iyy>1</iyy>
+            <iyz>0</iyz>
+            <izz>1</izz>
+          </inertia>
+        </inertial>
+        <collision name='collision'>
+          <geometry>
+            <mesh>
+              <uri>model://wireless_router/meshes/wireless_microreceiver.dae</uri>
+            </mesh>
+          </geometry>
+          <max_contacts>10</max_contacts>
+          <surface>
+            <bounce/>
+            <friction>
+              <ode/>
+            </friction>
+            <contact>
+              <ode/>
+            </contact>
+          </surface>
+        </collision>
+        <visual name='visual'>
+          <geometry>
+            <mesh>
+              <uri>model://wireless_router/meshes/wireless_microreceiver.dae</uri>
+            </mesh>
+          </geometry>
+        </visual>
+        <velocity_decay>
+          <linear>0</linear>
+          <angular>0</angular>
+        </velocity_decay>
+        <self_collide>0</self_collide>
+        <kinematic>0</kinematic>
+        <gravity>1</gravity>
+      </link>
+      <pose>5 12 0 0 -0 0</pose>
+      <static>0</static>
+    </model>
+    <model name='wireless_router_9'>
+      <link name='link'>
+        <pose>0 0 0.02 0 -0 0</pose>
+        <inertial>
+          <mass>0.05977</mass>
+          <inertia>
+            <ixx>1</ixx>
+            <ixy>0</ixy>
+            <ixz>0</ixz>
+            <iyy>1</iyy>
+            <iyz>0</iyz>
+            <izz>1</izz>
+          </inertia>
+        </inertial>
+        <collision name='collision'>
+          <geometry>
+            <mesh>
+              <uri>model://wireless_router/meshes/wireless_microreceiver.dae</uri>
+            </mesh>
+          </geometry>
+          <max_contacts>10</max_contacts>
+          <surface>
+            <bounce/>
+            <friction>
+              <ode/>
+            </friction>
+            <contact>
+              <ode/>
+            </contact>
+          </surface>
+        </collision>
+        <visual name='visual'>
+          <geometry>
+            <mesh>
+              <uri>model://wireless_router/meshes/wireless_microreceiver.dae</uri>
+            </mesh>
+          </geometry>
+        </visual>
+        <velocity_decay>
+          <linear>0</linear>
+          <angular>0</angular>
+        </velocity_decay>
+        <self_collide>0</self_collide>
+        <kinematic>0</kinematic>
+        <gravity>1</gravity>
+      </link>
+      <pose>-1 12.4419 0 0 -0 0</pose>
+      <static>0</static>
+    </model>
+    <model name='wireless_router_10'>
+      <link name='link'>
+        <pose>0 0 0.02 0 -0 0</pose>
+        <inertial>
+          <mass>0.05977</mass>
+          <inertia>
+            <ixx>1</ixx>
+            <ixy>0</ixy>
+            <ixz>0</ixz>
+            <iyy>1</iyy>
+            <iyz>0</iyz>
+            <izz>1</izz>
+          </inertia>
+        </inertial>
+        <collision name='collision'>
+          <geometry>
+            <mesh>
+              <uri>model://wireless_router/meshes/wireless_microreceiver.dae</uri>
+            </mesh>
+          </geometry>
+          <max_contacts>10</max_contacts>
+          <surface>
+            <bounce/>
+            <friction>
+              <ode/>
+            </friction>
+            <contact>
+              <ode/>
+            </contact>
+          </surface>
+        </collision>
+        <visual name='visual'>
+          <geometry>
+            <mesh>
+              <uri>model://wireless_router/meshes/wireless_microreceiver.dae</uri>
+            </mesh>
+          </geometry>
+        </visual>
+        <velocity_decay>
+          <linear>0</linear>
+          <angular>0</angular>
+        </velocity_decay>
+        <self_collide>0</self_collide>
+        <kinematic>0</kinematic>
+        <gravity>1</gravity>
+      </link>
+      <pose>-7.47485 12 0 0 -0 0</pose>
+      <static>0</static>
+    </model>
+    <model name='wireless_router_11'>
+      <link name='link'>
+        <pose>0 0 0.02 0 -0 0</pose>
+        <inertial>
+          <mass>0.05977</mass>
+          <inertia>
+            <ixx>1</ixx>
+            <ixy>0</ixy>
+            <ixz>0</ixz>
+            <iyy>1</iyy>
+            <iyz>0</iyz>
+            <izz>1</izz>
+          </inertia>
+        </inertial>
+        <collision name='collision'>
+          <geometry>
+            <mesh>
+              <uri>model://wireless_router/meshes/wireless_microreceiver.dae</uri>
+            </mesh>
+          </geometry>
+          <max_contacts>10</max_contacts>
+          <surface>
+            <bounce/>
+            <friction>
+              <ode/>
+            </friction>
+            <contact>
+              <ode/>
+            </contact>
+          </surface>
+        </collision>
+        <visual name='visual'>
+          <geometry>
+            <mesh>
+              <uri>model://wireless_router/meshes/wireless_microreceiver.dae</uri>
+            </mesh>
+          </geometry>
+        </visual>
+        <velocity_decay>
+          <linear>0</linear>
+          <angular>0</angular>
+        </velocity_decay>
+        <self_collide>0</self_collide>
+        <kinematic>0</kinematic>
+        <gravity>1</gravity>
+      </link>
+      <pose>-12 -7 0 0 -0 0</pose>
+      <static>0</static>
+    </model>
+    <model name='wireless_router_12'>
+      <link name='link'>
+        <pose>0 0 0.02 0 -0 0</pose>
+        <inertial>
+          <mass>0.05977</mass>
+          <inertia>
+            <ixx>1</ixx>
+            <ixy>0</ixy>
+            <ixz>0</ixz>
+            <iyy>1</iyy>
+            <iyz>0</iyz>
+            <izz>1</izz>
+          </inertia>
+        </inertial>
+        <collision name='collision'>
+          <geometry>
+            <mesh>
+              <uri>model://wireless_router/meshes/wireless_microreceiver.dae</uri>
+            </mesh>
+          </geometry>
+          <max_contacts>10</max_contacts>
+          <surface>
+            <bounce/>
+            <friction>
+              <ode/>
+            </friction>
+            <contact>
+              <ode/>
+            </contact>
+          </surface>
+        </collision>
+        <visual name='visual'>
+          <geometry>
+            <mesh>
+              <uri>model://wireless_router/meshes/wireless_microreceiver.dae</uri>
+            </mesh>
+          </geometry>
+        </visual>
+        <velocity_decay>
+          <linear>0</linear>
+          <angular>0</angular>
+        </velocity_decay>
+        <self_collide>0</self_collide>
+        <kinematic>0</kinematic>
+        <gravity>1</gravity>
+      </link>
+      <pose>-12 -2 0 0 -0 0</pose>
+      <static>0</static>
+    </model>
+    <model name='wireless_router_13'>
+      <link name='link'>
+        <pose>0 0 0.02 0 -0 0</pose>
+        <inertial>
+          <mass>0.05977</mass>
+          <inertia>
+            <ixx>1</ixx>
+            <ixy>0</ixy>
+            <ixz>0</ixz>
+            <iyy>1</iyy>
+            <iyz>0</iyz>
+            <izz>1</izz>
+          </inertia>
+        </inertial>
+        <collision name='collision'>
+          <geometry>
+            <mesh>
+              <uri>model://wireless_router/meshes/wireless_microreceiver.dae</uri>
+            </mesh>
+          </geometry>
+          <max_contacts>10</max_contacts>
+          <surface>
+            <bounce/>
+            <friction>
+              <ode/>
+            </friction>
+            <contact>
+              <ode/>
+            </contact>
+          </surface>
+        </collision>
+        <visual name='visual'>
+          <geometry>
+            <mesh>
+              <uri>model://wireless_router/meshes/wireless_microreceiver.dae</uri>
+            </mesh>
+          </geometry>
+        </visual>
+        <velocity_decay>
+          <linear>0</linear>
+          <angular>0</angular>
+        </velocity_decay>
+        <self_collide>0</self_collide>
+        <kinematic>0</kinematic>
+        <gravity>1</gravity>
+      </link>
+      <pose>-12 5.58735 0 0 -0 0</pose>
       <static>0</static>
     </model>
     <state world_name='default'>
-      <sim_time>199 352000000</sim_time>
-      <real_time>210 405143502</real_time>
-      <wall_time>1457155403 920009165</wall_time>
+      <sim_time>360 924000000</sim_time>
+      <real_time>373 392123335</real_time>
+      <wall_time>1457336875 425200293</wall_time>
       <model name='asphalt_plane'>
-        <pose>-0.430802 1 0 0 -0 0</pose>
+        <pose>0 0 0 0 -0 0</pose>
         <link name='link'>
-          <pose>-0.430802 1 0 0 -0 0</pose>
+          <pose>0 0 0 0 -0 0</pose>
           <velocity>0 0 0 0 -0 0</velocity>
           <acceleration>0 0 0 0 -0 0</acceleration>
           <wrench>0 0 0 0 -0 0</wrench>
@@ -554,82 +734,118 @@
           <wrench>0 0 0 0 -0 0</wrench>
         </link>
       </model>
-      <model name='wireless_router'>
-        <pose>9.24995 -7.54932 0.059389 -2.57109 -0.795974 2.44448</pose>
+      <model name='wireless_router_10'>
+        <pose>-7.47485 12 -0.020009 0 -0.00027 0</pose>
         <link name='link'>
-          <pose>9.15705 -7.55253 -0.008322 -2.57109 -0.795974 2.44448</pose>
-          <velocity>0.034781 0.004795 0.042551 0.095149 -0.602073 -0.009937</velocity>
-          <acceleration>-0.047302 0.005967 -0.013403 0.353225 0.744601 0.001253</acceleration>
-          <wrench>-0.023651 0.002984 -0.006701 0 -0 0</wrench>
+          <pose>-7.47485 12 -9e-06 0 -0.00027 0</pose>
+          <velocity>0 0 0 0 -0 0</velocity>
+          <acceleration>0 0 -9.8 0 -0 0</acceleration>
+          <wrench>0 0 -0.585746 0 -0 0</wrench>
         </link>
       </model>
-      <model name='wireless_router_0'>
-        <pose>-9.77004 -8.5938 0.09442 3.03556 -0.803953 2.7011</pose>
+      <model name='wireless_router_11'>
+        <pose>-12 -7 -0.02 0 -0.00027 0</pose>
         <link name='link'>
-          <pose>-9.83934 -8.54768 0.015074 3.03556 -0.803953 2.7011</pose>
-          <velocity>-0.000652 0.012482 -0.043771 0.405009 -0.000757 -0.006246</velocity>
-          <acceleration>-0.043703 0.051913 -0.317451 -2.11304 0.644797 3.13266</acceleration>
-          <wrench>-0.021852 0.025957 -0.158725 0 -0 0</wrench>
+          <pose>-12 -7 -0 0 -0.00027 0</pose>
+          <velocity>0 0 0 0 -0 0</velocity>
+          <acceleration>0 0 -9.8 0 -0 0</acceleration>
+          <wrench>0 0 -0.585746 0 -0 0</wrench>
         </link>
       </model>
-      <model name='wireless_router_1'>
-        <pose>9.19771 10.9519 -0.054186 -1.45318 -1.37226 0.928371</pose>
+      <model name='wireless_router_12'>
+        <pose>-12 -2 -0.020009 0 -0.00027 0</pose>
         <link name='link'>
-          <pose>9.09834 11.0097 -0.051524 -1.45318 -1.37226 0.928371</pose>
-          <velocity>0.076581 -0.044604 0.011512 -0.460697 -0.753414 -0.008674</velocity>
-          <acceleration>-0.009885 2.20296 19.9555 -0.514319 0.246529 -0.018423</acceleration>
-          <wrench>-0.004943 1.10148 9.97776 0 -0 0</wrench>
+          <pose>-12 -2 -9e-06 0 -0.00027 0</pose>
+          <velocity>0 0 0 0 -0 0</velocity>
+          <acceleration>0 0 -9.8 0 -0 0</acceleration>
+          <wrench>0 0 -0.585746 0 -0 0</wrench>
+        </link>
+      </model>
+      <model name='wireless_router_13'>
+        <pose>-12 5.58735 -0.02 0 -0.00027 0</pose>
+        <link name='link'>
+          <pose>-12 5.58735 -0 0 -0.00027 0</pose>
+          <velocity>0 0 0 0 -0 0</velocity>
+          <acceleration>0 0 -9.8 2.57255 -0 0</acceleration>
+          <wrench>0 0 -0.585746 0 -0 0</wrench>
         </link>
       </model>
       <model name='wireless_router_2'>
-        <pose>-9.75504 10.9799 0.022613 -2.40184 -0.919206 2.25907</pose>
+        <pose>-7 -11 -0.020009 0 -0.00027 0</pose>
         <link name='link'>
-          <pose>-9.85782 10.9828 -0.028901 -2.40184 -0.919206 2.25907</pose>
-          <velocity>0.044078 -0.000556 0.045593 -0.04156 -0.559352 -0.004614</velocity>
-          <acceleration>-0.109858 2.50375 15.1864 -2.90937 1.43899 2.97201</acceleration>
-          <wrench>-0.054929 1.25188 7.59322 0 -0 0</wrench>
+          <pose>-7 -11 -9e-06 0 -0.00027 0</pose>
+          <velocity>0 0 0 0 -0 0</velocity>
+          <acceleration>0 0 -9.8 0 -0 0</acceleration>
+          <wrench>0 0 -0.585746 0 -0 0</wrench>
         </link>
       </model>
       <model name='wireless_router_3'>
-        <pose>9.23099 2.93367 0.108206 2.93805 -0.763963 2.8653</pose>
+        <pose>1.00001 -11 -0.02 0 -0.00027 0</pose>
         <link name='link'>
-          <pose>9.16237 2.97729 0.026878 2.93805 -0.763963 2.8653</pose>
-          <velocity>-0.000744 -0.009547 0.014664 -0.331047 0.008362 -0.006814</velocity>
-          <acceleration>0 0 -9.8 -0.039447 0.000243 0.000243</acceleration>
-          <wrench>0 0 -4.9 0 -0 0</wrench>
+          <pose>1 -11 -0 0 -0.00027 0</pose>
+          <velocity>0 0 0 0 -0 0</velocity>
+          <acceleration>0 0 -9.8 0 -0 0</acceleration>
+          <wrench>0 0 -0.585746 0 -0 0</wrench>
         </link>
       </model>
       <model name='wireless_router_4'>
-        <pose>2.2268 10.9272 0.085487 -2.89775 -0.703098 2.29802</pose>
+        <pose>7.40508 -11 -0.020009 0 -0.00027 0</pose>
         <link name='link'>
-          <pose>2.15808 10.9627 0.000355 -2.89775 -0.703098 2.29802</pose>
-          <velocity>0.024571 -0.00861 0.051007 -0.208514 -0.498941 -0.006792</velocity>
-          <acceleration>0 0 -9.84748 0.039766 -0.282135 0.489785</acceleration>
-          <wrench>0 0 -4.92374 0 -0 0</wrench>
+          <pose>7.40508 -11 -9e-06 0 -0.00027 0</pose>
+          <velocity>0 0 0 0 -0 0</velocity>
+          <acceleration>0 0 -9.8 0 -0 0</acceleration>
+          <wrench>0 0 -0.585746 0 -0 0</wrench>
         </link>
       </model>
       <model name='wireless_router_5'>
-        <pose>1.24624 -7.98993 0.031104 -2.28535 -0.861799 2.54399</pose>
+        <pose>11 -7.58686 -0.02 0 -0.00027 0</pose>
         <link name='link'>
-          <pose>1.15007 -8.02956 -0.017959 -2.28535 -0.861799 2.54399</pose>
-          <velocity>0.043344 0.026832 0.039566 0.398632 -0.638503 -0.003687</velocity>
-          <acceleration>-0.049832 -0.009219 0.00947 0.195407 0.725782 0.001675</acceleration>
-          <wrench>-0.024916 -0.004609 0.004735 0 -0 0</wrench>
+          <pose>11 -7.58686 -0 0 -0.00027 0</pose>
+          <velocity>0 0 0 0 -0 0</velocity>
+          <acceleration>0 0 -9.8 0 -0 0</acceleration>
+          <wrench>0 0 -0.585746 0 -0 0</wrench>
         </link>
       </model>
       <model name='wireless_router_6'>
-        <pose>-9.95896 -0.014851 -0.065284 0.198164 -0.36645 0.768419</pose>
+        <pose>11.4225 -2.49473 -0.020009 0 -0.00027 0</pose>
         <link name='link'>
-          <pose>-9.97228 -0.059206 0.03998 0.198164 -0.36645 0.768419</pose>
-          <velocity>0.000438 0.0004 -0.006493 -0.017354 -0.03437 -0.00329</velocity>
-          <acceleration>0.008643 -0.00149 -0.150801 2.86583 -1.45809 3.14158</acceleration>
-          <wrench>0.004322 -0.000745 -0.075401 0 -0 0</wrench>
+          <pose>11.4225 -2.49473 -9e-06 0 -0.00027 0</pose>
+          <velocity>0 0 0 0 -0 0</velocity>
+          <acceleration>0 0 -9.8 0 -0 0</acceleration>
+          <wrench>0 0 -0.585746 0 -0 0</wrench>
+        </link>
+      </model>
+      <model name='wireless_router_7'>
+        <pose>11.4293 4 -0.02 0 -0.00027 0</pose>
+        <link name='link'>
+          <pose>11.4293 4 -0 0 -0.00027 0</pose>
+          <velocity>0 0 0 0 -0 0</velocity>
+          <acceleration>0 0 -9.8 0 -0 0</acceleration>
+          <wrench>0 0 -0.585746 0 -0 0</wrench>
+        </link>
+      </model>
+      <model name='wireless_router_8'>
+        <pose>5 12 -0.020009 0 -0.00027 0</pose>
+        <link name='link'>
+          <pose>5 12 -9e-06 0 -0.00027 0</pose>
+          <velocity>0 0 0 0 -0 0</velocity>
+          <acceleration>0 0 -9.8 0 -0 0</acceleration>
+          <wrench>0 0 -0.585746 0 -0 0</wrench>
+        </link>
+      </model>
+      <model name='wireless_router_9'>
+        <pose>-0.999995 12.4419 -0.02 0 -0.00027 0</pose>
+        <link name='link'>
+          <pose>-1 12.4419 -0 0 -0.00027 0</pose>
+          <velocity>0 0 0 0 -0 0</velocity>
+          <acceleration>0 0 -9.8 0 -0 0</acceleration>
+          <wrench>0 0 -0.585746 0 -0 0</wrench>
         </link>
       </model>
     </state>
     <gui fullscreen='0'>
       <camera name='user_camera'>
-        <pose>9.72379 42.9366 14.4525 0 0.151643 -2.03099</pose>
+        <pose>21.3468 -18.7768 5.31766 0 0.167643 2.22419</pose>
         <view_controller>orbit</view_controller>
       </camera>
     </gui>

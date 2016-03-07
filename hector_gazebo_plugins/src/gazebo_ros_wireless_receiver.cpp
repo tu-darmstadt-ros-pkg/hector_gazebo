@@ -145,6 +145,11 @@ void GazeboRosWirelessReceiver::Update()
   // activate RaySensor if it is not yet active
   if (!sensor_->IsActive()) sensor_->SetActive(true);
 
+  sensor_msgs::PointCloud transmitters_;//positon of transmitter
+  sensor_msgs::PointCloud rss_; //rss value of transmitter, here is the distance 
+  sensor_msgs::PointCloud AoA_;//angle of arrival 
+  geometry_msgs::PoseStamped receiver_pose_;
+
   //receiver's pose in the world
   math::Pose referencePose = 
       sensor_->GetPose() + this->parentEntity->GetWorldPose();
@@ -174,15 +179,13 @@ void GazeboRosWirelessReceiver::Update()
   rss_.header.stamp.sec =  (world->GetSimTime()).sec;
   rss_.header.stamp.nsec =  (world->GetSimTime()).nsec;
 
-  transmitters_.points.clear();
-  transmitters_.channels.clear();
-  rss_.points.clear();
-  rss_.channels.clear();
-  AoA_.points.clear();
-  AoA_.channels.clear();
+ 
+  transmitters_.channels.resize(1);
+  rss_.channels.resize(1);
+  AoA_.channels.resize(1);
 
-  //math::Pose myPose = sensor_->GetPose();//the pose to the baselink
-  //cout << "referencePose: " << referencePose.pos << "  " << referencePose.rot << endl;
+
+  int count = 0;//id of the transmitter
   physics::Model_V models = this->world->GetModels();
   for(physics::Model_V::iterator it = models.begin(); it != models.end(); it++)
   {
@@ -192,50 +195,21 @@ void GazeboRosWirelessReceiver::Update()
     {                                                                              
       //std::cout << "name: " << name << std::endl;
       math::Pose model_pose = (*it)->GetWorldPose();
-      //cout << "model pose: " << model_pose.pos << "  " << model_pose.rot << endl;
-      // cout << "model pose: " 
-      // << model_pose.pos.x << " "
-      // << model_pose.pos.y << " "
-      // << model_pose.pos.z << " "
-      // << model_pose.rot.x << " "
-      // << model_pose.rot.y << " "
-      // << model_pose.rot.z << endl;
-
-      //todo 
       math::Pose relative_pose = -(referencePose - model_pose);//router coordinator to receiver coordinator
-      //cout << "relative: " << relative_pose.pos << "  " << relative_pose.rot << endl;
-
-      // cout << "relative pose: " 
-      // << relative_pose.pos.x << " "
-      // << relative_pose.pos.y << " "
-      // << relative_pose.pos.z << " "
-      // << relative_pose.rot.x << " "
-      // << relative_pose.rot.y << " "
-      // << relative_pose.rot.z << endl;
-
-
 
       geometry_msgs::Point32 p;
       p.x = model_pose.pos.x;
       p.y = model_pose.pos.y;
       p.z = model_pose.pos.z;
       transmitters_.points.push_back(p);
-
-
-    
-      //add noise 
-      // gazebo::math::Vector3 distance = velocity_error_model_(link->GetWorldLinearVel(), dt);
-      // gazebo::math::Vector3 position = position_error_model_(pose.pos, dt);
+      transmitters_.channels[0].values.push_back(count);
 
       double dist = relative_pose.pos.GetLength();
       dist = rss_sensor_model_(dist, dt);
       geometry_msgs::Point32 dist_p;
       dist_p.x = dist;//dist; //todo
       rss_.points.push_back(dist_p);
-      // cout << test_dist << " <-> " << dist << endl;
-      // cout << "(" << relative_pose.pos.x << " " << relative_pose.pos.y << " " << relative_pose.pos.z << ") "
-      //      <<  "--(" << test_pose.pos.x << " " << test_pose.pos.y << " " << test_pose.pos.z << ") " << endl;
-      
+      rss_.channels[0].values.push_back(count);
 
       relative_pose.pos.Normalize();//only direction
       math::Vector3 dir  = AoA_sensor_model_(relative_pose.pos, dt);
@@ -245,13 +219,15 @@ void GazeboRosWirelessReceiver::Update()
       relative_p.z = dir.z;
 
       AoA_.points.push_back(relative_p);
+      AoA_.channels[0].values.push_back(count);
+      
     }
   }   
 
   AoA_pub_.publish(AoA_);
   transmitter_pub_.publish(transmitters_);
   rss_pub_.publish(rss_);
-
+  count++;
 }
 
 // Register this plugin with the simulator
