@@ -222,12 +222,13 @@ void GazeboRosWirelessReceiver::Update()
       AoA_.channels[0].values.push_back(count);
       
     }
+    count++;
   }   
 
   AoA_pub_.publish(AoA_);
   transmitter_pub_.publish(transmitters_);
   rss_pub_.publish(rss_);
-  count++;
+  
 }
 
 // Register this plugin with the simulator
