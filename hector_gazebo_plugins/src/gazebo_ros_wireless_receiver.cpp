@@ -220,9 +220,9 @@ void GazeboRosWirelessReceiver::Update()
 
       AoA_.points.push_back(relative_p);
       AoA_.channels[0].values.push_back(count);
-      
+      count++;
     }
-    count++;
+    
   }   
 
   AoA_pub_.publish(AoA_);
