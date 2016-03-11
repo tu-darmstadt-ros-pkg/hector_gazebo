@@ -122,16 +122,16 @@
         <kinematic>0</kinematic>
         <gravity>1</gravity>
       </link>
-      <pose>-1 1 0 0 -0 0</pose>
+      <pose>0 0 0 0 -0 0</pose>
     </model>
     <state world_name='default'>
-      <sim_time>639 911000000</sim_time>
-      <real_time>642 728211836</real_time>
-      <wall_time>1456058466 197189205</wall_time>
+      <sim_time>53 873000000</sim_time>
+      <real_time>54 154651169</real_time>
+      <wall_time>1457697346 400427281</wall_time>
       <model name='asphalt_plane'>
-        <pose>-1 1 0 0 -0 0</pose>
+        <pose>0 0 0 0 -0 0</pose>
         <link name='link'>
-          <pose>-1 1 0 0 -0 0</pose>
+          <pose>0 0 0 0 -0 0</pose>
           <velocity>0 0 0 0 -0 0</velocity>
           <acceleration>0 0 0 0 -0 0</acceleration>
           <wrench>0 0 0 0 -0 0</wrench>
@@ -149,7 +149,7 @@
     </state>
     <gui fullscreen='0'>
       <camera name='user_camera'>
-        <pose>6.00874 -19.207 21.5598 0 0.825796 1.85587</pose>
+        <pose>21.5047 -22.2821 10.0287 0 0.275643 2.35619</pose>
         <view_controller>orbit</view_controller>
       </camera>
     </gui>
