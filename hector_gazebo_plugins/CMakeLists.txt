@@ -98,6 +98,11 @@ add_library(hector_gazebo_ros_wireless_receiver src/gazebo_ros_wireless_receiver
 target_link_libraries(hector_gazebo_ros_wireless_receiver ${GAZEBO_LIBRARIES} ${catkin_LIBRARIES})
 add_dependencies(hector_gazebo_ros_wireless_receiver ${PROJECT_NAME}_gencfg)
 
+add_library(gazebo_ros_create src/gazebo_ros_create.cpp)
+target_link_libraries(gazebo_ros_create  ${catkin_LIBRARIES} ${GAZEBO_LIBRARIES})
+add_dependencies(gazebo_ros_create ${PROJECT_NAME}_gencfg)
+
+
 #############
 ## Install ##
 #############
