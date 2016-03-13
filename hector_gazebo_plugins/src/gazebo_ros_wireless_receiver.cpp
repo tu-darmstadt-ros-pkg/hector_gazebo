@@ -108,10 +108,27 @@ void GazeboRosWirelessReceiver::Load(sensors::SensorPtr _sensor, sdf::ElementPtr
   }
 
   node_handle_ = new ros::NodeHandle(namespace_);
-  transmitter_pub_ = node_handle_->advertise<sensor_msgs::PointCloud>(topic_+"/transmitter", 1);
-  rss_pub_ = node_handle_->advertise<sensor_msgs::PointCloud>(topic_+"/rss", 1);
-  AoA_pub_ = node_handle_->advertise<sensor_msgs::PointCloud>(topic_+"/AoA", 1);
-  receiver_pub_ = node_handle_->advertise<geometry_msgs::PoseStamped>(topic_ + "/receiver", 1);
+
+  physics::Model_V models = this->world->GetModels();
+  transmitter_count_ = 0;
+  for(physics::Model_V::iterator it = models.begin(); it != models.end(); it++)
+  {
+    std::string name = (*it)->GetName();
+    
+    if( name.compare(0, 15, "wireless_router") == 0 )
+    {
+      transmitter_count_++;
+    }
+  }
+  if(transmitter_count_ > 0)
+  {
+    transmitter_pub_ = node_handle_->advertise<sensor_msgs::PointCloud>(topic_+"/transmitter", 1);
+    rss_pub_ = node_handle_->advertise<sensor_msgs::PointCloud>(topic_+"/rss", 1);
+    AoA_pub_ = node_handle_->advertise<sensor_msgs::PointCloud>(topic_+"/AoA", 1);
+    receiver_pub_ = node_handle_->advertise<geometry_msgs::PoseStamped>(topic_ + "/receiver", 1);
+  }
+
+
   // setup dynamic_reconfigure server
   dynamic_reconfigure_server_.reset(new dynamic_reconfigure::Server<SensorModelConfig>(ros::NodeHandle(*node_handle_, topic_)));
   dynamic_reconfigure_server_->setCallback(boost::bind(&SensorModel::dynamicReconfigureCallback, &rss_sensor_model_, _1, _2));
@@ -145,6 +162,11 @@ void GazeboRosWirelessReceiver::Update()
   // activate RaySensor if it is not yet active
   if (!sensor_->IsActive()) sensor_->SetActive(true);
 
+  if(transmitter_count_  == 0)
+  {
+    return;
+  }
+  
   sensor_msgs::PointCloud transmitters_;//positon of transmitter
   sensor_msgs::PointCloud rss_; //rss value of transmitter, here is the distance 
   sensor_msgs::PointCloud AoA_;//angle of arrival 
@@ -164,7 +186,7 @@ void GazeboRosWirelessReceiver::Update()
   receiver_pose_.pose.orientation.x = referencePose.rot.x;
   receiver_pose_.pose.orientation.y = referencePose.rot.y;
   receiver_pose_.pose.orientation.z = referencePose.rot.z;
-  receiver_pub_.publish(receiver_pose_);
+  
 
 
   transmitters_.header.frame_id = "/world";
@@ -224,10 +246,14 @@ void GazeboRosWirelessReceiver::Update()
     }
     
   }   
+  if(count > 0)
+  {
+    AoA_pub_.publish(AoA_);
+    transmitter_pub_.publish(transmitters_);
+    rss_pub_.publish(rss_);
+    receiver_pub_.publish(receiver_pose_);
+  }
 
-  AoA_pub_.publish(AoA_);
-  transmitter_pub_.publish(transmitters_);
-  rss_pub_.publish(rss_);
   
 }
 

@@ -69,7 +69,7 @@ private:
   ros::Publisher rss_pub_;
   ros::Publisher AoA_pub_;
   ros::Publisher receiver_pub_;
-
+  int transmitter_count_;
 
 
   /// \brief Parent entity of this sensor
