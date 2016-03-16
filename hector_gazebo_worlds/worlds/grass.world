@@ -79,38 +79,44 @@
       <elevation>0</elevation>
       <heading_deg>0</heading_deg>
     </spherical_coordinates>
-    <model name='asphalt_plane_white_line'>
+    <model name='grass_plane'>
       <static>1</static>
-      <link name='link'>
+      <link name='grass_plane'>
         <collision name='collision'>
           <geometry>
-            <box>
-              <size>20 20 0.1</size>
-            </box>
+            <plane>
+              <normal>0 0 1</normal>
+              <size>30 30</size>
+            </plane>
           </geometry>
-          <max_contacts>10</max_contacts>
           <surface>
-            <bounce/>
             <friction>
-              <ode/>
+              <ode>
+                <mu>0.5</mu>
+                <mu2>0.5</mu2>
+              </ode>
             </friction>
+            <bounce/>
             <contact>
               <ode/>
             </contact>
           </surface>
+          <max_contacts>10</max_contacts>
         </collision>
         <visual name='visual'>
+          <pose>0 0 0 0 -0 0</pose>
           <cast_shadows>0</cast_shadows>
           <geometry>
-            <box>
-              <size>20 20 0.1</size>
-            </box>
+            <plane>
+              <normal>0 0 1</normal>
+              <size>30 30</size>
+            </plane>
           </geometry>
           <material>
             <script>
-              <uri>model://asphalt_plane_white_line/materials/scripts</uri>
-              <uri>model://asphalt_plane_white_line/materials/textures</uri>
-              <name>vrc/asphalt</name>
+              <uri>model://vrc_driving_terrain/materials/scripts</uri>
+              <uri>model://vrc_driving_terrain/materials/textures</uri>
+              <name>vrc/grass</name>
             </script>
           </material>
         </visual>
@@ -122,16 +128,16 @@
         <kinematic>0</kinematic>
         <gravity>1</gravity>
       </link>
-      <pose>0.542511 0 0 0 -0 0</pose>
+      <pose>-0.515212 1 0 0 -0 0</pose>
     </model>
     <state world_name='default'>
-      <sim_time>74 26000000</sim_time>
-      <real_time>74 399045107</real_time>
-      <wall_time>1457949967 812807825</wall_time>
-      <model name='asphalt_plane_white_line'>
-        <pose>0.542511 0 0 0 -0 0</pose>
-        <link name='link'>
-          <pose>0.542511 0 0 0 -0 0</pose>
+      <sim_time>41 549000000</sim_time>
+      <real_time>41 737054260</real_time>
+      <wall_time>1458010021 513814263</wall_time>
+      <model name='grass_plane'>
+        <pose>-0.515212 1 0 0 -0 0</pose>
+        <link name='grass_plane'>
+          <pose>-0.515212 1 0 0 -0 0</pose>
           <velocity>0 0 0 0 -0 0</velocity>
           <acceleration>0 0 0 0 -0 0</acceleration>
           <wrench>0 0 0 0 -0 0</wrench>
@@ -149,7 +155,7 @@
     </state>
     <gui fullscreen='0'>
       <camera name='user_camera'>
-        <pose>19.3191 -7.64082 17.1951 0 0.891642 2.58419</pose>
+        <pose>7.37998 -10.3847 8.47072 0 0.851643 1.9802</pose>
         <view_controller>orbit</view_controller>
       </camera>
     </gui>
