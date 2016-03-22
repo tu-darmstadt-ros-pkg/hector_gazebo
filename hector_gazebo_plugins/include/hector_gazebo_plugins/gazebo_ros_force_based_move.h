@@ -66,6 +66,8 @@ namespace gazebo {
 
       /// \brief A pointer to the Link, where force is applied
       physics::LinkPtr link_;
+      physics::LinkPtr link_front_flipper_;
+      physics::LinkPtr link_rear_flipper_;
 
       /// \brief The Link this plugin is attached to, and will exert forces on.
       private: std::string link_name_;
@@ -86,6 +88,8 @@ namespace gazebo {
       std::string odometry_topic_;
       std::string odometry_frame_;
       std::string robot_base_frame_;
+      std::string front_flipper_frame_;
+      std::string rear_flipper_frame_;
       double odometry_rate_;
       bool publish_odometry_tf_;
 
