@@ -140,6 +140,7 @@ void GazeboRosVelodyne::Load(sensors::SensorPtr _sensor, sdf::ElementPtr _sdf)
   Reset();
 
   // connect Update function
+  sensor_->SetUpdateRate(10);//todo
   updateTimer.setUpdateRate(10);
   updateTimer.Load(world, _sdf);
   updateConnection = updateTimer.Connect(boost::bind(&GazeboRosVelodyne::Update, this));
@@ -165,7 +166,8 @@ void GazeboRosVelodyne::Update()
   double dt = updateTimer.getTimeSinceLastUpdate().Double();
 
   // activate RaySensor if it is not yet active
-  if (!sensor_->IsActive()) sensor_->SetActive(true);
+  // if (!sensor_->IsActive()) sensor_->SetActive(true);
+  sensor_->SetActive(false);
 
   int vertialRangeCnt = sensor_->GetLaserShape()->GetVerticalSampleCount();
   int rangeCnt = sensor_->GetLaserShape()->GetSampleCount();
@@ -199,6 +201,11 @@ void GazeboRosVelodyne::Update()
   cloud_msg_.is_bigendian = false;
   cloud_msg_.is_dense = true;
 
+  std::vector<double> ranges;
+  sensor_->GetRanges(ranges);
+
+  // std::cout << "ranges size: " << ranges.size() << std::endl;
+
   float x, y, z, intensity;
   double ray;
   float * ptr = (float*)( cloud_msg_.data.data() );
@@ -212,7 +219,8 @@ void GazeboRosVelodyne::Update()
     int range_id = i*rangeCnt; 
     for(int j = 0; j < rangeCnt; j++)
     { 
-      ray = sensor_->GetLaserShape()->GetRange(range_id);
+      // ray = sensor_->GetLaserShape()->GetRange(range_id);
+      ray = ranges[range_id];
       //intensity = sensor_->GetLaserShape()->GetRetro(i*rangeCnt + j);
       ray = sensor_model_(ray, dt); //add noise
 
@@ -234,7 +242,7 @@ void GazeboRosVelodyne::Update()
   // std::cout << "publish cloud_msg_" << std::endl;
   publisher_.publish(cloud_msg_);
   // std::cout << "cloud_msg_ duration: " << (double)(clock() - start)/CLOCKS_PER_SEC << std::endl;
-
+  sensor_->SetActive(true);
 }
 
 // Register this plugin with the simulator
