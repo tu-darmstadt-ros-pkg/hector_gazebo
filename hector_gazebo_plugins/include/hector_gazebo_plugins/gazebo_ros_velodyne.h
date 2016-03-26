@@ -64,7 +64,7 @@ private:
   ros::NodeHandle* node_handle_;
   ros::Publisher publisher_;
 
-  sensor_msgs::PointCloud2 pointcloud2;
+  sensor_msgs::PointCloud2 cloud_msg_;
 
   std::string namespace_;
   std::string topic_;

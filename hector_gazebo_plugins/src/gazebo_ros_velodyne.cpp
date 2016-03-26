@@ -80,8 +80,8 @@ void GazeboRosVelodyne::Load(sensors::SensorPtr _sensor, sdf::ElementPtr _sdf)
   if (_sdf->HasElement("robotNamespace"))
     namespace_ = _sdf->GetElement("robotNamespace")->GetValue()->GetAsString();
 
-  if (_sdf->HasElement("frameId"))
-    frame_id_ = _sdf->GetElement("frameId")->GetValue()->GetAsString();
+  if (_sdf->HasElement("frameName"))
+    frame_id_ = _sdf->GetElement("frameName")->GetValue()->GetAsString();
 
   if (_sdf->HasElement("topicName"))
     topic_ = _sdf->GetElement("topicName")->GetValue()->GetAsString();
@@ -89,32 +89,32 @@ void GazeboRosVelodyne::Load(sensors::SensorPtr _sensor, sdf::ElementPtr _sdf)
   sensor_model_.Load(_sdf);
 
   point_step = 16;
-  pointcloud2.header.frame_id = frame_id_;
-  pointcloud2.fields.resize(4);
-  pointcloud2.fields[0].name = "x";
-  pointcloud2.fields[0].offset = 0;
-  pointcloud2.fields[0].datatype = sensor_msgs::PointField::FLOAT32;
-  pointcloud2.fields[0].count = 1;
-  pointcloud2.fields[1].name = "y";
-  pointcloud2.fields[1].offset = 4;
-  pointcloud2.fields[1].datatype = sensor_msgs::PointField::FLOAT32;
-  pointcloud2.fields[1].count = 1;
-  pointcloud2.fields[2].name = "z";
-  pointcloud2.fields[2].offset = 8;
-  pointcloud2.fields[2].datatype = sensor_msgs::PointField::FLOAT32;
-  pointcloud2.fields[2].count = 1;
-  pointcloud2.fields[3].name = "intensity";
-  pointcloud2.fields[3].offset = 12;
-  pointcloud2.fields[3].datatype = sensor_msgs::PointField::FLOAT32;
-  pointcloud2.fields[3].count = 1;
-  // pointcloud2.fields[4].name = "ring";
-  // pointcloud2.fields[4].offset = 20;
-  // pointcloud2.fields[4].datatype = sensor_msgs::PointField::UINT16;
-  // pointcloud2.fields[4].count = 1;
+  cloud_msg_.header.frame_id = frame_id_;
+  cloud_msg_.fields.resize(4);
+  cloud_msg_.fields[0].name = "x";
+  cloud_msg_.fields[0].offset = 0;
+  cloud_msg_.fields[0].datatype = sensor_msgs::PointField::FLOAT32;
+  cloud_msg_.fields[0].count = 1;
+  cloud_msg_.fields[1].name = "y";
+  cloud_msg_.fields[1].offset = 4;
+  cloud_msg_.fields[1].datatype = sensor_msgs::PointField::FLOAT32;
+  cloud_msg_.fields[1].count = 1;
+  cloud_msg_.fields[2].name = "z";
+  cloud_msg_.fields[2].offset = 8;
+  cloud_msg_.fields[2].datatype = sensor_msgs::PointField::FLOAT32;
+  cloud_msg_.fields[2].count = 1;
+  cloud_msg_.fields[3].name = "intensity";
+  cloud_msg_.fields[3].offset = 12;
+  cloud_msg_.fields[3].datatype = sensor_msgs::PointField::FLOAT32;
+  cloud_msg_.fields[3].count = 1;
+  // cloud_msg_.fields[4].name = "ring";
+  // cloud_msg_.fields[4].offset = 20;
+  // cloud_msg_.fields[4].datatype = sensor_msgs::PointField::UINT16;
+  // cloud_msg_.fields[4].count = 1;
 
-  pointcloud2.point_step = point_step;
+  cloud_msg_.point_step = point_step;
 
-  // pointcloud2.data.resize(verticalRangeCount * rangeCount * POINT_STEP);
+  // cloud_msg_.data.resize(verticalRangeCount * rangeCount * POINT_STEP);
 
   // range_.header.frame_id = frame_id_;
   // range_.radiation_type = sensor_msgs::Range::ULTRASOUND;
@@ -140,7 +140,7 @@ void GazeboRosVelodyne::Load(sensors::SensorPtr _sensor, sdf::ElementPtr _sdf)
   Reset();
 
   // connect Update function
-  updateTimer.setUpdateRate(10.0);
+  updateTimer.setUpdateRate(10);
   updateTimer.Load(world, _sdf);
   updateConnection = updateTimer.Connect(boost::bind(&GazeboRosVelodyne::Update, this));
 
@@ -158,86 +158,82 @@ void GazeboRosVelodyne::Reset()
 // Update the controller
 void GazeboRosVelodyne::Update()
 {
+  
+  // clock_t start = clock();
+
   common::Time sim_time = world->GetSimTime();
   double dt = updateTimer.getTimeSinceLastUpdate().Double();
 
   // activate RaySensor if it is not yet active
   if (!sensor_->IsActive()) sensor_->SetActive(true);
 
-  //std::cout << "line: " << __LINE__ << std::endl;
-  float maxAngle = sensor_->GetAngleMax().Radian();
-  float minAngle = sensor_->GetAngleMin().Radian();
-  //std::cout << "line: " << __LINE__ << std::endl;
-  float vertialMaxAngle = sensor_->GetVerticalAngleMax().Radian();
-  float vertialMinAngle = sensor_->GetVerticalAngleMin().Radian();
-  //std::cout << "line: " << __LINE__ << std::endl;
   int vertialRangeCnt = sensor_->GetLaserShape()->GetVerticalSampleCount();
   int rangeCnt = sensor_->GetLaserShape()->GetSampleCount();
+  if(vertialRangeCnt*rangeCnt == 0) return;
+
+  
+  double maxAngle = sensor_->GetAngleMax().Radian();
+  double minAngle = sensor_->GetAngleMin().Radian();
+  
+  double vertialMaxAngle = sensor_->GetVerticalAngleMax().Radian();
+  double vertialMinAngle = sensor_->GetVerticalAngleMin().Radian();
+  
+
   // std::cout << "count: " << vertialRangeCnt << "  " 
   //      << rangeCnt << "  " 
   //      << vertialRangeCnt*rangeCnt << std::endl;
-  float delta_angle = (maxAngle - minAngle )/rangeCnt;
-  float delta_vertial_angle = (vertialMaxAngle - vertialMinAngle)/vertialRangeCnt;
-  //std::cout << "line: " << __LINE__ << std::endl;
-  float maxRange = sensor_->GetRangeMax();
-  float minRange = sensor_->GetRangeMin();
-  //std::cout << "line: " << __LINE__ << std::endl;
-  pointcloud2.header.stamp.sec  = (world->GetSimTime()).sec;
-  pointcloud2.header.stamp.nsec = (world->GetSimTime()).nsec;
-  //std::cout << "line: " << __LINE__ << std::endl;
-  pointcloud2.data.resize(vertialRangeCnt*rangeCnt*point_step);
-  pointcloud2.width = rangeCnt;
-  pointcloud2.height = vertialRangeCnt;
-  pointcloud2.is_bigendian = false;
-  pointcloud2.is_dense = true;
+  double delta_angle = (maxAngle - minAngle )/rangeCnt;
+  double delta_vertial_angle = (vertialMaxAngle - vertialMinAngle)/vertialRangeCnt;
+  
+  double maxRange = sensor_->GetRangeMax();
+  double minRange = sensor_->GetRangeMin();
+  
+  cloud_msg_.header.stamp.sec  = (world->GetSimTime()).sec;
+  cloud_msg_.header.stamp.nsec = (world->GetSimTime()).nsec;
+  
+  cloud_msg_.data.resize(vertialRangeCnt*rangeCnt*point_step);
 
-  float x, y, z;
-  float ray, intensity;
-  uint8_t * ptr = pointcloud2.data.data();
-  //std::cout << "line: " << __LINE__ << std::endl;
+  cloud_msg_.width = rangeCnt;
+  cloud_msg_.height = vertialRangeCnt;
+
+  cloud_msg_.is_bigendian = false;
+  cloud_msg_.is_dense = true;
+
+  float x, y, z, intensity;
+  double ray;
+  float * ptr = (float*)( cloud_msg_.data.data() );
+  
   for(int i = 0; i < vertialRangeCnt; ++i) 
   {
-    float vertialAngle = vertialMinAngle + delta_vertial_angle*i; 
-    //std::cout << "line: " << __LINE__ << std::endl;
+    double vertialAngle = vertialMinAngle + delta_vertial_angle*i; 
+    double angle = minAngle;
+    double cos_va = cos(vertialAngle);
+    double sin_va = sin(vertialAngle);
+    int range_id = i*rangeCnt; 
     for(int j = 0; j < rangeCnt; j++)
-    {
-      //std::cout << "line: " << __LINE__ << std::endl;
-      float angle = minAngle + delta_angle*j;
-      ray = sensor_->GetLaserShape()->GetRange(i*rangeCnt + j);
-      intensity = sensor_->GetLaserShape()->GetRetro(i*rangeCnt + j);
+    { 
+      ray = sensor_->GetLaserShape()->GetRange(range_id);
+      //intensity = sensor_->GetLaserShape()->GetRetro(i*rangeCnt + j);
       ray = sensor_model_(ray, dt); //add noise
 
-       x = ray*cos(vertialAngle)*cos(angle);
-       y = ray*cos(vertialAngle)*sin(angle);
-       z = ray*sin(vertialAngle);
+       x = ray*cos_va*cos(angle);
+       y = ray*cos_va*sin(angle);
+       z = -ray*sin_va;
 
-       *((float*) (ptr + 0) ) = x;
-       *((float*) (ptr + 4) ) = y;
-       *((float*) (ptr + 8) ) = z;
-       *((float*) (ptr + 12) ) = intensity;
-       ptr += point_step;
+       *(ptr + 0)  = x;
+       *(ptr + 1)  = y;
+       *(ptr + 2)  = z;
+       *(ptr + 3) = intensity;
+       ptr += cloud_msg_.fields.size();
+       angle += delta_angle;
+       range_id++;
     }
-    
-    //x y z
 
   }
-  //std::cout << "line: " << __LINE__ << std::endl;
-  publisher_.publish(pointcloud2);
-  // find ray with minimal range
-  // range_.range = std::numeric_limits<sensor_msgs::Range::_range_type>::max();
-  // int num_ranges = sensor_->GetLaserShape()->GetSampleCount() * sensor_->GetLaserShape()->GetVerticalSampleCount();
-  // for(int i = 0; i < num_ranges; ++i) {
-  //   double ray = sensor_->GetLaserShape()->GetRange(i);
-  //   if (ray < range_.range) range_.range = ray;
-  // }
-
-  // add Gaussian noise (and limit to min/max range)
-  // if (range_.range < range_.max_range) {
-  //   range_.range = sensor_model_(range_.range, dt);
-  //   if (range_.range < range_.min_range) range_.range = range_.min_range;
-  //   if (range_.range > range_.max_range) range_.range = range_.max_range;
-  // }
-
+  // std::cout << "cloud_msg_ t1: " << (double)(clock() - start)/CLOCKS_PER_SEC << std::endl;
+  // std::cout << "publish cloud_msg_" << std::endl;
+  publisher_.publish(cloud_msg_);
+  // std::cout << "cloud_msg_ duration: " << (double)(clock() - start)/CLOCKS_PER_SEC << std::endl;
 
 }
 
