@@ -4,7 +4,7 @@ project(hector_gazebo_plugins)
 ## Find catkin macros and libraries
 ## if COMPONENTS list like find_package(catkin REQUIRED COMPONENTS xyz)
 ## is used, also find other catkin packages
-find_package(catkin REQUIRED COMPONENTS roscpp std_msgs std_srvs geometry_msgs nav_msgs tf dynamic_reconfigure)
+find_package(catkin REQUIRED COMPONENTS roscpp std_msgs std_srvs geometry_msgs nav_msgs tf dynamic_reconfigure message_generation)
 include_directories(include ${catkin_INCLUDE_DIRS})
 
 ## Find gazebo
@@ -54,7 +54,7 @@ generate_dynamic_reconfigure_options(
 ## DEPENDS: system dependencies of this project that dependent projects also need
 catkin_package(
     DEPENDS gazebo
-    CATKIN_DEPENDS roscpp std_msgs geometry_msgs nav_msgs tf
+    CATKIN_DEPENDS roscpp std_msgs geometry_msgs nav_msgs tf message_runtime
     INCLUDE_DIRS include
     LIBRARIES
 )
