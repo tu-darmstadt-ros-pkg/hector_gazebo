@@ -88,6 +88,24 @@ namespace gazebo
     {
       odometry_frame_ = sdf->GetElement("odometryFrame")->Get<std::string>();
     }
+    
+    
+    torque_yaw_velocity_p_gain_ = 100.0;
+    force_x_velocity_p_gain_ = 10000.0;
+    force_y_velocity_p_gain_ = 10000.0;
+    
+    if (sdf->HasElement("yaw_velocity_p_gain"))
+      (sdf->GetElement("yaw_velocity_p_gain")->GetValue()->Get(torque_yaw_velocity_p_gain_));
+
+    if (sdf->HasElement("x_velocity_p_gain"))
+      (sdf->GetElement("x_velocity_p_gain")->GetValue()->Get(force_x_velocity_p_gain_));
+
+    if (sdf->HasElement("y_velocity_p_gain"))
+      (sdf->GetElement("y_velocity_p_gain")->GetValue()->Get(force_y_velocity_p_gain_));
+      
+    ROS_INFO_STREAM("ForceBasedMove using gains: yaw: " << torque_yaw_velocity_p_gain_ <<
+                                                 " x: " << force_x_velocity_p_gain_ <<
+                                                 " y: " << force_y_velocity_p_gain_ << "\n");
 
     robot_base_frame_ = "base_footprint";
     if (!sdf->HasElement("robotBaseFrame")) 
@@ -131,6 +149,8 @@ namespace gazebo
     y_ = 0;
     rot_ = 0;
     alive_ = true;
+
+    odom_transform_.setIdentity();
 
     // Ensure that ROS has been initialized and subscribe to cmd_vel
     if (!ros::isInitialized()) 
@@ -181,14 +201,14 @@ namespace gazebo
 
     double error = angular_vel.z - rot_;
 
-    link_->AddTorque(math::Vector3(0.0, 0.0, -error * 100.0));
+    link_->AddTorque(math::Vector3(0.0, 0.0, -error * torque_yaw_velocity_p_gain_));
 
     float yaw = pose.rot.GetYaw();
 
     math::Vector3 linear_vel = parent_->GetRelativeLinearVel();
 
-    link_->AddRelativeForce(math::Vector3((x_ - linear_vel.x)* 10000,
-                                          (y_ - linear_vel.y)* 10000,
+    link_->AddRelativeForce(math::Vector3((x_ - linear_vel.x)* force_x_velocity_p_gain_,
+                                          (y_ - linear_vel.y)* force_y_velocity_p_gain_,
                                           0.0));
     //parent_->PlaceOnNearestEntityBelow();
     //parent_->SetLinearVel(math::Vector3(
@@ -243,66 +263,78 @@ namespace gazebo
     std::string base_footprint_frame = 
       tf::resolve(tf_prefix_, robot_base_frame_);
 
-    // getting data for base_footprint to odom transform
-    math::Pose pose = this->parent_->GetWorldPose();
+    math::Vector3 angular_vel = parent_->GetRelativeAngularVel();
+    math::Vector3 linear_vel = parent_->GetRelativeLinearVel();
 
-    tf::Quaternion qt(pose.rot.x, pose.rot.y, pose.rot.z, pose.rot.w);
-    tf::Vector3 vt(pose.pos.x, pose.pos.y, pose.pos.z);
+    odom_transform_= odom_transform_ * this->getTransformForMotion(linear_vel.x, angular_vel.z, step_time);
 
-    tf::Transform base_footprint_to_odom(qt, vt);
-
-    //Do not publish odom tf if disabled via sdf parameters
-    if (transform_broadcaster_.get()){
-      transform_broadcaster_->sendTransform(
-          tf::StampedTransform(base_footprint_to_odom, current_time, odom_frame,
-              base_footprint_frame));
-    }
-
-    // publish odom topic
-    odom_.pose.pose.position.x = pose.pos.x;
-    odom_.pose.pose.position.y = pose.pos.y;
-
-    odom_.pose.pose.orientation.x = pose.rot.x;
-    odom_.pose.pose.orientation.y = pose.rot.y;
-    odom_.pose.pose.orientation.z = pose.rot.z;
-    odom_.pose.pose.orientation.w = pose.rot.w;
-    odom_.pose.covariance[0] = 0.00001;
-    odom_.pose.covariance[7] = 0.00001;
-    odom_.pose.covariance[14] = 1000000000000.0;
-    odom_.pose.covariance[21] = 1000000000000.0;
-    odom_.pose.covariance[28] = 1000000000000.0;
-    odom_.pose.covariance[35] = 0.001;
-
-    // get velocity in /odom frame
-    math::Vector3 linear;
-    linear.x = (pose.pos.x - last_odom_pose_.pos.x) / step_time;
-    linear.y = (pose.pos.y - last_odom_pose_.pos.y) / step_time;
-    if (rot_ > M_PI / step_time) 
-    { 
-      // we cannot calculate the angular velocity correctly
-      odom_.twist.twist.angular.z = rot_;
-    } 
-    else 
-    {
-      float last_yaw = last_odom_pose_.rot.GetYaw();
-      float current_yaw = pose.rot.GetYaw();
-      while (current_yaw < last_yaw - M_PI) current_yaw += 2 * M_PI;
-      while (current_yaw > last_yaw + M_PI) current_yaw -= 2 * M_PI;
-      float angular_diff = current_yaw - last_yaw;
-      odom_.twist.twist.angular.z = angular_diff / step_time;
-    }
-    last_odom_pose_ = pose;
-
-    // convert velocity to child_frame_id (aka base_footprint)
-    float yaw = pose.rot.GetYaw();
-    odom_.twist.twist.linear.x = cosf(yaw) * linear.x + sinf(yaw) * linear.y;
-    odom_.twist.twist.linear.y = cosf(yaw) * linear.y - sinf(yaw) * linear.x;
+    tf::poseTFToMsg(odom_transform_, odom_.pose.pose);
+    odom_.twist.twist.angular.z = angular_vel.z;
+    odom_.twist.twist.linear.x  = linear_vel.x;
 
     odom_.header.stamp = current_time;
     odom_.header.frame_id = odom_frame;
     odom_.child_frame_id = base_footprint_frame;
 
+    if (transform_broadcaster_.get()){
+      transform_broadcaster_->sendTransform(
+          tf::StampedTransform(odom_transform_, current_time, odom_frame,
+              base_footprint_frame));
+    }
+    
+    odom_.pose.covariance[0] = 0.001;
+    odom_.pose.covariance[7] = 0.001;
+    odom_.pose.covariance[14] = 1000000000000.0;
+    odom_.pose.covariance[21] = 1000000000000.0;
+    odom_.pose.covariance[28] = 1000000000000.0;
+    
+    if (std::abs(angular_vel.z) < 0.0001) {
+      odom_.pose.covariance[35] = 0.01;
+    }else{
+      odom_.pose.covariance[35] = 100.0;
+    }
+
+    odom_.twist.covariance[0] = 0.001;
+    odom_.twist.covariance[7] = 0.001;
+    odom_.twist.covariance[14] = 0.001;
+    odom_.twist.covariance[21] = 1000000000000.0;
+    odom_.twist.covariance[28] = 1000000000000.0;
+
+    if (std::abs(angular_vel.z) < 0.0001) {
+      odom_.twist.covariance[35] = 0.01;
+    }else{
+      odom_.twist.covariance[35] = 100.0;
+    }
+
+
+
     odometry_pub_.publish(odom_);
+  }
+
+
+  tf::Transform GazeboRosForceBasedMove::getTransformForMotion(double linear_vel_x, double angular_vel, double timeSeconds) const
+  {
+    tf::Transform tmp;
+    tmp.setIdentity();
+
+
+    if (std::abs(angular_vel) < 0.0001) {
+      //Drive straight
+      tmp.setOrigin(tf::Vector3(static_cast<double>(linear_vel_x*timeSeconds), 0.0, 0.0));
+    } else {
+      //Follow circular arc
+      double distChange = linear_vel_x * timeSeconds;
+      double angleChange = angular_vel * timeSeconds;
+
+      double arcRadius = distChange / angleChange;
+
+      tmp.setOrigin(tf::Vector3(std::sin(angleChange) * arcRadius,
+                                arcRadius - std::cos(angleChange) * arcRadius,
+                                0.0));
+      tmp.setRotation(tf::createQuaternionFromYaw(angleChange));
+    }
+
+    return tmp;
   }
 
   GZ_REGISTER_MODEL_PLUGIN(GazeboRosForceBasedMove)

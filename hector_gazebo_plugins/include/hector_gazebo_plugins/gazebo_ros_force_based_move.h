@@ -59,6 +59,8 @@ namespace gazebo {
     private:
       void publishOdometry(double step_time);
 
+      tf::Transform getTransformForMotion(double linear_vel_x, double angular_vel, double timeSeconds) const;
+
       physics::ModelPtr parent_;
       event::ConnectionPtr update_connection_;
 
@@ -74,6 +76,8 @@ namespace gazebo {
       boost::shared_ptr<tf::TransformBroadcaster> transform_broadcaster_;
       nav_msgs::Odometry odom_;
       std::string tf_prefix_;
+
+      tf::Transform odom_transform_;
 
       boost::mutex lock;
 
@@ -99,6 +103,10 @@ namespace gazebo {
       bool alive_;
       common::Time last_odom_publish_time_;
       math::Pose last_odom_pose_;
+      
+      double torque_yaw_velocity_p_gain_;
+      double force_x_velocity_p_gain_;
+      double force_y_velocity_p_gain_;
 
   };
 
