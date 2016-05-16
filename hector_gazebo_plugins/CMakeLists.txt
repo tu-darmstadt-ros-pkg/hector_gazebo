@@ -94,6 +94,20 @@ add_dependencies(hector_gazebo_ros_sonar ${PROJECT_NAME}_gencfg)
 add_library(hector_servo_plugin src/servo_plugin.cpp)
 target_link_libraries(hector_servo_plugin ${Boost_LIBRARIES} ${GAZEBO_LIBRARIES} ${catkin_LIBRARIES})
 
+add_library(hector_gazebo_ros_wireless_receiver src/gazebo_ros_wireless_receiver.cpp)
+target_link_libraries(hector_gazebo_ros_wireless_receiver ${GAZEBO_LIBRARIES} ${catkin_LIBRARIES})
+add_dependencies(hector_gazebo_ros_wireless_receiver ${PROJECT_NAME}_gencfg)
+
+add_library(hector_gazebo_ros_velodyne src/gazebo_ros_velodyne.cpp)
+target_link_libraries(hector_gazebo_ros_velodyne ${GAZEBO_LIBRARIES} ${catkin_LIBRARIES})
+add_dependencies(hector_gazebo_ros_velodyne ${PROJECT_NAME}_gencfg)
+
+
+add_library(gazebo_ros_create src/gazebo_ros_create.cpp)
+target_link_libraries(gazebo_ros_create  ${catkin_LIBRARIES} ${GAZEBO_LIBRARIES})
+add_dependencies(gazebo_ros_create ${PROJECT_NAME}_gencfg)
+
+
 #############
 ## Install ##
 #############

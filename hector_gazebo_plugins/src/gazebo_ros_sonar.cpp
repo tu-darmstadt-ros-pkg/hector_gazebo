@@ -67,6 +67,7 @@ void GazeboRosSonar::Load(sensors::SensorPtr _sensor, sdf::ElementPtr _sdf)
   // Get the world name.
   std::string worldName = sensor_->GetWorldName();
   world = physics::get_world(worldName);
+  
 
   // default parameters
   namespace_.clear();
