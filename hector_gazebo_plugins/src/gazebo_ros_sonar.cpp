@@ -160,7 +160,11 @@ void GazeboRosSonar::Update()
   int num_ranges = sensor_->GetLaserShape()->GetSampleCount() * sensor_->GetLaserShape()->GetVerticalSampleCount();
 #endif
   for(int i = 0; i < num_ranges; ++i) {
+#if (GAZEBO_MAJOR_VERSION > 6)
     double ray = sensor_->LaserShape()->GetRange(i);
+#else
+    double ray = sensor_->GetLaserShape()->GetRange(i);
+#endif
     if (ray < range_.range) range_.range = ray;
   }
 
