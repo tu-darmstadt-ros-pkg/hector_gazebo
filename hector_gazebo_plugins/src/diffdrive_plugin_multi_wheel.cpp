@@ -250,7 +250,7 @@ namespace gazebo {
           gzthrow(error);
         }
 #if (GAZEBO_MAJOR_VERSION > 4)
-        joints_[side][i]->SetParam("fmax", 0, torque);
+        joints_[side][i]->SetEffortLimit(0, torque);
 #else
         joints_[side][i]->SetMaxForce(0, torque);
 #endif

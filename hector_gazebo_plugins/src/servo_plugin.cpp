@@ -202,11 +202,11 @@ void ServoPlugin::Update()
     }
 
 #if (GAZEBO_MAJOR_VERSION > 4)
-    servo[FIRST].joint->SetParam("fmax", 0, maximumTorque);
+    servo[FIRST].joint->SetEffortLimit(0, maximumTorque);
     if (countOfServos > 1) {
-      servo[SECOND].joint->SetParam("fmax", 0, maximumTorque);
+      servo[SECOND].joint->SetEffortLimit(0, maximumTorque);
       if (countOfServos > 2) {
-        servo[THIRD].joint->SetParam("fmax", 0, maximumTorque);
+        servo[THIRD].joint->SetEffortLimit(0, maximumTorque);
       }
     }
 #else
@@ -220,11 +220,11 @@ void ServoPlugin::Update()
 #endif
   } else {
 #if (GAZEBO_MAJOR_VERSION > 4)
-    servo[FIRST].joint->SetParam("fmax", 0, 0.0);
+    servo[FIRST].joint->SetEffortLimit(0, 0.0);
     if (countOfServos > 1) {
-      servo[SECOND].joint->SetParam("fmax", 0, 0.0);
+      servo[SECOND].joint->SetEffortLimit(0, 0.0);
       if (countOfServos > 2) {
-        servo[THIRD].joint->SetParam("fmax", 0, 0.0);
+        servo[THIRD].joint->SetEffortLimit(0, 0.0);
       }
     }
 #else
