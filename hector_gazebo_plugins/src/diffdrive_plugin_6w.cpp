@@ -231,13 +231,13 @@ void DiffDrivePlugin6W::Update()
     joints[REAR_RIGHT]->SetVelocity(0, wheelSpeed[1] / (wheelDiam / 2.0));
 
 #if (GAZEBO_MAJOR_VERSION > 4)
-    joints[FRONT_LEFT]->SetParam("fmax", 0, torque);
-    joints[MID_LEFT]->SetParam("fmax", 0, torque);
-    joints[REAR_LEFT]->SetParam("fmax", 0, torque);
+    joints[FRONT_LEFT]->SetEffortLimit(0, torque);
+    joints[MID_LEFT]->SetEffortLimit(0, torque);
+    joints[REAR_LEFT]->SetEffortLimit(0, torque);
 
-    joints[FRONT_RIGHT]->SetParam("fmax", 0, torque);
-    joints[MID_RIGHT]->SetParam("fmax", 0, torque);
-    joints[REAR_RIGHT]->SetParam("fmax", 0, torque);
+    joints[FRONT_RIGHT]->SetEffortLimit(0, torque);
+    joints[MID_RIGHT]->SetEffortLimit(0, torque);
+    joints[REAR_RIGHT]->SetEffortLimit(0, torque);
 #else
     joints[FRONT_LEFT]->SetMaxForce(0, torque);
     joints[MID_LEFT]->SetMaxForce(0, torque);
