@@ -4,22 +4,7 @@ Changelog for package hector_gazebo_thermal_camera
 
 0.4.1 (2016-06-24)
 ------------------
-* Merge branch 'indigo-devel' into jade-devel
-  Conflicts:
-  hector_gazebo/CHANGELOG.rst
-  hector_gazebo/package.xml
-  hector_gazebo_plugins/CHANGELOG.rst
-  hector_gazebo_plugins/package.xml
-  hector_gazebo_thermal_camera/CHANGELOG.rst
-  hector_gazebo_thermal_camera/package.xml
-  hector_gazebo_worlds/CHANGELOG.rst
-  hector_gazebo_worlds/package.xml
-  hector_sensors_gazebo/CHANGELOG.rst
-  hector_sensors_gazebo/package.xml
-* Add Cmake flags for C++11
-* 0.4.0
-* Added proper dependencies for jade and gazebo5. Now compiles and works for gazebo5
-* Contributors: Johannes Meyer, L0g1x, Romain Reignier
+* see 0.3.8
 
 0.4.0 (2015-11-07)
 ------------------
