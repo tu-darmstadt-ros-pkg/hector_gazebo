@@ -269,7 +269,8 @@ void GazeboRosIMU::Update()
   math::Quaternion delta = this->orientation.GetInverse() * rot;
   this->orientation = rot;
   if (dt > 0.0) {
-    rate = 2.0 * acos(std::max(std::min(delta.w, 1.0), -1.0)) * math::Vector3(delta.x, delta.y, delta.z).Normalize() / dt;
+    rate = this->offset_.rot.GetInverse()
+           * (2.0 * acos(std::max(std::min(delta.w, 1.0), -1.0)) * math::Vector3(delta.x, delta.y, delta.z).Normalize() / dt);
   }
 
   // update sensor models
