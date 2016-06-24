@@ -2,6 +2,12 @@
 Changelog for package hector_gazebo_thermal_camera
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+0.5.0 (2016-06-24)
+------------------
+* Updated gazebo dependencies to version 7 for kinetic release
+* hector_gazebo_thermal_camera: get rid of unused dependencies nodelet, dynamic_reconfigure, driver_base and image_transport
+* Contributors: Johannes Meyer
+
 0.4.1 (2016-06-24)
 ------------------
 * see 0.3.8

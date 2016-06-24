@@ -2,6 +2,11 @@
 Changelog for package hector_gazebo_plugins
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+0.5.0 (2016-06-24)
+------------------
+* Updated gazebo dependencies to version 7 for kinetic release
+* Contributors: Johannes Meyer
+
 0.4.1 (2016-06-24)
 ------------------
 * see 0.3.8
