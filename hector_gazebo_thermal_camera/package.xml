@@ -16,12 +16,12 @@
 
   <!-- Dependencies needed to compile this package. -->
   <build_depend>roscpp</build_depend>
-  <build_depend>libgazebo5-dev</build_depend>
+  <build_depend>libgazebo7-dev</build_depend>
   <build_depend>gazebo_plugins</build_depend>
 
   <!-- Dependencies needed after this package is compiled. -->
   <run_depend>roscpp</run_depend>
-  <run_depend>gazebo5</run_depend>
+  <run_depend>gazebo</run_depend>
   <run_depend>gazebo_plugins</run_depend>
 
 </package>
