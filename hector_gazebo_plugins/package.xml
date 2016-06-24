@@ -1,6 +1,6 @@
 <package>
   <name>hector_gazebo_plugins</name>
-  <version>0.3.7</version>
+  <version>0.3.8</version>
   <description>hector_gazebo_plugins provides gazebo plugins from Team Hector.
      Currently it contains a 6wd differential drive plugin, an IMU sensor plugin,
      an earth magnetic field sensor plugin, a GPS sensor plugin and a
