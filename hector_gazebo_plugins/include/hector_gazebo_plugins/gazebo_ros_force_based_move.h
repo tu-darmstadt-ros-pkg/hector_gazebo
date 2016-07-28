@@ -59,7 +59,7 @@ namespace gazebo {
     private:
       void publishOdometry(double step_time);
 
-      tf::Transform getTransformForMotion(double linear_vel_x, double angular_vel, double timeSeconds) const;
+      tf::Transform getTransformForMotion(double linear_vel_x, double linear_vel_y, double angular_vel, double timeSeconds) const;
 
       physics::ModelPtr parent_;
       event::ConnectionPtr update_connection_;
