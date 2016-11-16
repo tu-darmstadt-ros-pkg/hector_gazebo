@@ -199,7 +199,15 @@ namespace gazebo
   void GazeboRosForceBasedMove::UpdateChild()
   {
     
+
+
+
     if (x_ == 0.0 && y_ == 0.0 && rot_ == 0.0){
+
+      if (switch_to_zero_cmd){
+        stand_pose = parent_->GetWorldPose();
+        switch_to_zero_cmd = false;
+      }
 
       math::Pose pose = parent_->GetWorldPose();
       
@@ -209,14 +217,25 @@ namespace gazebo
 
       //float yaw = pose.rot.GetYaw();
 
-      //math::Vector3 linear_vel = parent_->GetRelativeLinearVel();
+      math::Vector3 linear_vel = parent_->GetRelativeLinearVel();
 
-      link_->AddForce(math::Vector3((stand_pose.pos.x - pose.pos.x) * force_x_velocity_p_gain_,
-                                    (stand_pose.pos.y - pose.pos.y) * force_y_velocity_p_gain_,
-                                     0.0));
+      // Either oscillates or explodes
+      //link_->AddForce(math::Vector3((stand_pose.pos.x - pose.pos.x) * force_x_velocity_p_gain_ * 0.01 + (x_ - linear_vel.x)* force_x_velocity_p_gain_,
+      //                              (stand_pose.pos.y - pose.pos.y) * force_y_velocity_p_gain_ * 0.01 + (y_ - linear_vel.y)* force_y_velocity_p_gain_,
+      //                               0.0));
+
+
+      // Robot explodes
+      //link_->SetWorldPose(stand_pose);
+
+      link_->SetLinearVel(math::Vector3(0.0, 0.0, 0.0));
+      link_->SetAngularVel(math::Vector3(0.0, 0.0, 0.0));
       
 
     }else{
+
+      switch_to_zero_cmd = true;
+
       boost::mutex::scoped_lock scoped_lock(lock);
       math::Pose pose = parent_->GetWorldPose();
 
@@ -272,6 +291,7 @@ namespace gazebo
     y_ = cmd_msg->linear.y;
     rot_ = cmd_msg->angular.z;
     
+    /*
     if (x_ == 0.0 && y_ == 0.0 && rot_ == 0.0){
       if (switch_to_zero_cmd){
         stand_pose = parent_->GetWorldPose();
@@ -280,6 +300,7 @@ namespace gazebo
     }else{
       switch_to_zero_cmd = true;
     }
+    */
       
   }
 
