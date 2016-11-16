@@ -149,6 +149,8 @@ namespace gazebo
     y_ = 0;
     rot_ = 0;
     alive_ = true;
+    
+    switch_to_zero_cmd = true;
 
     odom_transform_.setIdentity();
 
@@ -189,43 +191,67 @@ namespace gazebo
       event::Events::ConnectWorldUpdateBegin(
           boost::bind(&GazeboRosForceBasedMove::UpdateChild, this));
 
+    stand_pose = parent_->GetWorldPose();
+
   }
 
   // Update the controller
   void GazeboRosForceBasedMove::UpdateChild()
   {
-    boost::mutex::scoped_lock scoped_lock(lock);
-    math::Pose pose = parent_->GetWorldPose();
+    
+    if (x_ == 0.0 && y_ == 0.0 && rot_ == 0.0){
 
-    math::Vector3 angular_vel = parent_->GetWorldAngularVel();
+      math::Pose pose = parent_->GetWorldPose();
+      
+      //double angle_error = angular_vel.z - rot_;
 
-    double error = angular_vel.z - rot_;
+      //link_->AddTorque(math::Vector3(0.0, 0.0, -error * torque_yaw_velocity_p_gain_));
 
-    link_->AddTorque(math::Vector3(0.0, 0.0, -error * torque_yaw_velocity_p_gain_));
+      //float yaw = pose.rot.GetYaw();
 
-    float yaw = pose.rot.GetYaw();
+      //math::Vector3 linear_vel = parent_->GetRelativeLinearVel();
 
-    math::Vector3 linear_vel = parent_->GetRelativeLinearVel();
+      link_->AddForce(math::Vector3((stand_pose.pos.x - pose.pos.x) * force_x_velocity_p_gain_,
+                                    (stand_pose.pos.y - pose.pos.y) * force_y_velocity_p_gain_,
+                                     0.0));
+      
 
-    link_->AddRelativeForce(math::Vector3((x_ - linear_vel.x)* force_x_velocity_p_gain_,
+    }else{
+      boost::mutex::scoped_lock scoped_lock(lock);
+      math::Pose pose = parent_->GetWorldPose();
+
+      math::Vector3 angular_vel = parent_->GetWorldAngularVel();
+
+      double error = angular_vel.z - rot_;
+
+      link_->AddTorque(math::Vector3(0.0, 0.0, -error * torque_yaw_velocity_p_gain_));
+
+      float yaw = pose.rot.GetYaw();
+
+      math::Vector3 linear_vel = parent_->GetRelativeLinearVel();
+
+      link_->AddRelativeForce(math::Vector3((x_ - linear_vel.x)* force_x_velocity_p_gain_,
                                           (y_ - linear_vel.y)* force_y_velocity_p_gain_,
                                           0.0));
-    //parent_->PlaceOnNearestEntityBelow();
-    //parent_->SetLinearVel(math::Vector3(
-    //      x_ * cosf(yaw) - y_ * sinf(yaw),
-    //      y_ * cosf(yaw) + x_ * sinf(yaw),
-    //      0));
-    //parent_->SetAngularVel(math::Vector3(0, 0, rot_));
+      //parent_->PlaceOnNearestEntityBelow();
+      //parent_->SetLinearVel(math::Vector3(
+      //      x_ * cosf(yaw) - y_ * sinf(yaw),
+      //      y_ * cosf(yaw) + x_ * sinf(yaw),
+      //      0));
+      //parent_->SetAngularVel(math::Vector3(0, 0, rot_));
 
-    if (odometry_rate_ > 0.0) {
-      common::Time current_time = parent_->GetWorld()->GetSimTime();
-      double seconds_since_last_update = 
-        (current_time - last_odom_publish_time_).Double();
-      if (seconds_since_last_update > (1.0 / odometry_rate_)) {
-        publishOdometry(seconds_since_last_update);
-        last_odom_publish_time_ = current_time;
-      }
+   
     }
+    
+    if (odometry_rate_ > 0.0) {
+        common::Time current_time = parent_->GetWorld()->GetSimTime();
+        double seconds_since_last_update = 
+          (current_time - last_odom_publish_time_).Double();
+        if (seconds_since_last_update > (1.0 / odometry_rate_)) {
+          publishOdometry(seconds_since_last_update);
+          last_odom_publish_time_ = current_time;
+        }
+      }   
   }
 
   // Finalize the controller
@@ -241,9 +267,20 @@ namespace gazebo
       const geometry_msgs::Twist::ConstPtr& cmd_msg) 
   {
     boost::mutex::scoped_lock scoped_lock(lock);
+    
     x_ = cmd_msg->linear.x;
     y_ = cmd_msg->linear.y;
     rot_ = cmd_msg->angular.z;
+    
+    if (x_ == 0.0 && y_ == 0.0 && rot_ == 0.0){
+      if (switch_to_zero_cmd){
+        stand_pose = parent_->GetWorldPose();
+        switch_to_zero_cmd = false;
+      }
+    }else{
+      switch_to_zero_cmd = true;
+    }
+      
   }
 
   void GazeboRosForceBasedMove::QueueThread()

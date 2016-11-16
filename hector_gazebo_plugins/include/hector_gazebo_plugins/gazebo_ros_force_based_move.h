@@ -107,6 +107,9 @@ namespace gazebo {
       double torque_yaw_velocity_p_gain_;
       double force_x_velocity_p_gain_;
       double force_y_velocity_p_gain_;
+      
+      bool switch_to_zero_cmd;
+      math::Pose stand_pose;
 
   };
 
