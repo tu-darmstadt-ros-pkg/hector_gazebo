@@ -154,6 +154,8 @@ namespace gazebo
 
     odom_transform_.setIdentity();
 
+    odom_transform_.setIdentity();
+
     // Ensure that ROS has been initialized and subscribe to cmd_vel
     if (!ros::isInitialized()) 
     {
@@ -352,6 +354,13 @@ namespace gazebo
     odom_.twist.twist.angular.z = angular_vel.z;
     odom_.twist.twist.linear.x  = linear_vel.x;
 
+
+
+    //@TODO: Verify below is same as above, just shorter
+    //tf::poseTFToMsg(odom_transform_, odom_.pose.pose);
+    //odom_.twist.twist.angular.z = angular_vel.z;
+    //odom_.twist.twist.linear.x  = linear_vel.x;
+
     odom_.header.stamp = current_time;
     odom_.header.frame_id = odom_frame;
     odom_.child_frame_id = base_footprint_frame;
@@ -385,9 +394,6 @@ namespace gazebo
     }else{
       odom_.twist.covariance[35] = 100.0;
     }
-
-
-
 
 
     odometry_pub_.publish(odom_);

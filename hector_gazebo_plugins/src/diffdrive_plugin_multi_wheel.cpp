@@ -91,6 +91,8 @@
 #include <boost/algorithm/string/split.hpp>
 #include <boost/algorithm/string/classification.hpp>
 
+#include <gazebo/gazebo_config.h>
+
 namespace gazebo {
 
   enum {
@@ -247,7 +249,11 @@ namespace gazebo {
                    this->robot_namespace_.c_str(), joint_names_[side][i].c_str());
           gzthrow(error);
         }
+#if (GAZEBO_MAJOR_VERSION > 4)
+        joints_[side][i]->SetEffortLimit(0, torque);
+#else
         joints_[side][i]->SetMaxForce(0, torque);
+#endif
       }
     }
 

@@ -2,6 +2,35 @@
 Changelog for package hector_gazebo_plugins
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+0.5.0 (2016-06-24)
+------------------
+* Updated gazebo dependencies to version 7 for kinetic release
+* Contributors: Johannes Meyer
+
+0.4.1 (2016-06-24)
+------------------
+* see 0.3.8
+
+0.4.0 (2015-11-07)
+------------------
+* Added proper dependencies for jade and gazebo5. Now compiles and works for gazebo5
+* Contributors: L0g1x
+
+0.3.8 (2016-06-24)
+------------------
+* hector_gazebo_plugins: fixed angular rate output with non-zero rpyOffset parameter (fix #23)
+* Fix compilation errors and warnings against Gazebo 7
+* Fix
+* Compatible with gazebo7
+* [hector_gazebo_plugins] fix missing dependencies
+* Update odometry with proper covariance data
+* Updates to 2d odom
+* Basics of 2d odom
+* Add gitignore
+* Add Cmake flags for C++11
+* Make force based p gains parameters
+* Contributors: Furushchev, Johannes Meyer, Nate Koenig, Nicolae Rosia, Romain Reignier, Stefan Kohlbrecher
+
 0.3.7 (2015-11-07)
 ------------------
 * gazebo_ros_force_based_move: Disable odom tf publishing if set in sdf params

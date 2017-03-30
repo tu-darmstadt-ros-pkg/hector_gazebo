@@ -57,6 +57,8 @@
 
 #include <sensor_msgs/image_encodings.h>
 
+#include <gazebo/gazebo_config.h>
+
 namespace gazebo
 {
 
@@ -105,7 +107,11 @@ void GazeboRosThermalCamera_<Base>::OnNewFrame(const unsigned char *_image,
   if (!this->initialized_ || this->height_ <=0 || this->width_ <=0)
     return;
 
+#if (GAZEBO_MAJOR_VERSION > 6)
+  this->sensor_update_time_ = this->parentSensor_->LastUpdateTime();
+#else
   this->sensor_update_time_ = this->parentSensor_->GetLastUpdateTime();
+#endif
 
   if (!this->parentSensor->IsActive())
   {

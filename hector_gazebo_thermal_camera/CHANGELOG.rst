@@ -2,6 +2,27 @@
 Changelog for package hector_gazebo_thermal_camera
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+0.5.0 (2016-06-24)
+------------------
+* Updated gazebo dependencies to version 7 for kinetic release
+* hector_gazebo_thermal_camera: get rid of unused dependencies nodelet, dynamic_reconfigure, driver_base and image_transport
+* Contributors: Johannes Meyer
+
+0.4.1 (2016-06-24)
+------------------
+* see 0.3.8
+
+0.4.0 (2015-11-07)
+------------------
+* Added proper dependencies for jade and gazebo5. Now compiles and works for gazebo5
+* Contributors: L0g1x
+
+0.3.8 (2016-06-24)
+------------------
+* Compatible with gazebo7
+* Add Cmake flags for C++11
+* Contributors: Nate Koenig, Romain Reignier
+
 0.3.7 (2015-11-07)
 ------------------
 * hector_gazebo_plugins/hector_gazebo_thermal_camera: switch to cmake configuration for gazebo and added OGRE include directories required for CameraPlugin.hh

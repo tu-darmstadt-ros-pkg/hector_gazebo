@@ -4,7 +4,7 @@ project(hector_gazebo_thermal_camera)
 ## Find catkin macros and libraries
 ## if COMPONENTS list like find_package(catkin REQUIRED COMPONENTS xyz)
 ## is used, also find other catkin packages
-find_package(catkin REQUIRED COMPONENTS nodelet image_transport dynamic_reconfigure driver_base gazebo_plugins)
+find_package(catkin REQUIRED COMPONENTS gazebo_plugins)
 include_directories(include ${catkin_INCLUDE_DIRS})
 
 ## Find gazebo
@@ -27,14 +27,6 @@ find_package(Boost REQUIRED COMPONENTS thread)
 include_directories(${Boost_INCLUDE_DIRS})
 
 ###################################
-## dynamic_reconfigure ##
-###################################
-
-generate_dynamic_reconfigure_options(
-  cfg/GazeboRosThermalCamera.cfg
-)
-
-###################################
 ## catkin specific configuration ##
 ###################################
 ## The catkin_package macro generates cmake config files for your package
@@ -44,8 +36,7 @@ generate_dynamic_reconfigure_options(
 ## CATKIN_DEPENDS: catkin_packages dependent projects also need
 ## DEPENDS: system dependencies of this project that dependent projects also need
 catkin_package(
-    DEPENDS gazebo
-    CATKIN_DEPENDS nodelet image_transport dynamic_reconfigure driver_base gazebo_plugins
+    CATKIN_DEPENDS gazebo_plugins
     INCLUDE_DIRS include
     LIBRARIES
 )
@@ -56,11 +47,9 @@ catkin_package(
 
 add_library(gazebo_ros_thermal_camera src/gazebo_ros_thermal_camera_plugin.cpp)
 target_link_libraries(gazebo_ros_thermal_camera ${GAZEBO_LIBRARIES} ${catkin_LIBRARIES} ${Boost_LIBRARIES} CameraPlugin)
-add_dependencies(gazebo_ros_thermal_camera ${PROJECT_NAME}_gencfg)
 
 add_library(gazebo_ros_thermal_depth_camera src/gazebo_ros_thermal_depth_camera_plugin.cpp)
 target_link_libraries(gazebo_ros_thermal_depth_camera ${GAZEBO_LIBRARIES} ${catkin_LIBRARIES} ${Boost_LIBRARIES} DepthCameraPlugin)
-add_dependencies(gazebo_ros_thermal_depth_camera ${PROJECT_NAME}_gencfg)
 
 #############
 ## Install ##

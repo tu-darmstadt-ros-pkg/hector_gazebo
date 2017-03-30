@@ -44,6 +44,8 @@
 #include <nav_msgs/Odometry.h>
 #include <boost/bind.hpp>
 
+#include <gazebo/gazebo_config.h>
+
 namespace gazebo {
 
 enum
@@ -228,6 +230,15 @@ void DiffDrivePlugin6W::Update()
     joints[MID_RIGHT]->SetVelocity(0, wheelSpeed[1] / (wheelDiam / 2.0));
     joints[REAR_RIGHT]->SetVelocity(0, wheelSpeed[1] / (wheelDiam / 2.0));
 
+#if (GAZEBO_MAJOR_VERSION > 4)
+    joints[FRONT_LEFT]->SetEffortLimit(0, torque);
+    joints[MID_LEFT]->SetEffortLimit(0, torque);
+    joints[REAR_LEFT]->SetEffortLimit(0, torque);
+
+    joints[FRONT_RIGHT]->SetEffortLimit(0, torque);
+    joints[MID_RIGHT]->SetEffortLimit(0, torque);
+    joints[REAR_RIGHT]->SetEffortLimit(0, torque);
+#else
     joints[FRONT_LEFT]->SetMaxForce(0, torque);
     joints[MID_LEFT]->SetMaxForce(0, torque);
     joints[REAR_LEFT]->SetMaxForce(0, torque);
@@ -235,6 +246,7 @@ void DiffDrivePlugin6W::Update()
     joints[FRONT_RIGHT]->SetMaxForce(0, torque);
     joints[MID_RIGHT]->SetMaxForce(0, torque);
     joints[REAR_RIGHT]->SetMaxForce(0, torque);
+#endif
   }
 
   //publish_odometry();

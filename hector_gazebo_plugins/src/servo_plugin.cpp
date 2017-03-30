@@ -29,6 +29,7 @@
 #include <hector_gazebo_plugins/servo_plugin.h>
 #include <gazebo/common/Events.hh>
 #include <gazebo/physics/physics.hh>
+#include <gazebo/gazebo_config.h>
 
 #include <sensor_msgs/JointState.h>
 
@@ -200,6 +201,15 @@ void ServoPlugin::Update()
       }
     }
 
+#if (GAZEBO_MAJOR_VERSION > 4)
+    servo[FIRST].joint->SetEffortLimit(0, maximumTorque);
+    if (countOfServos > 1) {
+      servo[SECOND].joint->SetEffortLimit(0, maximumTorque);
+      if (countOfServos > 2) {
+        servo[THIRD].joint->SetEffortLimit(0, maximumTorque);
+      }
+    }
+#else
     servo[FIRST].joint->SetMaxForce(0, maximumTorque);
     if (countOfServos > 1) {
       servo[SECOND].joint->SetMaxForce(0, maximumTorque);
@@ -207,7 +217,17 @@ void ServoPlugin::Update()
         servo[THIRD].joint->SetMaxForce(0, maximumTorque);
       }
     }
+#endif
   } else {
+#if (GAZEBO_MAJOR_VERSION > 4)
+    servo[FIRST].joint->SetEffortLimit(0, 0.0);
+    if (countOfServos > 1) {
+      servo[SECOND].joint->SetEffortLimit(0, 0.0);
+      if (countOfServos > 2) {
+        servo[THIRD].joint->SetEffortLimit(0, 0.0);
+      }
+    }
+#else
     servo[FIRST].joint->SetMaxForce(0, 0.0);
     if (countOfServos > 1) {
       servo[SECOND].joint->SetMaxForce(0, 0.0);
@@ -215,6 +235,7 @@ void ServoPlugin::Update()
         servo[THIRD].joint->SetMaxForce(0, 0.0);
       }
     }
+#endif
   }
 }
 
