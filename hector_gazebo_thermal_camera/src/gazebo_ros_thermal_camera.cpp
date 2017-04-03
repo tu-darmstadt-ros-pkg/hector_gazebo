@@ -108,9 +108,9 @@ void GazeboRosThermalCamera_<Base>::OnNewFrame(const unsigned char *_image,
     return;
 
 #if (GAZEBO_MAJOR_VERSION > 6)
-  this->sensor_update_time_ = this->parentSensor_->LastUpdateTime();
+  this->sensor_update_time_ = this->parentSensor_->LastMeasurementTime();
 #else
-  this->sensor_update_time_ = this->parentSensor_->GetLastUpdateTime();
+  this->sensor_update_time_ = this->parentSensor_->GetLastMeasurementTime();
 #endif
 
   if (!this->parentSensor->IsActive())
@@ -123,12 +123,12 @@ void GazeboRosThermalCamera_<Base>::OnNewFrame(const unsigned char *_image,
   {
     if ((*this->image_connect_count_) > 0)
     {
-      common::Time cur_time = this->world_->GetSimTime();
-      if (cur_time - this->last_update_time_ >= this->update_period_)
+      //common::Time cur_time = this->world_->GetSimTime();
+      if (this->sensor_update_time_ - this->last_update_time_ >= this->update_period_)
       {
         this->PutCameraData(_image);
         this->PublishCameraInfo();
-        this->last_update_time_ = cur_time;
+        this->last_update_time_ = this->sensor_update_time_;
       }
     }
   }
@@ -186,12 +186,12 @@ void GazeboRosThermalCamera_<Base>::PutCameraData(const unsigned char *_src)
         temp = (273.15 + 100.0);
 
       }else{
-        //Everything else is written to the MONO18 output image much darker
+        //Everything else is written to the MONO16 output image much darker
         float pixel_temp = (_src[img_index] + _src[img_index+1] + _src[img_index+2]) / 3.0;
         temp = 273.15 + (pixel_temp*0.05);
       }
-      float faktor = 25;
-      uint16_t temp_16 = (uint16_t) (faktor * temp);
+      float factor = 25;
+      uint16_t temp_16 = (uint16_t) (factor * temp);
 
       data[i]= (uint8_t) temp_16;
       data[i+1]= (uint8_t)(temp_16 >> 8);
