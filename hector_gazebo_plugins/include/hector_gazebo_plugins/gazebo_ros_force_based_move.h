@@ -72,12 +72,15 @@ namespace gazebo {
 
       boost::shared_ptr<ros::NodeHandle> rosnode_;
       ros::Publisher odometry_pub_;
+      ros::Publisher disturbed_odometry_pub_;
       ros::Subscriber vel_sub_;
       boost::shared_ptr<tf::TransformBroadcaster> transform_broadcaster_;
       nav_msgs::Odometry odom_;
+      nav_msgs::Odometry odom_disturbed_;
       std::string tf_prefix_;
 
       tf::Transform odom_transform_;
+      tf::Transform odom_transform_disturbed_;
 
       boost::mutex lock;
 

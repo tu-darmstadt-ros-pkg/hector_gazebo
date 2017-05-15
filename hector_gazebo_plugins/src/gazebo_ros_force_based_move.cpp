@@ -25,6 +25,11 @@
 
 #include <hector_gazebo_plugins/gazebo_ros_force_based_move.h>
 
+#include <iostream>
+#include <iterator>
+#include <random>
+#include <chrono>
+
 namespace gazebo 
 {
 
@@ -151,6 +156,7 @@ namespace gazebo
     alive_ = true;
 
     odom_transform_.setIdentity();
+    odom_transform_disturbed_.setIdentity();
 
     // Ensure that ROS has been initialized and subscribe to cmd_vel
     if (!ros::isInitialized()) 
@@ -179,6 +185,7 @@ namespace gazebo
 
     vel_sub_ = rosnode_->subscribe(so);
     odometry_pub_ = rosnode_->advertise<nav_msgs::Odometry>(odometry_topic_, 1);
+    disturbed_odometry_pub_ = rosnode_->advertise<nav_msgs::Odometry>("odom_disturbed", 1);
 
     // start custom queue for diff drive
     callback_queue_thread_ = 
@@ -263,12 +270,33 @@ namespace gazebo
     std::string base_footprint_frame = 
       tf::resolve(tf_prefix_, robot_base_frame_);
 
+   unsigned seed = std::chrono::system_clock::now().time_since_epoch().count();
+   std::default_random_engine generator (seed);
+   std::normal_distribution<double> distribution (0.0,5.0);
+   //std::cout << "some Normal-distributed(0.0,1.0) results:" << std::endl;
+   //for (int i=0; i<10; ++i)
+   //  std::cout << distribution(generator) << std::endl;
+
+
     math::Vector3 angular_vel = parent_->GetRelativeAngularVel();
     math::Vector3 linear_vel = parent_->GetRelativeLinearVel();
 
     odom_transform_= odom_transform_ * this->getTransformForMotion(linear_vel.x, angular_vel.z, step_time);
-
     tf::poseTFToMsg(odom_transform_, odom_.pose.pose);
+    
+    
+    math::Vector3 angular_vel_disturbed = parent_->GetRelativeAngularVel();
+    math::Vector3 linear_vel_disturbed = parent_->GetRelativeLinearVel();
+    angular_vel_disturbed.x = angular_vel_disturbed.x+distribution(generator);
+    angular_vel_disturbed.y = angular_vel_disturbed.y+distribution(generator);
+    angular_vel_disturbed.z = angular_vel_disturbed.z+distribution(generator);
+    linear_vel_disturbed.x = linear_vel_disturbed.x+distribution(generator);
+    linear_vel_disturbed.y = linear_vel_disturbed.y+distribution(generator);
+    linear_vel_disturbed.z = linear_vel_disturbed.z+distribution(generator);
+    
+    
+    odom_transform_disturbed_= odom_transform_disturbed_ * this->getTransformForMotion(linear_vel_disturbed.x, angular_vel_disturbed.z, step_time);
+    tf::poseTFToMsg(odom_transform_disturbed_, odom_disturbed_.pose.pose);
 
     if (true){
       // getting data for base_footprint to odom transform
@@ -293,10 +321,17 @@ namespace gazebo
 
     odom_.twist.twist.angular.z = angular_vel.z;
     odom_.twist.twist.linear.x  = linear_vel.x;
+    
+    odom_disturbed_.twist.twist.angular.z = angular_vel_disturbed.z;
+    odom_disturbed_.twist.twist.linear.x  = linear_vel_disturbed.x;
 
     odom_.header.stamp = current_time;
     odom_.header.frame_id = odom_frame;
     odom_.child_frame_id = base_footprint_frame;
+    
+    odom_disturbed_.header.stamp = current_time;
+    odom_disturbed_.header.frame_id = odom_frame;
+    odom_disturbed_.child_frame_id = base_footprint_frame;
 
     if (transform_broadcaster_.get()){
       transform_broadcaster_->sendTransform(
@@ -316,23 +351,20 @@ namespace gazebo
       odom_.pose.covariance[35] = 100.0;
     }
 
-    odom_.twist.covariance[0] = 0.001;
-    odom_.twist.covariance[7] = 0.001;
-    odom_.twist.covariance[14] = 0.001;
-    odom_.twist.covariance[21] = 1000000000000.0;
-    odom_.twist.covariance[28] = 1000000000000.0;
+    odom_disturbed_.twist.covariance[0] = 0.001;
+    odom_disturbed_.twist.covariance[7] = 0.001;
+    odom_disturbed_.twist.covariance[14] = 0.001;
+    odom_disturbed_.twist.covariance[21] = 1000000000000.0;
+    odom_disturbed_.twist.covariance[28] = 1000000000000.0;
 
     if (std::abs(angular_vel.z) < 0.0001) {
-      odom_.twist.covariance[35] = 0.01;
+      odom_disturbed_.twist.covariance[35] = 0.01;
     }else{
-      odom_.twist.covariance[35] = 100.0;
+      odom_disturbed_.twist.covariance[35] = 100.0;
     }
 
-
-
-
-
     odometry_pub_.publish(odom_);
+    disturbed_odometry_pub_.publish(odom_disturbed_);
   }
 
 
