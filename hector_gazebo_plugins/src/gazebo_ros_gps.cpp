@@ -124,7 +124,7 @@ void GazeboRosGps::Load(physics::ModelPtr _model, sdf::ElementPtr _sdf)
     _sdf->GetElement("referenceAltitude")->GetValue()->Get(reference_altitude_);
 
   if (_sdf->HasElement("status"))
-    _sdf->GetElement("status")->GetValue()->Get(fix_.status.status);
+    fix_.status.status = std::stoi(_sdf->GetElement("status")->GetValue()->GetAsString());
 
   if (_sdf->HasElement("service"))
     _sdf->GetElement("service")->GetValue()->Get(fix_.status.service);
@@ -179,7 +179,6 @@ void GazeboRosGps::Reset()
 void GazeboRosGps::dynamicReconfigureCallback(GazeboRosGps::GNSSConfig &config, uint32_t level)
 {
   using sensor_msgs::NavSatStatus;
-
   if (level == 1) {
     if (!config.STATUS_FIX) {
       fix_.status.status = NavSatStatus::STATUS_NO_FIX;
