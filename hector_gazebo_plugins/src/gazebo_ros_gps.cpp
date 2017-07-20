@@ -99,7 +99,7 @@ void GazeboRosGps::Load(physics::ModelPtr _model, sdf::ElementPtr _sdf)
   reference_altitude_  = DEFAULT_REFERENCE_ALTITUDE;
 
   fix_.status.status  = sensor_msgs::NavSatStatus::STATUS_FIX;
-  fix_.status.service = sensor_msgs::NavSatStatus::STATUS_FIX;
+  fix_.status.service = 0;
 
   if (_sdf->HasElement("frameId"))
     frame_id_ = _sdf->GetElement("frameId")->GetValue()->GetAsString();
@@ -123,11 +123,17 @@ void GazeboRosGps::Load(physics::ModelPtr _model, sdf::ElementPtr _sdf)
   if (_sdf->HasElement("referenceAltitude"))
     _sdf->GetElement("referenceAltitude")->GetValue()->Get(reference_altitude_);
 
-  if (_sdf->HasElement("status"))
-    _sdf->GetElement("status")->GetValue()->Get(fix_.status.status);
+  if (_sdf->HasElement("status")) {
+    int status = fix_.status.status;
+    if (_sdf->GetElement("status")->GetValue()->Get(status))
+      fix_.status.status = static_cast<sensor_msgs::NavSatStatus::_status_type>(status);
+  }
 
-  if (_sdf->HasElement("service"))
-    _sdf->GetElement("service")->GetValue()->Get(fix_.status.service);
+  if (_sdf->HasElement("service")) {
+    unsigned int service = fix_.status.service;
+    if (_sdf->GetElement("service")->GetValue()->Get(service))
+      fix_.status.service = static_cast<sensor_msgs::NavSatStatus::_service_type>(service);
+  }
 
   fix_.header.frame_id = frame_id_;
   velocity_.header.frame_id = frame_id_;
@@ -179,7 +185,6 @@ void GazeboRosGps::Reset()
 void GazeboRosGps::dynamicReconfigureCallback(GazeboRosGps::GNSSConfig &config, uint32_t level)
 {
   using sensor_msgs::NavSatStatus;
-
   if (level == 1) {
     if (!config.STATUS_FIX) {
       fix_.status.status = NavSatStatus::STATUS_NO_FIX;
