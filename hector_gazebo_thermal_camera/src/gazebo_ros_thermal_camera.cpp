@@ -123,7 +123,11 @@ void GazeboRosThermalCamera_<Base>::OnNewFrame(const unsigned char *_image,
   {
     if ((*this->image_connect_count_) > 0)
     {
+#if (GAZEBO_MAJOR_VERSION >= 8)
+      common::Time cur_time = this->world_->SimTime();
+#else
       common::Time cur_time = this->world_->GetSimTime();
+#endif
       if (cur_time - this->last_update_time_ >= this->update_period_)
       {
         this->PutCameraData(_image);

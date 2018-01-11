@@ -143,14 +143,23 @@ void GazeboRosSonar::Reset()
 // Update the controller
 void GazeboRosSonar::Update()
 {
+#if (GAZEBO_MAJOR_VERSION >= 8)
+  common::Time sim_time = world->SimTime();
+#else
   common::Time sim_time = world->GetSimTime();
+#endif
   double dt = updateTimer.getTimeSinceLastUpdate().Double();
 
   // activate RaySensor if it is not yet active
   if (!sensor_->IsActive()) sensor_->SetActive(true);
 
+#if (GAZEBO_MAJOR_VERSION >= 8)
+  range_.header.stamp.sec  = (world->SimTime()).sec;
+  range_.header.stamp.nsec = (world->SimTime()).nsec;
+#else
   range_.header.stamp.sec  = (world->GetSimTime()).sec;
   range_.header.stamp.nsec = (world->GetSimTime()).nsec;
+#endif
 
   // find ray with minimal range
   range_.range = std::numeric_limits<sensor_msgs::Range::_range_type>::max();

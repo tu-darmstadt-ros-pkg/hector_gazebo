@@ -63,7 +63,11 @@ private:
   ros::Publisher publisher_;
 
   geometry_msgs::Vector3Stamped magnetic_field_;
+#if (GAZEBO_MAJOR_VERSION >= 8)
+  ignition::math::Vector3d magnetic_field_world_;
+#else
   gazebo::math::Vector3 magnetic_field_world_;
+#endif
 
   std::string namespace_;
   std::string topic_;

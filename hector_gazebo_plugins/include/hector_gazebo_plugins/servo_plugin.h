@@ -68,7 +68,11 @@ private:
 
   struct Servo {
     std::string name;
+#if (GAZEBO_MAJOR_VERSION >= 8)
+    ignition::math::Vector3d axis;
+#else
     math::Vector3 axis;
+#endif
     physics::JointPtr joint;
     float velocity;
     Servo() : velocity() {}
@@ -106,7 +110,11 @@ private:
 
   boost::mutex mutex;
   geometry_msgs::QuaternionStamped::ConstPtr current_cmd;
+#if (GAZEBO_MAJOR_VERSION >= 8)
+  ignition::math::Quaterniond rotation_;
+#else
   math::Quaternion rotation_;
+#endif
 
   // Pointer to the update event connection
   event::ConnectionPtr updateConnection;
