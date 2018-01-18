@@ -24,7 +24,9 @@
 
 #include <gazebo/common/Plugin.hh>
 #include <gazebo/common/Time.hh>
+#if (GAZEBO_MAJOR_VERSION < 8)
 #include <gazebo/math/Quaternion.hh>
+#endif
 
 // ROS 
 #include <ros/ros.h>

@@ -77,7 +77,9 @@
 
 #include <hector_gazebo_plugins/diffdrive_plugin_multi_wheel.h>
 
+#if (GAZEBO_MAJOR_VERSION < 8)
 #include <gazebo/math/gzmath.hh>
+#endif
 #include <sdf/sdf.hh>
 
 #include <ros/ros.h>

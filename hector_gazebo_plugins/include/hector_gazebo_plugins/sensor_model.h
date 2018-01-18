@@ -30,7 +30,9 @@
 #define HECTOR_GAZEBO_PLUGINS_SENSOR_MODEL_H
 
 #include <sdf/sdf.hh>
+#if (GAZEBO_MAJOR_VERSION < 8)
 #include <gazebo/math/Vector3.hh>
+#endif
 
 #include <hector_gazebo_plugins/SensorModelConfig.h>
 #include <numeric>
