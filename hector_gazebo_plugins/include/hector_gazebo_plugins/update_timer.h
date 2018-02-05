@@ -60,11 +60,25 @@ public:
     }
 
     if (_sdf->HasElement(_prefix + "Period")) {
+#if (GAZEBO_MAJOR_VERSION >= 9)
+      sdf::Time sdf_update_period;
+      _sdf->GetElement(_prefix + "Period")->GetValue()->Get(sdf_update_period);
+      update_period_.sec = sdf_update_period.sec;
+      update_period_.nsec = sdf_update_period.nsec;
+#else
       _sdf->GetElement(_prefix + "Period")->GetValue()->Get(update_period_);
+#endif
     }
 
     if (_sdf->HasElement(_prefix + "Offset")) {
+#if (GAZEBO_MAJOR_VERSION >= 9)
+      sdf::Time sdf_update_offset;
+      _sdf->GetElement(_prefix + "Offset")->GetValue()->Get(sdf_update_offset);
+      update_offset_.sec = sdf_update_offset.sec;
+      update_offset_.nsec = sdf_update_offset.nsec;
+#else
       _sdf->GetElement(_prefix + "Offset")->GetValue()->Get(update_offset_);
+#endif
     }
   }
 
