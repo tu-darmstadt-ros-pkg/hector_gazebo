@@ -214,8 +214,8 @@ namespace gazebo
     ignition::math::Vector3d linear_vel = parent_->RelativeLinearVel();
 
     link_->AddRelativeForce(ignition::math::Vector3d((x_ - linear_vel.X())* force_x_velocity_p_gain_,
-                                          (y_ - linear_vel.Y())* force_y_velocity_p_gain_,
-                                          0.0));
+                                                     (y_ - linear_vel.Y())* force_y_velocity_p_gain_,
+                                                     0.0));
 #else
     math::Pose pose = parent_->GetWorldPose();
 
