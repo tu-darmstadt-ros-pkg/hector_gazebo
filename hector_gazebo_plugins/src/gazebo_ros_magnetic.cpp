@@ -28,10 +28,10 @@
 
 #include <hector_gazebo_plugins/gazebo_ros_magnetic.h>
 #include <gazebo/common/Events.hh>
+#include <gazebo/common/SphericalCoordinates.hh>
 #include <gazebo/physics/physics.hh>
 
 static const double DEFAULT_MAGNITUDE           = 1.0;
-static const double DEFAULT_REFERENCE_HEADING   = 0.0;
 static const double DEFAULT_DECLINATION         = 0.0;
 static const double DEFAULT_INCLINATION         = 60.0;
 
@@ -88,10 +88,13 @@ void GazeboRosMagnetic::Load(physics::ModelPtr _model, sdf::ElementPtr _sdf)
     return;
   }
 
+  common::SphericalCoordinatesPtr spherical_coords = world->GetSphericalCoordinates();
+
   // default parameters
   frame_id_ = link_name_;
   magnitude_ = DEFAULT_MAGNITUDE;
-  reference_heading_ = DEFAULT_REFERENCE_HEADING * M_PI/180.0;
+  // SDF specifies heading counter-clockwise from east, but here it's measured clockwise from north
+  reference_heading_ = (M_PI / 2.0) - spherical_coords->HeadingOffset().Radian();
   declination_ = DEFAULT_DECLINATION * M_PI/180.0;
   inclination_ = DEFAULT_INCLINATION * M_PI/180.0;
 
