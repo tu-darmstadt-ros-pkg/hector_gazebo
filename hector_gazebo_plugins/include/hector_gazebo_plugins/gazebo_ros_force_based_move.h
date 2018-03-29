@@ -47,12 +47,12 @@ namespace gazebo {
 
   class GazeboRosForceBasedMove : public ModelPlugin {
 
-    public: 
+    public:
       GazeboRosForceBasedMove();
       ~GazeboRosForceBasedMove();
       void Load(physics::ModelPtr parent, sdf::ElementPtr sdf);
 
-    protected: 
+    protected:
       virtual void UpdateChild();
       virtual void FiniChild();
 
@@ -87,6 +87,7 @@ namespace gazebo {
       std::string odometry_frame_;
       std::string robot_base_frame_;
       double odometry_rate_;
+      double cmd_vel_time_out_;
       bool publish_odometry_tf_;
 
       // Custom Callback Queue
@@ -96,6 +97,7 @@ namespace gazebo {
 
       // command velocity callback
       void cmdVelCallback(const geometry_msgs::Twist::ConstPtr& cmd_msg);
+      common::Time last_cmd_vel_time_;
 
       double x_;
       double y_;
@@ -103,7 +105,7 @@ namespace gazebo {
       bool alive_;
       common::Time last_odom_publish_time_;
       math::Pose last_odom_pose_;
-      
+
       double torque_yaw_velocity_p_gain_;
       double force_x_velocity_p_gain_;
       double force_y_velocity_p_gain_;
