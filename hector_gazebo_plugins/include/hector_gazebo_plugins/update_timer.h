@@ -80,10 +80,11 @@ public:
 
   virtual void Disconnect(event::ConnectionPtr const& _c = event::ConnectionPtr())
   {
-    if (_c) update_event_.Disconnect(_c);
-
+    //if (_c) update_event_.Disconnect(_c);
+    if (_c) update_event_.Disconnect(_c->Id());
     if (update_connection_ && (!_c || --connection_count_ == 0)) {
-      event::Events::DisconnectWorldUpdateBegin(update_connection_);
+      // event::Events::DisconnectWorldUpdateBegin(update_connection_);
+      // not sure if that'll work?
       update_connection_.reset();
     }
   }
@@ -111,22 +112,22 @@ public:
 
   common::Time getTimeSinceLastUpdate() const {
     if (last_update_ == common::Time()) return common::Time();
-    return world_->GetSimTime() - last_update_;
+    return world_->SimTime() - last_update_;
   }
 
   virtual bool checkUpdate() const
   {
     double period = update_period_.Double();
-    double step = world_->GetPhysicsEngine()->GetMaxStepSize();
+    double step = world_->Physics()->GetMaxStepSize();
     if (period == 0) return true;
-    double fraction = fmod((world_->GetSimTime() - update_offset_).Double() + (step / 2.0), period);
+    double fraction = fmod((world_->SimTime() - update_offset_).Double() + (step / 2.0), period);
     return (fraction >= 0.0) && (fraction < step);
   }
 
   virtual bool update()
   {
     if (!checkUpdate()) return false;
-    last_update_ = world_->GetSimTime();
+    last_update_ = world_->SimTime();
     return true;
   }
 
@@ -148,7 +149,7 @@ protected:
       return false;
     }
     update_event_();
-    last_update_ = world_->GetSimTime();
+    last_update_ = world_->SimTime();
     return true;
   }
 

@@ -30,7 +30,6 @@
 #define HECTOR_GAZEBO_PLUGINS_SENSOR_MODEL_H
 
 #include <sdf/sdf.hh>
-#include <gazebo/math/Vector3.hh>
 
 #include <hector_gazebo_plugins/SensorModelConfig.h>
 #include <numeric>
@@ -166,11 +165,12 @@ double SensorModel_<double>::update(double dt)
 }
 
 template <>
-math::Vector3 SensorModel_<math::Vector3>::update(double dt)
+ignition::math::Vector3d SensorModel_<ignition::math::Vector3d>::update(double dt)
+
 {
-  current_error_.x = SensorModelInternalUpdate(current_drift_.x, drift.x, drift_frequency.x, offset.x, gaussian_noise.x, dt);
-  current_error_.y = SensorModelInternalUpdate(current_drift_.y, drift.y, drift_frequency.y, offset.y, gaussian_noise.y, dt);
-  current_error_.z = SensorModelInternalUpdate(current_drift_.z, drift.z, drift_frequency.z, offset.z, gaussian_noise.z, dt);
+  current_error_.X(SensorModelInternalUpdate(current_drift_.X(), drift.X(), drift_frequency.X(), offset.X(), gaussian_noise.X(), dt));
+  current_error_.Y(SensorModelInternalUpdate(current_drift_.Y(), drift.Y(), drift_frequency.Y(), offset.Y(), gaussian_noise.Y(), dt));
+  current_error_.Z(SensorModelInternalUpdate(current_drift_.Z(), drift.Z(), drift_frequency.Z(), offset.Z(), gaussian_noise.Z(), dt));
   return current_error_;
 }
 
@@ -189,12 +189,12 @@ void SensorModel_<double>::reset()
 }
 
 template <>
-void SensorModel_<math::Vector3>::reset()
+void SensorModel_<ignition::math::Vector3d>::reset()
 {
-  current_drift_.x = SensorModelGaussianKernel(0.0, drift.x);
-  current_drift_.y = SensorModelGaussianKernel(0.0, drift.y);
-  current_drift_.z = SensorModelGaussianKernel(0.0, drift.z);
-  current_error_ = math::Vector3();
+  current_drift_.X(SensorModelGaussianKernel(0.0, drift.X()));
+  current_drift_.Y(SensorModelGaussianKernel(0.0, drift.Y()));
+  current_drift_.Z(SensorModelGaussianKernel(0.0, drift.Z()));
+  current_error_ = ignition::math::Vector3d();
 }
 
 template <typename T>
@@ -207,7 +207,7 @@ void SensorModel_<T>::reset(const T& value)
 namespace helpers {
   template <typename T> struct scalar_value { static double toDouble(const T &orig) { return orig; } };
   template <typename T> struct scalar_value<std::vector<T> > { static double toDouble(const std::vector<T> &orig) { return (double) std::accumulate(orig.begin(), orig.end()) / orig.size(); } };
-  template <> struct scalar_value<math::Vector3> { static double toDouble(const math::Vector3 &orig) { return (orig.x + orig.y + orig.z) / 3; } };
+  template <> struct scalar_value<ignition::math::Vector3d> { static double toDouble(const ignition::math::Vector3d &orig) { return (orig.X() + orig.Y() + orig.Z()) / 3; } };
 }
 
 template <typename T>
@@ -229,7 +229,7 @@ void SensorModel_<T>::dynamicReconfigureCallback(SensorModelConfig &config, uint
 }
 
 typedef SensorModel_<double> SensorModel;
-typedef SensorModel_<math::Vector3> SensorModel3;
+typedef SensorModel_<ignition::math::Vector3d> SensorModel3;
 
 }
 

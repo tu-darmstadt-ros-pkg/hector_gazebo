@@ -24,7 +24,7 @@
 
 #include <gazebo/common/Plugin.hh>
 #include <gazebo/common/Time.hh>
-#include <gazebo/math/Quaternion.hh>
+#include <ignition/math/Quaternion.hh>
 
 // ROS 
 #include <ros/ros.h>
