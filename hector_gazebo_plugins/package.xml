@@ -20,7 +20,7 @@
 
   <!-- Dependencies needed to compile this package. -->
   <build_depend>roscpp</build_depend>
-  <build_depend>libgazebo7-dev</build_depend>
+  <build_depend>gazebo_dev</build_depend>
   <build_depend>std_msgs</build_depend>
   <build_depend>std_srvs</build_depend>
   <build_depend>geometry_msgs</build_depend>

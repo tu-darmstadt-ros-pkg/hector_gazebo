@@ -67,7 +67,11 @@ DiffDrivePlugin6W::DiffDrivePlugin6W()
 // Destructor
 DiffDrivePlugin6W::~DiffDrivePlugin6W()
 {
+#if (GAZEBO_MAJOR_VERSION >= 8)
+  updateConnection.reset();
+#else
   event::Events::DisconnectWorldUpdateBegin(updateConnection);
+#endif
   delete transform_broadcaster_;
   rosnode_->shutdown();
   callback_queue_thread_.join();
@@ -173,7 +177,11 @@ void DiffDrivePlugin6W::Reset()
     wheelSpeed[i] = 0;
   }
 
+#if (GAZEBO_MAJOR_VERSION >= 8)
+  prevUpdateTime = world->SimTime();
+#else
   prevUpdateTime = world->GetSimTime();
+#endif
 
   x_ = 0;
   rot_ = 0;
@@ -200,8 +208,13 @@ void DiffDrivePlugin6W::Update()
   GetPositionCmd();
 
   //stepTime = World::Instance()->GetPhysicsEngine()->GetStepTime();
+#if (GAZEBO_MAJOR_VERSION >= 8)
+  stepTime = world->SimTime() - prevUpdateTime;
+  prevUpdateTime = world->SimTime();
+#else
   stepTime = world->GetSimTime() - prevUpdateTime;
   prevUpdateTime = world->GetSimTime();
+#endif
 
   // Distance travelled by front wheels
   d1 = stepTime.Double() * wheelDiam / 2 * joints[MID_LEFT]->GetVelocity(0);
@@ -306,15 +319,28 @@ void DiffDrivePlugin6W::QueueThread()
 void DiffDrivePlugin6W::publish_odometry()
 {
   // get current time
+#if (GAZEBO_MAJOR_VERSION >= 8)
+  ros::Time current_time_((world->SimTime()).sec, (world->SimTime()).nsec); 
+#else
   ros::Time current_time_((world->GetSimTime()).sec, (world->GetSimTime()).nsec); 
+#endif
 
   // getting data for base_footprint to odom transform
+#if (GAZEBO_MAJOR_VERSION >= 8)
+  ignition::math::Pose3d pose = link->WorldPose();
+  ignition::math::Vector3d velocity = link->WorldLinearVel();
+  ignition::math::Vector3d angular_velocity = link->WorldAngularVel();
+
+  tf::Quaternion qt(pose.Rot().X(), pose.Rot().Y(), pose.Rot().Z(), pose.Rot().W());
+  tf::Vector3 vt(pose.Pos().X(), pose.Pos().Y(), pose.Pos().Z());
+#else
   math::Pose pose = link->GetWorldPose();
   math::Vector3 velocity = link->GetWorldLinearVel();
   math::Vector3 angular_velocity = link->GetWorldAngularVel();
 
   tf::Quaternion qt(pose.rot.x, pose.rot.y, pose.rot.z, pose.rot.w);
   tf::Vector3 vt(pose.pos.x, pose.pos.y, pose.pos.z);
+#endif
   tf::Transform base_footprint_to_odom(qt, vt);
 
   transform_broadcaster_->sendTransform(tf::StampedTransform(base_footprint_to_odom,
@@ -323,6 +349,19 @@ void DiffDrivePlugin6W::publish_odometry()
                                                             "base_footprint"));
 
   // publish odom topic
+#if (GAZEBO_MAJOR_VERSION >= 8)
+  odom_.pose.pose.position.x = pose.Pos().X();
+  odom_.pose.pose.position.y = pose.Pos().Y();
+
+  odom_.pose.pose.orientation.x = pose.Rot().X();
+  odom_.pose.pose.orientation.y = pose.Rot().Y();
+  odom_.pose.pose.orientation.z = pose.Rot().Z();
+  odom_.pose.pose.orientation.w = pose.Rot().W();
+
+  odom_.twist.twist.linear.x = velocity.X();
+  odom_.twist.twist.linear.y = velocity.Y();
+  odom_.twist.twist.angular.z = angular_velocity.Z();
+#else
   odom_.pose.pose.position.x = pose.pos.x;
   odom_.pose.pose.position.y = pose.pos.y;
 
@@ -334,6 +373,7 @@ void DiffDrivePlugin6W::publish_odometry()
   odom_.twist.twist.linear.x = velocity.x;
   odom_.twist.twist.linear.y = velocity.y;
   odom_.twist.twist.angular.z = angular_velocity.z;
+#endif
 
   odom_.header.frame_id = tf::resolve(tf_prefix_, "odom");
   odom_.child_frame_id = "base_footprint";

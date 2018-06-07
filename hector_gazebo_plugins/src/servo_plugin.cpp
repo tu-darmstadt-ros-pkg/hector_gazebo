@@ -63,7 +63,11 @@ ServoPlugin::ServoPlugin()
 // Destructor
 ServoPlugin::~ServoPlugin()
 {
+#if (GAZEBO_MAJOR_VERSION >= 8)
+  updateConnection.reset();
+#else
   event::Events::DisconnectWorldUpdateBegin(updateConnection);
+#endif
   delete transform_listener_;
   rosnode_->shutdown();
   delete rosnode_;
@@ -90,11 +94,23 @@ void ServoPlugin::Load(physics::ModelPtr _model, sdf::ElementPtr _sdf)
   if (_sdf->HasElement("topicName")) topicName = _sdf->Get<std::string>("topicName");
   if (_sdf->HasElement("jointStateName")) jointStateName = _sdf->Get<std::string>("jointStateName");
   if (_sdf->HasElement("firstServoName")) servo[FIRST].name = _sdf->Get<std::string>("firstServoName");
+#if (GAZEBO_MAJOR_VERSION >= 8)
+  if (_sdf->HasElement("firstServoAxis")) servo[FIRST].axis = _sdf->Get<ignition::math::Vector3d>("firstServoAxis");
+#else
   if (_sdf->HasElement("firstServoAxis")) servo[FIRST].axis = _sdf->Get<math::Vector3>("firstServoAxis");
+#endif
   if (_sdf->HasElement("secondServoName")) servo[SECOND].name = _sdf->Get<std::string>("secondServoName");
+#if (GAZEBO_MAJOR_VERSION >= 8)
+  if (_sdf->HasElement("secondServoAxis")) servo[SECOND].axis = _sdf->Get<ignition::math::Vector3d>("secondServoAxis");
+#else
   if (_sdf->HasElement("secondServoAxis")) servo[SECOND].axis = _sdf->Get<math::Vector3>("secondServoAxis");
+#endif
   if (_sdf->HasElement("thirdServoName")) servo[THIRD].name = _sdf->Get<std::string>("thirdServoName");
+#if (GAZEBO_MAJOR_VERSION >= 8)
+  if (_sdf->HasElement("thirdServoAxis")) servo[THIRD].axis = _sdf->Get<ignition::math::Vector3d>("thirdServoAxis");
+#else
   if (_sdf->HasElement("thirdServoAxis")) servo[THIRD].axis = _sdf->Get<math::Vector3>("thirdServoAxis");
+#endif
   if (_sdf->HasElement("proportionalControllerGain")) proportionalControllerGain = _sdf->Get<double>("proportionalControllerGain");
   if (_sdf->HasElement("derivativeControllerGain")) derivativeControllerGain = _sdf->Get<double>("derivativeControllerGain");
   if (_sdf->HasElement("maxVelocity")) maximumVelocity = _sdf->Get<double>("maxVelocity");
@@ -173,7 +189,11 @@ void ServoPlugin::Reset()
   servo[SECOND].velocity = 0;
   servo[THIRD].velocity = 0;
 
+#if (GAZEBO_MAJOR_VERSION >= 8)
+  prevUpdateTime = world->SimTime();
+#else
   prevUpdateTime = world->GetSimTime();
+#endif
 }
 
 // Update the controller
@@ -183,12 +203,20 @@ void ServoPlugin::Update()
   queue_.callAvailable();
 
   common::Time stepTime;
+#if (GAZEBO_MAJOR_VERSION >= 8)
+  stepTime = world->SimTime() - prevUpdateTime;
+#else
   stepTime = world->GetSimTime() - prevUpdateTime;
+#endif
 
   if (controlPeriod == 0.0 || stepTime > controlPeriod) {
     CalculateVelocities();
     publish_joint_states();
+#if (GAZEBO_MAJOR_VERSION >= 8)
+    prevUpdateTime = world->SimTime();
+#else
     prevUpdateTime = world->GetSimTime();
+#endif
   }
 
   if (enableMotors)
@@ -265,7 +293,11 @@ void ServoPlugin::CalculateVelocities()
 
   rotation_.Set(current_cmd->quaternion.w, current_cmd->quaternion.x, current_cmd->quaternion.y, current_cmd->quaternion.z);
 
+#if (GAZEBO_MAJOR_VERSION >= 8)
+  ignition::math::Quaterniond quat(transform.getRotation().getW(),transform.getRotation().getX(),transform.getRotation().getY(),transform.getRotation().getZ());
+#else
   math::Quaternion quat(transform.getRotation().getW(),transform.getRotation().getX(),transform.getRotation().getY(),transform.getRotation().getZ());
+#endif
 
   rotation_ = quat * rotation_;
 
@@ -282,13 +314,21 @@ void ServoPlugin::CalculateVelocities()
 
   switch(countOfServos) {
     case 2:
+#if (GAZEBO_MAJOR_VERSION >= 8)
+      if ((servo[FIRST].axis.Z() == 1) && (servo[SECOND].axis.Y() == 1)) {
+#else
       if ((servo[FIRST].axis.z == 1) && (servo[SECOND].axis.y == 1)) {
+#endif
         rotationConv = zyx;
         orderOfAxes[0] = 0;
         orderOfAxes[1] = 1;
       }
       else {
+#if (GAZEBO_MAJOR_VERSION >= 8)
+        if ((servo[FIRST].axis.X() == 1) && (servo[SECOND].axis.Y() == 1)) {
+#else
         if ((servo[FIRST].axis.x == 1) && (servo[SECOND].axis.y == 1)) {
+#endif
           rotationConv = xyz;
           orderOfAxes[0] = 0;
           orderOfAxes[1] = 1;
@@ -297,13 +337,21 @@ void ServoPlugin::CalculateVelocities()
       break;
 
     case 3:
+#if (GAZEBO_MAJOR_VERSION >= 8)
+      if ((servo[FIRST].axis.Z() == 1) && (servo[SECOND].axis.Y() == 1) && (servo[THIRD].axis.X() == 1)) {
+#else
       if ((servo[FIRST].axis.z == 1) && (servo[SECOND].axis.y == 1) && (servo[THIRD].axis.x == 1)) {
+#endif
         rotationConv = zyx;
         orderOfAxes[0] = 0;
         orderOfAxes[1] = 1;
         orderOfAxes[2] = 2;
       }
+#if (GAZEBO_MAJOR_VERSION >= 8)
+      else if ((servo[FIRST].axis.X() == 1) && (servo[SECOND].axis.Y() == 1) && (servo[THIRD].axis.Z() == 1)) {
+#else
       else if ((servo[FIRST].axis.x == 1) && (servo[SECOND].axis.y == 1) && (servo[THIRD].axis.z == 1)) {
+#endif
         rotationConv = xyz;
         orderOfAxes[0] = 0;
         orderOfAxes[1] = 1;
@@ -312,7 +360,11 @@ void ServoPlugin::CalculateVelocities()
       break;
 
     case 1:
+#if (GAZEBO_MAJOR_VERSION >= 8)
+      if (servo[FIRST].axis.Y() == 1) {
+#else
       if (servo[FIRST].axis.y == 1) {
+#endif
          rotationConv = xyz;
          orderOfAxes[0] = 1;
       }
@@ -325,19 +377,35 @@ void ServoPlugin::CalculateVelocities()
 
   switch(rotationConv)  {
     case zyx:
+#if (GAZEBO_MAJOR_VERSION >= 8)
+      temp[0] =  2*(rotation_.X()*rotation_.Y() + rotation_.W()*rotation_.Z());
+      temp[1] =     rotation_.W()*rotation_.W() + rotation_.X()*rotation_.X() - rotation_.Y()*rotation_.Y() - rotation_.Z()*rotation_.Z();
+      temp[2] = -2*(rotation_.X()*rotation_.Z() - rotation_.W()*rotation_.Y());
+      temp[3] =  2*(rotation_.Y()*rotation_.Z() + rotation_.W()*rotation_.X());
+      temp[4] =     rotation_.W()*rotation_.W() - rotation_.X()*rotation_.X() - rotation_.Y()*rotation_.Y() + rotation_.Z()*rotation_.Z();
+#else
       temp[0] =  2*(rotation_.x*rotation_.y + rotation_.w*rotation_.z);
       temp[1] =     rotation_.w*rotation_.w + rotation_.x*rotation_.x - rotation_.y*rotation_.y - rotation_.z*rotation_.z;
       temp[2] = -2*(rotation_.x*rotation_.z - rotation_.w*rotation_.y);
       temp[3] =  2*(rotation_.y*rotation_.z + rotation_.w*rotation_.x);
       temp[4] =     rotation_.w*rotation_.w - rotation_.x*rotation_.x - rotation_.y*rotation_.y + rotation_.z*rotation_.z;
+#endif
       break;
 
     case xyz:
+#if (GAZEBO_MAJOR_VERSION >= 8)
+      temp[0] =  -2*(rotation_.Y()*rotation_.Z() - rotation_.W()*rotation_.X());
+      temp[1] =      rotation_.W()*rotation_.W() - rotation_.X()*rotation_.X() - rotation_.Y()*rotation_.Y() + rotation_.Z()*rotation_.Z();
+      temp[2] =   2*(rotation_.X()*rotation_.Z() + rotation_.W()*rotation_.Y());
+      temp[3] =  -2*(rotation_.X()*rotation_.Y() - rotation_.W()*rotation_.Z());
+      temp[4] =      rotation_.W()*rotation_.W() + rotation_.X()*rotation_.X() - rotation_.Y()*rotation_.Y() - rotation_.Z()*rotation_.Z();
+#else
       temp[0] =  -2*(rotation_.y*rotation_.z - rotation_.w*rotation_.x);
       temp[1] =      rotation_.w*rotation_.w - rotation_.x*rotation_.x - rotation_.y*rotation_.y + rotation_.z*rotation_.z;
       temp[2] =   2*(rotation_.x*rotation_.z + rotation_.w*rotation_.y);
       temp[3] =  -2*(rotation_.x*rotation_.y - rotation_.w*rotation_.z);
       temp[4] =      rotation_.w*rotation_.w + rotation_.x*rotation_.x - rotation_.y*rotation_.y - rotation_.z*rotation_.z;
+#endif
       break;
 
     default:
@@ -349,21 +417,33 @@ void ServoPlugin::CalculateVelocities()
   desAngle[1] = asin(temp[2]);
   desAngle[2] = atan2(temp[3], temp[4]);
 
+#if (GAZEBO_MAJOR_VERSION >= 8)
+  actualAngle[FIRST] = servo[FIRST].joint->Position(0);
+#else
   actualAngle[FIRST] = servo[FIRST].joint->GetAngle(0).RADIAN();
+#endif
   actualVel[FIRST] = servo[FIRST].joint->GetVelocity(0);
   ROS_DEBUG_NAMED("servo_plugin", "%s servo angle: %f - %f", servo[FIRST].name.c_str(), desAngle[orderOfAxes[FIRST]], actualAngle[FIRST]);
   servo[FIRST].velocity = ( proportionalControllerGain*(desAngle[orderOfAxes[FIRST]] - actualAngle[FIRST]) - derivativeControllerGain*actualVel[FIRST]);
   if (maximumVelocity > 0.0 && fabs(servo[FIRST].velocity) > maximumVelocity) servo[FIRST].velocity = (servo[FIRST].velocity > 0 ? maximumVelocity : -maximumVelocity);
 
   if (countOfServos > 1) {
+#if (GAZEBO_MAJOR_VERSION >= 8)
+    actualAngle[SECOND] = servo[SECOND].joint->Position(0);
+#else
     actualAngle[SECOND] = servo[SECOND].joint->GetAngle(0).RADIAN();
+#endif
     actualVel[SECOND] = servo[SECOND].joint->GetVelocity(0);
     ROS_DEBUG_NAMED("servo_plugin", "%s servo angle: %f - %f", servo[SECOND].name.c_str(), desAngle[orderOfAxes[SECOND]], actualAngle[SECOND]);
     servo[SECOND].velocity = ( proportionalControllerGain*(desAngle[orderOfAxes[SECOND]] - actualAngle[SECOND]) - derivativeControllerGain*actualVel[SECOND]);
     if (maximumVelocity > 0.0 && fabs(servo[SECOND].velocity) > maximumVelocity) servo[SECOND].velocity = (servo[SECOND].velocity > 0 ? maximumVelocity : -maximumVelocity);
 
     if (countOfServos == 3) {
+#if (GAZEBO_MAJOR_VERSION >= 8)
+      actualAngle[THIRD] = servo[THIRD].joint->Position(0);
+#else
       actualAngle[THIRD] = servo[THIRD].joint->GetAngle(0).RADIAN();
+#endif
       actualVel[THIRD] = servo[THIRD].joint->GetVelocity(0);
       ROS_DEBUG_NAMED("servo_plugin", "%s servo angle: %f - %f", servo[THIRD].name.c_str(), desAngle[orderOfAxes[THIRD]], actualAngle[THIRD]);
       servo[THIRD].velocity = ( proportionalControllerGain*(desAngle[orderOfAxes[THIRD]] - actualAngle[THIRD]) - derivativeControllerGain*actualVel[THIRD]);
@@ -386,8 +466,13 @@ void ServoPlugin::publish_joint_states()
 {
   if (!jointStatePub_) return;
 
+#if (GAZEBO_MAJOR_VERSION >= 8)
+  joint_state.header.stamp.sec = (world->SimTime()).sec;
+  joint_state.header.stamp.nsec = (world->SimTime()).nsec;
+#else
   joint_state.header.stamp.sec = (world->GetSimTime()).sec;
   joint_state.header.stamp.nsec = (world->GetSimTime()).nsec;
+#endif
 
   joint_state.name.resize(countOfServos);
   joint_state.position.resize(countOfServos);
@@ -396,7 +481,11 @@ void ServoPlugin::publish_joint_states()
 
   for (unsigned int i = 0; i < countOfServos; i++) {
     joint_state.name[i] = servo[i].joint->GetName();
+#if (GAZEBO_MAJOR_VERSION >= 8)
+    joint_state.position[i] = servo[i].joint->Position(0);
+#else
     joint_state.position[i] = servo[i].joint->GetAngle(0).RADIAN();
+#endif
     joint_state.velocity[i] = servo[i].joint->GetVelocity(0);
     joint_state.effort[i] = servo[i].joint->GetForce(0u);
   }

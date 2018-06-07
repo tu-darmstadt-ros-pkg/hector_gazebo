@@ -115,9 +115,15 @@ void GazeboRosMagnetic::Load(physics::ModelPtr _model, sdf::ElementPtr _sdf)
 
   // Note: Gazebo uses NorthWestUp coordinate system, heading and declination are compass headings
   magnetic_field_.header.frame_id = frame_id_;
+#if (GAZEBO_MAJOR_VERSION >= 8)
+  magnetic_field_world_.X() = magnitude_ *  cos(inclination_) * cos(reference_heading_ - declination_);
+  magnetic_field_world_.Y() = magnitude_ *  cos(inclination_) * sin(reference_heading_ - declination_);
+  magnetic_field_world_.Z() = magnitude_ * -sin(inclination_);
+#else
   magnetic_field_world_.x = magnitude_ *  cos(inclination_) * cos(reference_heading_ - declination_);
   magnetic_field_world_.y = magnitude_ *  cos(inclination_) * sin(reference_heading_ - declination_);
   magnetic_field_world_.z = magnitude_ * -sin(inclination_);
+#endif
 
   sensor_model_.Load(_sdf);
 
@@ -153,6 +159,18 @@ void GazeboRosMagnetic::Reset()
 // Update the controller
 void GazeboRosMagnetic::Update()
 {
+#if (GAZEBO_MAJOR_VERSION >= 8)
+  common::Time sim_time = world->SimTime();
+  double dt = updateTimer.getTimeSinceLastUpdate().Double();
+
+  ignition::math::Pose3d pose = link->WorldPose();
+  ignition::math::Vector3d field = sensor_model_(pose.Rot().RotateVectorReverse(magnetic_field_world_), dt);
+
+  magnetic_field_.header.stamp = ros::Time(sim_time.sec, sim_time.nsec);
+  magnetic_field_.vector.x = field.X();
+  magnetic_field_.vector.y = field.Y();
+  magnetic_field_.vector.z = field.Z();
+#else
   common::Time sim_time = world->GetSimTime();
   double dt = updateTimer.getTimeSinceLastUpdate().Double();
 
@@ -163,6 +181,7 @@ void GazeboRosMagnetic::Update()
   magnetic_field_.vector.x = field.x;
   magnetic_field_.vector.y = field.y;
   magnetic_field_.vector.z = field.z;
+#endif
 
   publisher_.publish(magnetic_field_);
 }

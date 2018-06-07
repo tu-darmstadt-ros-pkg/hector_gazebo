@@ -211,6 +211,15 @@ void GazeboRosGps::dynamicReconfigureCallback(GazeboRosGps::GNSSConfig &config, 
 // Update the controller
 void GazeboRosGps::Update()
 {
+#if (GAZEBO_MAJOR_VERSION >= 8)
+  common::Time sim_time = world->SimTime();
+  double dt = updateTimer.getTimeSinceLastUpdate().Double();
+
+  ignition::math::Pose3d pose = link->WorldPose();
+
+  ignition::math::Vector3d velocity = velocity_error_model_(link->WorldLinearVel(), dt);
+  ignition::math::Vector3d position = position_error_model_(pose.Pos(), dt);
+#else
   common::Time sim_time = world->GetSimTime();
   double dt = updateTimer.getTimeSinceLastUpdate().Double();
 
@@ -218,6 +227,7 @@ void GazeboRosGps::Update()
 
   gazebo::math::Vector3 velocity = velocity_error_model_(link->GetWorldLinearVel(), dt);
   gazebo::math::Vector3 position = position_error_model_(pose.pos, dt);
+#endif
 
   // An offset error in the velocity is integrated into the position error for the next timestep.
   // Note: Usually GNSS receivers have almost no drift in the velocity signal.
@@ -226,6 +236,19 @@ void GazeboRosGps::Update()
   fix_.header.stamp = ros::Time(sim_time.sec, sim_time.nsec);
   velocity_.header.stamp = fix_.header.stamp;
 
+#if (GAZEBO_MAJOR_VERSION >= 8)
+  fix_.latitude  = reference_latitude_  + ( cos(reference_heading_) * position.X() + sin(reference_heading_) * position.Y()) / radius_north_ * 180.0/M_PI;
+  fix_.longitude = reference_longitude_ - (-sin(reference_heading_) * position.X() + cos(reference_heading_) * position.Y()) / radius_east_  * 180.0/M_PI;
+  fix_.altitude  = reference_altitude_  + position.Z();
+  velocity_.vector.x =  cos(reference_heading_) * velocity.X() + sin(reference_heading_) * velocity.Y();
+  velocity_.vector.y = -sin(reference_heading_) * velocity.X() + cos(reference_heading_) * velocity.Y();
+  velocity_.vector.z = velocity.Z();
+
+  fix_.position_covariance_type = sensor_msgs::NavSatFix::COVARIANCE_TYPE_DIAGONAL_KNOWN;
+  fix_.position_covariance[0] = position_error_model_.drift.X()*position_error_model_.drift.X() + position_error_model_.gaussian_noise.X()*position_error_model_.gaussian_noise.X();
+  fix_.position_covariance[4] = position_error_model_.drift.Y()*position_error_model_.drift.Y() + position_error_model_.gaussian_noise.Y()*position_error_model_.gaussian_noise.Y();
+  fix_.position_covariance[8] = position_error_model_.drift.Z()*position_error_model_.drift.Z() + position_error_model_.gaussian_noise.Z()*position_error_model_.gaussian_noise.Z();
+#else
   fix_.latitude  = reference_latitude_  + ( cos(reference_heading_) * position.x + sin(reference_heading_) * position.y) / radius_north_ * 180.0/M_PI;
   fix_.longitude = reference_longitude_ - (-sin(reference_heading_) * position.x + cos(reference_heading_) * position.y) / radius_east_  * 180.0/M_PI;
   fix_.altitude  = reference_altitude_  + position.z;
@@ -237,6 +260,7 @@ void GazeboRosGps::Update()
   fix_.position_covariance[0] = position_error_model_.drift.x*position_error_model_.drift.x + position_error_model_.gaussian_noise.x*position_error_model_.gaussian_noise.x;
   fix_.position_covariance[4] = position_error_model_.drift.y*position_error_model_.drift.y + position_error_model_.gaussian_noise.y*position_error_model_.gaussian_noise.y;
   fix_.position_covariance[8] = position_error_model_.drift.z*position_error_model_.drift.z + position_error_model_.gaussian_noise.z*position_error_model_.gaussian_noise.z;
+#endif
 
   fix_publisher_.publish(fix_);
   velocity_publisher_.publish(velocity_);

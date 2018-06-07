@@ -30,7 +30,9 @@
 #define HECTOR_GAZEBO_PLUGINS_SENSOR_MODEL_H
 
 #include <sdf/sdf.hh>
+#if (GAZEBO_MAJOR_VERSION < 8)
 #include <gazebo/math/Vector3.hh>
+#endif
 
 #include <hector_gazebo_plugins/SensorModelConfig.h>
 #include <numeric>
@@ -165,6 +167,16 @@ double SensorModel_<double>::update(double dt)
   return current_error_;
 }
 
+#if (GAZEBO_MAJOR_VERSION >= 8)
+template <>
+ignition::math::Vector3d SensorModel_<ignition::math::Vector3d>::update(double dt)
+{
+  current_error_.X() = SensorModelInternalUpdate(current_drift_.X(), drift.X(), drift_frequency.X(), offset.X(), gaussian_noise.X(), dt);
+  current_error_.Y() = SensorModelInternalUpdate(current_drift_.Y(), drift.Y(), drift_frequency.Y(), offset.Y(), gaussian_noise.Y(), dt);
+  current_error_.Z() = SensorModelInternalUpdate(current_drift_.Z(), drift.Z(), drift_frequency.Z(), offset.Z(), gaussian_noise.Z(), dt);
+  return current_error_;
+}
+#else
 template <>
 math::Vector3 SensorModel_<math::Vector3>::update(double dt)
 {
@@ -173,6 +185,7 @@ math::Vector3 SensorModel_<math::Vector3>::update(double dt)
   current_error_.z = SensorModelInternalUpdate(current_drift_.z, drift.z, drift_frequency.z, offset.z, gaussian_noise.z, dt);
   return current_error_;
 }
+#endif
 
 template <typename T>
 void SensorModel_<T>::reset()
@@ -188,6 +201,16 @@ void SensorModel_<double>::reset()
   current_error_ = 0.0;
 }
 
+#if (GAZEBO_MAJOR_VERSION >= 8)
+template <>
+void SensorModel_<ignition::math::Vector3d>::reset()
+{
+  current_drift_.X() = SensorModelGaussianKernel(0.0, drift.X());
+  current_drift_.Y() = SensorModelGaussianKernel(0.0, drift.Y());
+  current_drift_.Z() = SensorModelGaussianKernel(0.0, drift.Z());
+  current_error_ = ignition::math::Vector3d();
+}
+#else
 template <>
 void SensorModel_<math::Vector3>::reset()
 {
@@ -196,6 +219,7 @@ void SensorModel_<math::Vector3>::reset()
   current_drift_.z = SensorModelGaussianKernel(0.0, drift.z);
   current_error_ = math::Vector3();
 }
+#endif
 
 template <typename T>
 void SensorModel_<T>::reset(const T& value)
@@ -207,7 +231,11 @@ void SensorModel_<T>::reset(const T& value)
 namespace helpers {
   template <typename T> struct scalar_value { static double toDouble(const T &orig) { return orig; } };
   template <typename T> struct scalar_value<std::vector<T> > { static double toDouble(const std::vector<T> &orig) { return (double) std::accumulate(orig.begin(), orig.end()) / orig.size(); } };
+#if (GAZEBO_MAJOR_VERSION >= 8)
+  template <> struct scalar_value<ignition::math::Vector3d> { static double toDouble(const ignition::math::Vector3d &orig) { return (orig.X() + orig.Y() + orig.Z()) / 3; } };
+#else
   template <> struct scalar_value<math::Vector3> { static double toDouble(const math::Vector3 &orig) { return (orig.x + orig.y + orig.z) / 3; } };
+#endif
 }
 
 template <typename T>
@@ -229,7 +257,11 @@ void SensorModel_<T>::dynamicReconfigureCallback(SensorModelConfig &config, uint
 }
 
 typedef SensorModel_<double> SensorModel;
+#if (GAZEBO_MAJOR_VERSION >= 8)
+typedef SensorModel_<ignition::math::Vector3d> SensorModel3;
+#else
 typedef SensorModel_<math::Vector3> SensorModel3;
+#endif
 
 }
 

@@ -60,11 +60,25 @@ public:
     }
 
     if (_sdf->HasElement(_prefix + "Period")) {
+#if (GAZEBO_MAJOR_VERSION >= 9)
+      sdf::Time sdf_update_period;
+      _sdf->GetElement(_prefix + "Period")->GetValue()->Get(sdf_update_period);
+      update_period_.sec = sdf_update_period.sec;
+      update_period_.nsec = sdf_update_period.nsec;
+#else
       _sdf->GetElement(_prefix + "Period")->GetValue()->Get(update_period_);
+#endif
     }
 
     if (_sdf->HasElement(_prefix + "Offset")) {
+#if (GAZEBO_MAJOR_VERSION >= 9)
+      sdf::Time sdf_update_offset;
+      _sdf->GetElement(_prefix + "Offset")->GetValue()->Get(sdf_update_offset);
+      update_offset_.sec = sdf_update_offset.sec;
+      update_offset_.nsec = sdf_update_offset.nsec;
+#else
       _sdf->GetElement(_prefix + "Offset")->GetValue()->Get(update_offset_);
+#endif
     }
   }
 
@@ -80,10 +94,16 @@ public:
 
   virtual void Disconnect(event::ConnectionPtr const& _c = event::ConnectionPtr())
   {
+#if (GAZEBO_MAJOR_VERSION >= 8)
+    if (_c) update_event_.~EventT<void()>();
+#else
     if (_c) update_event_.Disconnect(_c);
+#endif
 
     if (update_connection_ && (!_c || --connection_count_ == 0)) {
+#if (GAZEBO_MAJOR_VERSION < 8)
       event::Events::DisconnectWorldUpdateBegin(update_connection_);
+#endif
       update_connection_.reset();
     }
   }
@@ -111,22 +131,38 @@ public:
 
   common::Time getTimeSinceLastUpdate() const {
     if (last_update_ == common::Time()) return common::Time();
+#if (GAZEBO_MAJOR_VERSION >= 8)
+    return world_->SimTime() - last_update_;
+#else
     return world_->GetSimTime() - last_update_;
+#endif
   }
 
   virtual bool checkUpdate() const
   {
     double period = update_period_.Double();
+#if (GAZEBO_MAJOR_VERSION >= 8)
+    double step = world_->Physics()->GetMaxStepSize();
+#else
     double step = world_->GetPhysicsEngine()->GetMaxStepSize();
+#endif
     if (period == 0) return true;
+#if (GAZEBO_MAJOR_VERSION >= 8)
+    double fraction = fmod((world_->SimTime() - update_offset_).Double() + (step / 2.0), period);
+#else
     double fraction = fmod((world_->GetSimTime() - update_offset_).Double() + (step / 2.0), period);
+#endif
     return (fraction >= 0.0) && (fraction < step);
   }
 
   virtual bool update()
   {
     if (!checkUpdate()) return false;
+#if (GAZEBO_MAJOR_VERSION >= 8)
+    last_update_ = world_->SimTime();
+#else
     last_update_ = world_->GetSimTime();
+#endif
     return true;
   }
 
@@ -148,7 +184,11 @@ protected:
       return false;
     }
     update_event_();
+#if (GAZEBO_MAJOR_VERSION >= 8)
+    last_update_ = world_->SimTime();
+#else
     last_update_ = world_->GetSimTime();
+#endif
     return true;
   }
 
