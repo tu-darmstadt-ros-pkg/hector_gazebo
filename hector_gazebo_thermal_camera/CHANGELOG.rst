@@ -2,6 +2,14 @@
 Changelog for package hector_gazebo_thermal_camera
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+0.5.1 (2018-06-29)
+------------------
+* Merge pull request `#44 <https://github.com/tu-darmstadt-ros-pkg/hector_gazebo/issues/44>`_ from esteve/gazebo8
+  Use Gazebo 8 APIs to avoid deprecation warnings.
+* hector_gazebo_plugins/hector_gazebo_thermal_camera: removed catkin_package(DEPENDS gazebo) declaration which was a no-op anyway
+  See https://github.com/ros-simulation/gazebo_ros_pkgs/pull/537.
+* Contributors: Esteve Fernandez, Johannes Meyer
+
 0.5.0 (2016-06-24)
 ------------------
 * Updated gazebo dependencies to version 7 for kinetic release
