@@ -5,7 +5,7 @@
      Currently it contains a 6wd differential drive plugin, an IMU sensor plugin,
      an earth magnetic field sensor plugin, a GPS sensor plugin and a
      sonar ranger plugin.</description>
-  <maintainer email="meyer@fsr.tu-darmstadt.de">Johannes Meyer</maintainer>
+  <maintainer email="johannes@intermodalics.eu">Johannes Meyer</maintainer>
 
   <license>BSD</license>
 
