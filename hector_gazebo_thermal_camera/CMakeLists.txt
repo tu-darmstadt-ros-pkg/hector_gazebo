@@ -8,6 +8,9 @@ find_package(catkin REQUIRED COMPONENTS gazebo_plugins)
 include_directories(include ${catkin_INCLUDE_DIRS})
 
 ## Find gazebo
+if(POLICY CMP0054)
+  cmake_policy(SET CMP0054 NEW)
+endif()
 find_package(gazebo REQUIRED)
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${GAZEBO_CXX_FLAGS}")
 include_directories(${GAZEBO_INCLUDE_DIRS})
