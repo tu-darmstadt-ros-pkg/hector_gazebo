@@ -3,8 +3,8 @@
   <version>0.5.1</version>
   <description>hector_gazebo_plugins provides gazebo plugins from Team Hector.
      Currently it contains a 6wd differential drive plugin, an IMU sensor plugin,
-     an earth magnetic field sensor plugin, a GPS sensor plugin and a
-     sonar ranger plugin.</description>
+     an earth magnetic field sensor plugin, a GPS sensor plugin,
+     sonar ranger plugin and a force based planar move plugin.</description>
   <maintainer email="johannes@intermodalics.eu">Johannes Meyer</maintainer>
 
   <license>BSD</license>
@@ -28,6 +28,7 @@
   <build_depend>tf</build_depend>
   <build_depend>dynamic_reconfigure</build_depend>
   <build_depend>message_generation</build_depend>
+  <build_depend>control_toolbox</build_depend>
 
   <!-- Dependencies needed after this package is compiled. -->
   <run_depend>roscpp</run_depend>
@@ -40,5 +41,6 @@
   <run_depend>tf</run_depend>
   <run_depend>dynamic_reconfigure</run_depend>
   <run_depend>message_runtime</run_depend>
+  <run_depend>control_toolbox</run_depend>
 
 </package>

@@ -19,8 +19,8 @@
  * Desc: Simple model controller that uses a twist message to exert
  *       forces on a robot, resulting in motion. Based on the
  *       planar_move plugin by Piyush Khandelwal.
- * Author: Stefan Kohlbrecher
- * Date: 06 August 2015
+ * Author: Stefan Kohlbrecher, Sammy Pfeiffer
+ * Date: 06 August 2015, 21 December 2018
  */
 
 #include <hector_gazebo_plugins/gazebo_ros_force_based_move.h>
@@ -30,7 +30,9 @@ namespace gazebo
 
   GazeboRosForceBasedMove::GazeboRosForceBasedMove() {}
 
-  GazeboRosForceBasedMove::~GazeboRosForceBasedMove() {}
+  GazeboRosForceBasedMove::~GazeboRosForceBasedMove() {
+    rosnode_->shutdown();
+  }
 
   // Load the controller
   void GazeboRosForceBasedMove::Load(physics::ModelPtr parent,
@@ -89,10 +91,21 @@ namespace gazebo
       odometry_frame_ = sdf->GetElement("odometryFrame")->Get<std::string>();
     }
     
-    
-    torque_yaw_velocity_p_gain_ = 100.0;
-    force_x_velocity_p_gain_ = 10000.0;
-    force_y_velocity_p_gain_ = 10000.0;
+    // All these are related somehow to the friction
+    // coefficients of the link that we are pushing with the force
+    // as in, mu, mu2, fdir
+    torque_yaw_velocity_p_gain_ = 0.0;
+    force_x_velocity_p_gain_ = 0.0;
+    force_y_velocity_p_gain_ = 0.0;
+    torque_yaw_velocity_i_gain_ = 0.0;
+    force_x_velocity_i_gain_ = 0.0;
+    force_y_velocity_i_gain_ = 0.0;
+    torque_yaw_velocity_d_gain_ = 0.0;
+    force_x_velocity_d_gain_ = 0.0;
+    force_y_velocity_d_gain_ = 0.0;
+    torque_yaw_velocity_i_clamp_ = 0.0;
+    force_x_velocity_i_clamp_ = 0.0;
+    force_y_velocity_i_clamp_ = 0.0;
     
     if (sdf->HasElement("yaw_velocity_p_gain"))
       (sdf->GetElement("yaw_velocity_p_gain")->GetValue()->Get(torque_yaw_velocity_p_gain_));
@@ -102,10 +115,47 @@ namespace gazebo
 
     if (sdf->HasElement("y_velocity_p_gain"))
       (sdf->GetElement("y_velocity_p_gain")->GetValue()->Get(force_y_velocity_p_gain_));
+
+    if (sdf->HasElement("yaw_velocity_i_gain"))
+      (sdf->GetElement("yaw_velocity_i_gain")->GetValue()->Get(torque_yaw_velocity_i_gain_));
+
+    if (sdf->HasElement("x_velocity_i_gain"))
+      (sdf->GetElement("x_velocity_i_gain")->GetValue()->Get(force_x_velocity_i_gain_));
+
+    if (sdf->HasElement("y_velocity_i_gain"))
+      (sdf->GetElement("y_velocity_i_gain")->GetValue()->Get(force_y_velocity_i_gain_));
+
+    if (sdf->HasElement("yaw_velocity_d_gain"))
+      (sdf->GetElement("yaw_velocity_d_gain")->GetValue()->Get(torque_yaw_velocity_d_gain_));
+
+    if (sdf->HasElement("x_velocity_d_gain"))
+      (sdf->GetElement("x_velocity_d_gain")->GetValue()->Get(force_x_velocity_d_gain_));
+
+    if (sdf->HasElement("y_velocity_d_gain"))
+      (sdf->GetElement("y_velocity_d_gain")->GetValue()->Get(force_y_velocity_d_gain_));
+
+    if (sdf->HasElement("yaw_velocity_i_clamp"))
+      (sdf->GetElement("yaw_velocity_i_clamp")->GetValue()->Get(torque_yaw_velocity_i_clamp_));
+
+    if (sdf->HasElement("x_velocity_i_clamp"))
+      (sdf->GetElement("x_velocity_i_clamp")->GetValue()->Get(force_x_velocity_i_clamp_));
+
+    if (sdf->HasElement("y_velocity_i_clamp"))
+      (sdf->GetElement("y_velocity_i_clamp")->GetValue()->Get(force_y_velocity_i_clamp_));
+
       
-    ROS_INFO_STREAM("ForceBasedMove using gains: yaw: " << torque_yaw_velocity_p_gain_ <<
-                                                 " x: " << force_x_velocity_p_gain_ <<
-                                                 " y: " << force_y_velocity_p_gain_ << "\n");
+    ROS_INFO_STREAM("ForceBasedMove using gains:\np yaw: " << torque_yaw_velocity_p_gain_ <<
+                                                 "\np x: " << force_x_velocity_p_gain_ <<
+                                                 "\np y: " << force_y_velocity_p_gain_ <<
+                                                 "\ni yaw: " << torque_yaw_velocity_i_gain_ <<
+                                                 "\ni x: " << force_x_velocity_i_gain_ <<
+                                                 "\ni y: " << force_y_velocity_i_gain_ <<
+                                                 "\nd yaw: " << torque_yaw_velocity_d_gain_ <<
+                                                 "\nd x: " << force_x_velocity_d_gain_ <<
+                                                 "\nd y: " << force_y_velocity_d_gain_ <<
+                                                 "\ni_clamp yaw: " << torque_yaw_velocity_i_clamp_ <<
+                                                 "\ni_clamp x: " << force_x_velocity_i_clamp_ <<
+                                                 "\ni_clamp y: " << force_y_velocity_i_clamp_);
 
     robot_base_frame_ = "base_footprint";
     if (!sdf->HasElement("robotBaseFrame")) 
@@ -150,9 +200,10 @@ namespace gazebo
     last_odom_publish_time_ = parent_->GetWorld()->GetSimTime();
     last_odom_pose_ = parent_->GetWorldPose();
 #endif
-    x_ = 0;
-    y_ = 0;
-    rot_ = 0;
+
+    x_ = 0.0;
+    y_ = 0.0;
+    yaw_ = 0.0;
     alive_ = true;
 
     odom_transform_.setIdentity();
@@ -168,7 +219,7 @@ namespace gazebo
     }
     rosnode_.reset(new ros::NodeHandle(robot_namespace_));
 
-    ROS_DEBUG("OCPlugin (%s) has started!", 
+    ROS_DEBUG("ForceBasedMove Plugin (%s) has started!", 
         robot_namespace_.c_str());
 
     tf_prefix_ = tf::getPrefixParam(*rosnode_);
@@ -194,51 +245,72 @@ namespace gazebo
       event::Events::ConnectWorldUpdateBegin(
           boost::bind(&GazeboRosForceBasedMove::UpdateChild, this));
 
+    // Apparently the dynamic reconfigure server only instances if there is at least
+    // a 'p' param for it
+    rosnode_->setParam("force_based_move/yaw_pid/p", torque_yaw_velocity_p_gain_);
+    rosnode_->setParam("force_based_move/yaw_pid/i", torque_yaw_velocity_i_gain_);
+    rosnode_->setParam("force_based_move/yaw_pid/d", torque_yaw_velocity_d_gain_);
+    rosnode_->setParam("force_based_move/yaw_pid/i_clamp_min", -torque_yaw_velocity_i_clamp_);
+    rosnode_->setParam("force_based_move/yaw_pid/i_clamp_max", torque_yaw_velocity_i_clamp_);
+    pid_yaw_velocity_.init(ros::NodeHandle(*rosnode_, "force_based_move/yaw_pid"), false);
+
+    rosnode_->setParam("force_based_move/x_pid/p", force_x_velocity_p_gain_);
+    rosnode_->setParam("force_based_move/x_pid/i", force_x_velocity_i_gain_);
+    rosnode_->setParam("force_based_move/x_pid/d", force_x_velocity_d_gain_);
+    rosnode_->setParam("force_based_move/x_pid/i_clamp_min", -force_x_velocity_i_clamp_);
+    rosnode_->setParam("force_based_move/x_pid/i_clamp_max", force_x_velocity_i_clamp_);
+    pid_x_velocity_.init(ros::NodeHandle(*rosnode_, "force_based_move/x_pid"), false);
+
+    rosnode_->setParam("force_based_move/y_pid/p", force_y_velocity_p_gain_);
+    rosnode_->setParam("force_based_move/y_pid/i", force_y_velocity_i_gain_);
+    rosnode_->setParam("force_based_move/y_pid/d", force_y_velocity_d_gain_);
+    rosnode_->setParam("force_based_move/y_pid/i_clamp_min", -force_y_velocity_i_clamp_);
+    rosnode_->setParam("force_based_move/y_pid/i_clamp_max", force_y_velocity_i_clamp_);
+    pid_y_velocity_.init(ros::NodeHandle(*rosnode_, "force_based_move/y_pid"), false);
   }
+
 
   // Update the controller
   void GazeboRosForceBasedMove::UpdateChild()
   {
     boost::mutex::scoped_lock scoped_lock(lock);
+    ros::Time tnow = ros::Time::now();
+    ros::Duration dt = tnow - last_pid_update_time_;
 #if (GAZEBO_MAJOR_VERSION >= 8)
     ignition::math::Pose3d pose = parent_->WorldPose();
 
     ignition::math::Vector3d angular_vel = parent_->WorldAngularVel();
 
-    double error = angular_vel.Z() - rot_;
+    double value_yaw = pid_yaw_velocity_.computeCommand(pid_yaw_velocity_.getCurrentCmd() - angular_vel.Z(), dt);
 
-    link_->AddTorque(ignition::math::Vector3d(0.0, 0.0, -error * torque_yaw_velocity_p_gain_));
+    link_->AddTorque(ignition::math::Vector3d(0.0, 0.0, value_yaw));
 
-    float yaw = pose.Rot().Yaw();
 
     ignition::math::Vector3d linear_vel = parent_->RelativeLinearVel();
 
-    link_->AddRelativeForce(ignition::math::Vector3d((x_ - linear_vel.X())* force_x_velocity_p_gain_,
-                                                     (y_ - linear_vel.Y())* force_y_velocity_p_gain_,
+    double value_x = pid_x_velocity_.computeCommand(pid_x_velocity_.getCurrentCmd() - linear_vel.X(), dt);
+    double value_y = pid_y_velocity_.computeCommand(pid_y_velocity_.getCurrentCmd() - linear_vel.Y(), dt);
+
+    link_->AddRelativeForce(ignition::math::Vector3d(value_x,
+                                                     value_y,
                                                      0.0));
 #else
     math::Pose pose = parent_->GetWorldPose();
 
     math::Vector3 angular_vel = parent_->GetWorldAngularVel();
-
-    double error = angular_vel.z - rot_;
-
-    link_->AddTorque(math::Vector3(0.0, 0.0, -error * torque_yaw_velocity_p_gain_));
-
-    float yaw = pose.rot.GetYaw();
-
     math::Vector3 linear_vel = parent_->GetRelativeLinearVel();
 
-    link_->AddRelativeForce(math::Vector3((x_ - linear_vel.x)* force_x_velocity_p_gain_,
-                                          (y_ - linear_vel.y)* force_y_velocity_p_gain_,
-                                          0.0));
+    double  value_yaw = pid_yaw_velocity_.computeCommand(yaw_ - angular_vel.z, dt);
+    link_->AddTorque(math::Vector3(0.0, 0.0, value_yaw));
+
+    double value_x = pid_x_velocity_.computeCommand(x_ - linear_vel.x, dt);
+    double value_y = pid_y_velocity_.computeCommand(y_ - linear_vel.y, dt);
+
+    link_->AddRelativeForce(math::Vector3(value_x,
+                                          value_y,
+                                            0.0));
 #endif
-    //parent_->PlaceOnNearestEntityBelow();
-    //parent_->SetLinearVel(math::Vector3(
-    //      x_ * cosf(yaw) - y_ * sinf(yaw),
-    //      y_ * cosf(yaw) + x_ * sinf(yaw),
-    //      0));
-    //parent_->SetAngularVel(math::Vector3(0, 0, rot_));
+    last_pid_update_time_ = tnow;
 
     if (odometry_rate_ > 0.0) {
 #if (GAZEBO_MAJOR_VERSION >= 8)
@@ -270,7 +342,12 @@ namespace gazebo
     boost::mutex::scoped_lock scoped_lock(lock);
     x_ = cmd_msg->linear.x;
     y_ = cmd_msg->linear.y;
-    rot_ = cmd_msg->angular.z;
+    yaw_ = cmd_msg->angular.z;
+    ROS_DEBUG_STREAM("Updating command:\n" << 
+      "x: " << cmd_msg->linear.x <<
+      "\ny: " << cmd_msg->linear.y <<
+      "\nyaw: " << cmd_msg->angular.z);
+ 
   }
 
   void GazeboRosForceBasedMove::QueueThread()
@@ -294,20 +371,22 @@ namespace gazebo
     ignition::math::Vector3d angular_vel = parent_->RelativeAngularVel();
     ignition::math::Vector3d linear_vel = parent_->RelativeLinearVel();
 
-    odom_transform_= odom_transform_ * this->getTransformForMotion(linear_vel.X(), angular_vel.Z(), step_time);
+    odom_transform_= odom_transform_ * this->getTransformForMotion(linear_vel.X(), linear_vel.Y(), angular_vel.Z(), step_time);
 
     tf::poseTFToMsg(odom_transform_, odom_.pose.pose);
     odom_.twist.twist.angular.z = angular_vel.Z();
     odom_.twist.twist.linear.x  = linear_vel.X();
+    odom_.twist.twist.linear.y = linear_vel.Y();
 #else
     math::Vector3 angular_vel = parent_->GetRelativeAngularVel();
     math::Vector3 linear_vel = parent_->GetRelativeLinearVel();
 
-    odom_transform_= odom_transform_ * this->getTransformForMotion(linear_vel.x, angular_vel.z, step_time);
+    odom_transform_= odom_transform_ * this->getTransformForMotion(linear_vel.x, linear_vel.y, angular_vel.z, step_time);
 
     tf::poseTFToMsg(odom_transform_, odom_.pose.pose);
     odom_.twist.twist.angular.z = angular_vel.z;
     odom_.twist.twist.linear.x  = linear_vel.x;
+    odom_.twist.twist.linear.y = linear_vel.y;
 #endif
 
     odom_.header.stamp = current_time;
@@ -358,7 +437,7 @@ namespace gazebo
   }
 
 
-  tf::Transform GazeboRosForceBasedMove::getTransformForMotion(double linear_vel_x, double angular_vel, double timeSeconds) const
+  tf::Transform GazeboRosForceBasedMove::getTransformForMotion(double linear_vel_x, double linear_vel_y, double angular_vel, double timeSeconds) const
   {
     tf::Transform tmp;
     tmp.setIdentity();
@@ -366,10 +445,10 @@ namespace gazebo
 
     if (std::abs(angular_vel) < 0.0001) {
       //Drive straight
-      tmp.setOrigin(tf::Vector3(static_cast<double>(linear_vel_x*timeSeconds), 0.0, 0.0));
+      tmp.setOrigin(tf::Vector3(static_cast<double>(linear_vel_x*timeSeconds), static_cast<double>(linear_vel_y*timeSeconds), 0.0));
     } else {
       //Follow circular arc
-      double distChange = linear_vel_x * timeSeconds;
+      double distChange = linear_vel_x * timeSeconds + linear_vel_y * timeSeconds;
       double angleChange = angular_vel * timeSeconds;
 
       double arcRadius = distChange / angleChange;
