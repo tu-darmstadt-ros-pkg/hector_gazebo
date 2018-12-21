@@ -1,0 +1,76 @@
+<?xml version="1.0"?>
+<!-- Revolute-Revolute Manipulator -->
+<robot name="boxbot" xmlns:xacro="http://www.ros.org/wiki/xacro">
+
+  <!-- Constants for robot dimensions -->
+  <xacro:property name="PI" value="3.1415926535897931"/>
+  <xacro:property name="mass" value="5" /> <!-- arbitrary value for mass -->
+  <xacro:property name="width" value="0.5" /> <!-- Square dimensions (widthxwidth) of beams -->
+  <xacro:property name="height1" value="0.3" /> <!-- Link 1 -->
+
+  <!-- Import all Gazebo-customization elements, including Gazebo colors -->
+  <xacro:include filename="$(find hector_gazebo_plugins)/launch/boxbot.gazebo" />
+  <!-- Import Rviz colors -->
+  <xacro:include filename="$(find hector_gazebo_plugins)/launch/materials.xacro" />
+
+  <!-- Base Link -->
+  <link name="link1">
+    <collision>
+      <origin xyz="0 0 ${height1/2}" rpy="0 0 0"/>
+      <geometry>
+	<box size="${width} ${width} ${height1}"/>
+      </geometry>
+    </collision>
+
+    <visual>
+      <origin xyz="0 0 ${height1/2}" rpy="0 0 0"/>
+      <geometry>
+	<box size="${width} ${width} ${height1}"/>
+      </geometry>
+      <material name="orange"/>
+    </visual>
+
+    <inertial>
+      <origin xyz="0 0 ${height1/2}" rpy="0 0 0"/>
+      <mass value="${mass}"/>
+      <inertia
+	  ixx="${mass / 12.0 * (width*width + height1*height1)}" ixy="0.0" ixz="0.0"
+	  iyy="${mass / 12.0 * (height1*height1 + width*width)}" iyz="0.0"
+	  izz="${mass / 12.0 * (width*width + width*width)}"/>
+    </inertial>
+  </link>
+
+  <joint name="joint1" type="fixed">
+    <parent link="link1"/>
+    <child link="link2"/>
+    <origin xyz="${width/4} 0 ${height1*1.25}" rpy="0 0 0"/>
+  </joint>
+
+  <!-- Box acting as front side -->
+  <link name="link2">
+    <collision>
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+      <geometry>
+        <box size="0.2 0.2 0.2"/>
+      </geometry>
+    </collision>
+
+    <visual>
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+      <geometry>
+        <box size="0.2 0.2 0.2"/>
+      </geometry>
+      <material name="orange"/>
+    </visual>
+
+    <inertial>
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+      <mass value="${0.1}"/>
+      <inertia
+        ixx="${mass/2 / 12.0 * (0.2*0.2 + 0.2*0.2)}" ixy="0.0" ixz="0.0"
+        iyy="${mass/2 / 12.0 * (0.2*0.2 + 0.2*0.2)}" iyz="0.0"
+        izz="${mass/2 / 12.0 * (0.2*0.2 + 0.2*0.2)}"/>
+    </inertial>
+  </link>
+
+</robot>

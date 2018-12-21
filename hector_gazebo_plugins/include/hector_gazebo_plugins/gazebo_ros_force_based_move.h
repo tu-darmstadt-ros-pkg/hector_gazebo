@@ -19,8 +19,8 @@
  * Desc: Simple model controller that uses a twist message to exert
  *       forces on a robot, resulting in motion. Based on the
  *       planar_move plugin by Piyush Khandelwal.
- * Author: Stefan Kohlbrecher
- * Date: 06 August 2015
+ * Author: Stefan Kohlbrecher, Sammy Pfeiffer
+ * Date: 06 August 2015, 21 December 2018
  */
 
 #ifndef GAZEBO_ROS_FORCE_BASED_MOVE_HH
@@ -42,6 +42,7 @@
 #include <ros/ros.h>
 #include <tf/transform_broadcaster.h>
 #include <tf/transform_listener.h>
+#include <control_toolbox/pid.h>
 
 namespace gazebo {
 
@@ -59,7 +60,7 @@ namespace gazebo {
     private:
       void publishOdometry(double step_time);
 
-      tf::Transform getTransformForMotion(double linear_vel_x, double angular_vel, double timeSeconds) const;
+      tf::Transform getTransformForMotion(double linear_vel_x, double linear_vel_y, double angular_vel, double timeSeconds) const;
 
       physics::ModelPtr parent_;
       event::ConnectionPtr update_connection_;
@@ -97,9 +98,11 @@ namespace gazebo {
       // command velocity callback
       void cmdVelCallback(const geometry_msgs::Twist::ConstPtr& cmd_msg);
 
+      // latest command
       double x_;
       double y_;
-      double rot_;
+      double yaw_;
+
       bool alive_;
       common::Time last_odom_publish_time_;
 #if (GAZEBO_MAJOR_VERSION >= 8)
@@ -107,10 +110,23 @@ namespace gazebo {
 #else
       math::Pose last_odom_pose_;
 #endif
-      
+      control_toolbox::Pid pid_yaw_velocity_;
+      control_toolbox::Pid pid_x_velocity_;
+      control_toolbox::Pid pid_y_velocity_;
+      ros::Time last_pid_update_time_;
+
       double torque_yaw_velocity_p_gain_;
       double force_x_velocity_p_gain_;
       double force_y_velocity_p_gain_;
+      double torque_yaw_velocity_i_gain_;
+      double force_x_velocity_i_gain_;
+      double force_y_velocity_i_gain_;
+      double torque_yaw_velocity_d_gain_;
+      double force_x_velocity_d_gain_;
+      double force_y_velocity_d_gain_;
+      double torque_yaw_velocity_i_clamp_;
+      double force_x_velocity_i_clamp_;
+      double force_y_velocity_i_clamp_;
 
   };
 

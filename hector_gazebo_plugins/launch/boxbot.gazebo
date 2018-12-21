@@ -1,0 +1,44 @@
+<?xml version="1.0"?>
+<robot>
+
+  <!-- Link1 -->
+  <gazebo reference="link1">
+    <mu1>0.2</mu1>
+    <mu2>0.2</mu2>
+    <kp value="10000000.0" />
+    <kd value="1.0" />
+    <fdir1 value="1 0 0"/>
+    <minDepth>0.003</minDepth>
+    <turnGravityOff>false</turnGravityOff>
+    <material>Gazebo/Orange</material>
+  </gazebo>
+
+  <!-- Link2 -->
+  <gazebo reference="link2">
+    <mu1>0.2</mu1>
+    <mu2>0.2</mu2>
+    <material>Gazebo/Orange</material>
+  </gazebo>
+
+  <gazebo>
+      <plugin name="base_drive_controller" filename="libgazebo_ros_force_based_move.so">
+          <robotNamespace>boxbot</robotNamespace>
+          <commandTopic>cmd_vel</commandTopic>
+          <odometryTopic>odom</odometryTopic>
+          <publishOdometryTf>true</publishOdometryTf>
+          <odometryFrame>odom</odometryFrame>
+          <odometryRate>20.0</odometryRate>
+          <robotBaseFrame>link1</robotBaseFrame>
+          <yaw_velocity_p_gain>100.0</yaw_velocity_p_gain>
+          <yaw_velocity_i_gain>0.0</yaw_velocity_i_gain>   
+          <yaw_velocity_i_clamp>00.0</yaw_velocity_i_clamp>     
+          <x_velocity_p_gain>1000.0</x_velocity_p_gain>
+          <x_velocity_i_gain>0.0</x_velocity_i_gain>
+          <x_velocity_i_clamp>0.0</x_velocity_i_clamp> 
+          <y_velocity_p_gain>1000.0</y_velocity_p_gain>
+          <y_velocity_i_gain>0.0</y_velocity_i_gain>
+          <y_velocity_i_clamp>0.0</y_velocity_i_clamp> 
+      </plugin>
+  </gazebo>
+
+</robot>
