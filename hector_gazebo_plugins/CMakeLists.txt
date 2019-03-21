@@ -93,6 +93,9 @@ add_dependencies(hector_gazebo_ros_sonar ${PROJECT_NAME}_gencfg)
 add_library(hector_servo_plugin src/servo_plugin.cpp)
 target_link_libraries(hector_servo_plugin ${Boost_LIBRARIES} ${GAZEBO_LIBRARIES} ${catkin_LIBRARIES})
 
+add_library(gazebo_ros_cmd_vel_relay src/gazebo_ros_cmd_vel_relay.cpp)
+target_link_libraries(gazebo_ros_cmd_vel_relay ${Boost_LIBRARIES} ${GAZEBO_LIBRARIES} ${catkin_LIBRARIES})
+
 #############
 ## Install ##
 #############
@@ -116,6 +119,7 @@ install(TARGETS
   hector_gazebo_ros_gps
   hector_gazebo_ros_sonar
   hector_servo_plugin
+  gazebo_ros_cmd_vel_relay
   ARCHIVE DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
   LIBRARY DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
   RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
