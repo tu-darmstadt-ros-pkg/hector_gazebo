@@ -72,7 +72,7 @@ private:
   ignition::math::Vector3d field_;
 #else
   gazebo::math::Vector3 magnetic_field_world_;
-  ignition::math::Vector3 field_;
+  math::Vector3 field_;
 #endif
 
   std::string namespace_;
@@ -92,8 +92,8 @@ private:
 
   boost::shared_ptr<dynamic_reconfigure::Server<SensorModelConfig> > dynamic_reconfigure_server_;
 
-  void Update_Vector3Stamped(common::Time &sim_time);
-  void Update_MagneticField(common::Time &sim_time);
+  void Update_Vector3Stamped(const common::Time &sim_time);
+  void Update_MagneticField(const common::Time &sim_time);
 };
 
 } // namespace gazebo

@@ -177,7 +177,7 @@ void GazeboRosMagnetic::Update()
   common::Time sim_time = world->GetSimTime();
   double dt = updateTimer.getTimeSinceLastUpdate().Double();
 
-  ignition::math::Pose pose = link->GetWorldPose();
+  math::Pose pose = link->GetWorldPose();
   field_ = sensor_model_(pose.rot.RotateVectorReverse(magnetic_field_world_), dt);
 #endif
 
@@ -191,7 +191,7 @@ void GazeboRosMagnetic::Update()
   }
 }
 
-void GazeboRosMagnetic::Update_Vector3Stamped(common::Time &sim_time)
+void GazeboRosMagnetic::Update_Vector3Stamped(const common::Time &sim_time)
 {
   magnetic_field_old_.header.stamp = ros::Time(sim_time.sec, sim_time.nsec);
 #if (GAZEBO_MAJOR_VERSION >= 8)
@@ -207,7 +207,7 @@ void GazeboRosMagnetic::Update_Vector3Stamped(common::Time &sim_time)
   publisher_.publish(magnetic_field_old_);
 }
 
-void GazeboRosMagnetic::Update_MagneticField(common::Time &sim_time)
+void GazeboRosMagnetic::Update_MagneticField(const common::Time &sim_time)
 {
   magnetic_field_new_.header.stamp = ros::Time(sim_time.sec, sim_time.nsec);
 #if (GAZEBO_MAJOR_VERSION >= 8)
