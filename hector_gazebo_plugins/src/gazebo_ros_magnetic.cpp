@@ -113,8 +113,14 @@ void GazeboRosMagnetic::Load(physics::ModelPtr _model, sdf::ElementPtr _sdf)
     if (_sdf->GetElement("inclination")->GetValue()->Get(inclination_))
       inclination_ *= M_PI/180.0;
 
+  if (_sdf->HasElement("useMagneticFieldMsgs"))
+    _sdf->GetElement("useMagneticFieldMsgs")->GetValue()->Get(use_magnetic_field_msgs_);
+  else
+    use_magnetic_field_msgs_ = false;
+
   // Note: Gazebo uses NorthWestUp coordinate system, heading and declination are compass headings
-  magnetic_field_.header.frame_id = frame_id_;
+  magnetic_field_old_.header.frame_id = frame_id_;
+  magnetic_field_new_.header.frame_id = frame_id_;
 #if (GAZEBO_MAJOR_VERSION >= 8)
   magnetic_field_world_.X() = magnitude_ *  cos(inclination_) * cos(reference_heading_ - declination_);
   magnetic_field_world_.Y() = magnitude_ *  cos(inclination_) * sin(reference_heading_ - declination_);
@@ -136,7 +142,10 @@ void GazeboRosMagnetic::Load(physics::ModelPtr _model, sdf::ElementPtr _sdf)
   }
 
   node_handle_ = new ros::NodeHandle(namespace_);
-  publisher_ = node_handle_->advertise<geometry_msgs::Vector3Stamped>(topic_, 1);
+  if (use_magnetic_field_msgs_)
+    publisher_ = node_handle_->advertise<sensor_msgs::MagneticField>(topic_, 1);
+  else
+    publisher_ = node_handle_->advertise<geometry_msgs::Vector3Stamped>(topic_, 1);
 
   // setup dynamic_reconfigure server
   dynamic_reconfigure_server_.reset(new dynamic_reconfigure::Server<SensorModelConfig>(ros::NodeHandle(*node_handle_, topic_)));
@@ -162,28 +171,60 @@ void GazeboRosMagnetic::Update()
 #if (GAZEBO_MAJOR_VERSION >= 8)
   common::Time sim_time = world->SimTime();
   double dt = updateTimer.getTimeSinceLastUpdate().Double();
-
   ignition::math::Pose3d pose = link->WorldPose();
-  ignition::math::Vector3d field = sensor_model_(pose.Rot().RotateVectorReverse(magnetic_field_world_), dt);
-
-  magnetic_field_.header.stamp = ros::Time(sim_time.sec, sim_time.nsec);
-  magnetic_field_.vector.x = field.X();
-  magnetic_field_.vector.y = field.Y();
-  magnetic_field_.vector.z = field.Z();
+  field_ = sensor_model_(pose.Rot().RotateVectorReverse(magnetic_field_world_), dt);
 #else
   common::Time sim_time = world->GetSimTime();
   double dt = updateTimer.getTimeSinceLastUpdate().Double();
 
-  math::Pose pose = link->GetWorldPose();
-  math::Vector3 field = sensor_model_(pose.rot.RotateVectorReverse(magnetic_field_world_), dt);
-
-  magnetic_field_.header.stamp = ros::Time(sim_time.sec, sim_time.nsec);
-  magnetic_field_.vector.x = field.x;
-  magnetic_field_.vector.y = field.y;
-  magnetic_field_.vector.z = field.z;
+  ignition::math::Pose pose = link->GetWorldPose();
+  field_ = sensor_model_(pose.rot.RotateVectorReverse(magnetic_field_world_), dt);
 #endif
 
-  publisher_.publish(magnetic_field_);
+  if (use_magnetic_field_msgs_)
+  {
+    Update_MagneticField(sim_time);
+  }
+  else
+  {
+    Update_Vector3Stamped(sim_time);
+  }
+}
+
+void GazeboRosMagnetic::Update_Vector3Stamped(common::Time &sim_time)
+{
+  magnetic_field_old_.header.stamp = ros::Time(sim_time.sec, sim_time.nsec);
+#if (GAZEBO_MAJOR_VERSION >= 8)
+  magnetic_field_old_.vector.x = field_.X();
+  magnetic_field_old_.vector.y = field_.Y();
+  magnetic_field_old_.vector.z = field_.Z();
+#else
+  magnetic_field_old_.vector.x = field_.x;
+  magnetic_field_old_.vector.y = field_.y;
+  magnetic_field_old_.vector.z = field_.z;
+#endif
+
+  publisher_.publish(magnetic_field_old_);
+}
+
+void GazeboRosMagnetic::Update_MagneticField(common::Time &sim_time)
+{
+  magnetic_field_new_.header.stamp = ros::Time(sim_time.sec, sim_time.nsec);
+#if (GAZEBO_MAJOR_VERSION >= 8)
+  magnetic_field_new_.magnetic_field.x = field_.X();
+  magnetic_field_new_.magnetic_field.y = field_.Y();
+  magnetic_field_new_.magnetic_field.z = field_.Z();
+#else
+  magnetic_field_new_.magnetic_field.x = field_.x;
+  magnetic_field_new_.magnetic_field.y = field_.y;
+  magnetic_field_new_.magnetic_field.z = field_.z;
+#endif
+
+  // future work: implement support for the magnetic_field_covariance
+  // e.g. magnetic_field_new_.magnetic_field_covariance = [...]
+  // by leaving it alone it'll be all-zeros, indicating "unknown" which is fine
+
+  publisher_.publish(magnetic_field_new_);
 }
 
 // Register this plugin with the simulator
