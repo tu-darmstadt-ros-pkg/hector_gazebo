@@ -374,18 +374,18 @@ namespace gazebo
       const double distX = linear_vel_x * timeSeconds;
       const double distY = linear_vel_y * timeSeconds;
       const double distChange = std::sqrt(distX * distX + distY * distY);
-      const double angleDist = std::acos(distX / distChange);
-      const double angleDriveDirection = angular_vel * timeSeconds;
+      const double angleDriveDirection = std::acos(distX / distChange);
+      const double angleChange = angular_vel * timeSeconds;
 
-      const double arcRadius = distChange / angleDriveDirection;
+      const double arcRadius = distChange / angleChange;
 
-      tf::Vector3 endPos = tf::Vector3(std::sin(angleDriveDirection) * arcRadius,
-                                arcRadius - std::cos(angleDriveDirection) * arcRadius,
+      tf::Vector3 endPos = tf::Vector3(std::sin(angleChange) * arcRadius,
+                                arcRadius - std::cos(angleChange) * arcRadius,
                                 0.0);
 
-      tmp.setOrigin(endPos.rotate(tf::Vector3(0.0, 0.0, 1.0), angleDist));
+      tmp.setOrigin(endPos.rotate(tf::Vector3(0.0, 0.0, 1.0), angleDriveDirection));
 
-      tmp.setRotation(tf::createQuaternionFromYaw(angleDriveDirection));
+      tmp.setRotation(tf::createQuaternionFromYaw(angleChange));
     }
 
     return tmp;
