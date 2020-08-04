@@ -119,8 +119,6 @@ void GazeboRosMagnetic::Load(physics::ModelPtr _model, sdf::ElementPtr _sdf)
     use_magnetic_field_msgs_ = false;
 
   // Note: Gazebo uses NorthWestUp coordinate system, heading and declination are compass headings
-  magnetic_field_old_.header.frame_id = frame_id_;
-  magnetic_field_new_.header.frame_id = frame_id_;
 #if (GAZEBO_MAJOR_VERSION >= 8)
   magnetic_field_world_.X() = magnitude_ *  cos(inclination_) * cos(reference_heading_ - declination_);
   magnetic_field_world_.Y() = magnitude_ *  cos(inclination_) * sin(reference_heading_ - declination_);
@@ -172,59 +170,55 @@ void GazeboRosMagnetic::Update()
   common::Time sim_time = world->SimTime();
   double dt = updateTimer.getTimeSinceLastUpdate().Double();
   ignition::math::Pose3d pose = link->WorldPose();
-  field_ = sensor_model_(pose.Rot().RotateVectorReverse(magnetic_field_world_), dt);
+  ignition::math::Vector3d field = sensor_model_(pose.Rot().RotateVectorReverse(magnetic_field_world_), dt);
 #else
   common::Time sim_time = world->GetSimTime();
   double dt = updateTimer.getTimeSinceLastUpdate().Double();
 
   math::Pose pose = link->GetWorldPose();
-  field_ = sensor_model_(pose.rot.RotateVectorReverse(magnetic_field_world_), dt);
+  math::Vector3 field = sensor_model_(pose.rot.RotateVectorReverse(magnetic_field_world_), dt);
 #endif
 
   if (use_magnetic_field_msgs_)
   {
-    Update_MagneticField(sim_time);
+    sensor_msgs::MagneticField magnetic_field;
+
+    magnetic_field.header.stamp = ros::Time(sim_time.sec, sim_time.nsec);
+    magnetic_field.header.frame_id = frame_id_;
+#if (GAZEBO_MAJOR_VERSION >= 8)
+    magnetic_field.magnetic_field.x = field.X();
+    magnetic_field.magnetic_field.y = field.Y();
+    magnetic_field.magnetic_field.z = field.Z();
+#else
+    magnetic_field.magnetic_field.x = field.x;
+    magnetic_field.magnetic_field.y = field.y;
+    magnetic_field.magnetic_field.z = field.z;
+#endif
+
+    // future work: implement support for the magnetic_field_covariance
+    // e.g. magnetic_field_new_.magnetic_field_covariance = [...]
+    // by leaving it alone it'll be all-zeros, indicating "unknown" which is fine
+
+    publisher_.publish(magnetic_field);
   }
   else
   {
-    Update_Vector3Stamped(sim_time);
+    geometry_msgs::Vector3Stamped magnetic_field;
+
+    magnetic_field.header.stamp = ros::Time(sim_time.sec, sim_time.nsec);
+    magnetic_field.header.frame_id = frame_id_;
+#if (GAZEBO_MAJOR_VERSION >= 8)
+    magnetic_field.vector.x = field.X();
+    magnetic_field.vector.y = field.Y();
+    magnetic_field.vector.z = field.Z();
+#else
+    magnetic_field.vector.x = field.x;
+    magnetic_field.vector.y = field.y;
+    magnetic_field.vector.z = field.z;
+#endif
+
+    publisher_.publish(magnetic_field);
   }
-}
-
-void GazeboRosMagnetic::Update_Vector3Stamped(const common::Time &sim_time)
-{
-  magnetic_field_old_.header.stamp = ros::Time(sim_time.sec, sim_time.nsec);
-#if (GAZEBO_MAJOR_VERSION >= 8)
-  magnetic_field_old_.vector.x = field_.X();
-  magnetic_field_old_.vector.y = field_.Y();
-  magnetic_field_old_.vector.z = field_.Z();
-#else
-  magnetic_field_old_.vector.x = field_.x;
-  magnetic_field_old_.vector.y = field_.y;
-  magnetic_field_old_.vector.z = field_.z;
-#endif
-
-  publisher_.publish(magnetic_field_old_);
-}
-
-void GazeboRosMagnetic::Update_MagneticField(const common::Time &sim_time)
-{
-  magnetic_field_new_.header.stamp = ros::Time(sim_time.sec, sim_time.nsec);
-#if (GAZEBO_MAJOR_VERSION >= 8)
-  magnetic_field_new_.magnetic_field.x = field_.X();
-  magnetic_field_new_.magnetic_field.y = field_.Y();
-  magnetic_field_new_.magnetic_field.z = field_.Z();
-#else
-  magnetic_field_new_.magnetic_field.x = field_.x;
-  magnetic_field_new_.magnetic_field.y = field_.y;
-  magnetic_field_new_.magnetic_field.z = field_.z;
-#endif
-
-  // future work: implement support for the magnetic_field_covariance
-  // e.g. magnetic_field_new_.magnetic_field_covariance = [...]
-  // by leaving it alone it'll be all-zeros, indicating "unknown" which is fine
-
-  publisher_.publish(magnetic_field_new_);
 }
 
 // Register this plugin with the simulator
