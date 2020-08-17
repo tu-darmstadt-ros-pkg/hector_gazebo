@@ -365,27 +365,33 @@ namespace gazebo
     tf::Transform tmp;
     tmp.setIdentity();
 
-
     if (std::abs(angular_vel) < 0.0001) {
       //Drive straight
       tmp.setOrigin(tf::Vector3(static_cast<double>(linear_vel_x*timeSeconds), static_cast<double>(linear_vel_y*timeSeconds), 0.0));
-    } else {
-      //Follow circular arc
-      const double distX = linear_vel_x * timeSeconds;
-      const double distY = linear_vel_y * timeSeconds;
-      const double distChange = std::sqrt(distX * distX + distY * distY);
-      const double angleDriveDirection = std::acos(distX / distChange);
-      const double angleChange = angular_vel * timeSeconds;
+    } else{
+        const double distX = linear_vel_x * timeSeconds;
+        const double distY = linear_vel_y * timeSeconds;
 
-      const double arcRadius = distChange / angleChange;
+        if (std::abs(distX) < 0.0001 && std::abs(distY) < 0.0001) {
+          //Rotate on spot
+          const double angleChange = angular_vel * timeSeconds;
+          tmp.setRotation(tf::createQuaternionFromYaw(angleChange));
+        } else {
+          //Follow circular arc
+          const double distChange = std::sqrt(distX * distX + distY * distY);
+          const double angleDriveDirection = std::acos(distX / distChange);
+          const double angleChange = angular_vel * timeSeconds;
 
-      tf::Vector3 endPos = tf::Vector3(std::sin(angleChange) * arcRadius,
-                                arcRadius - std::cos(angleChange) * arcRadius,
-                                0.0);
+          const double arcRadius = distChange / angleChange;
 
-      tmp.setOrigin(endPos.rotate(tf::Vector3(0.0, 0.0, 1.0), angleDriveDirection));
+          tf::Vector3 endPos = tf::Vector3(std::sin(angleChange) * arcRadius,
+                                    arcRadius - std::cos(angleChange) * arcRadius,
+                                    0.0);
 
-      tmp.setRotation(tf::createQuaternionFromYaw(angleChange));
+          tmp.setOrigin(endPos.rotate(tf::Vector3(0.0, 0.0, 1.0), angleDriveDirection));
+
+          tmp.setRotation(tf::createQuaternionFromYaw(angleChange));
+        }
     }
 
     return tmp;
