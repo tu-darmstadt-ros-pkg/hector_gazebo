@@ -379,7 +379,7 @@ namespace gazebo
         } else {
           //Follow circular arc
           const double distChange = std::sqrt(distX * distX + distY * distY);
-          const double angleDriveDirection = std::atan(distY / distX);
+          const double angleDriveDirection = std::atan2(distY, distX);
           const double angleChange = angular_vel * timeSeconds;
 
           const double arcRadius = distChange / angleChange;
