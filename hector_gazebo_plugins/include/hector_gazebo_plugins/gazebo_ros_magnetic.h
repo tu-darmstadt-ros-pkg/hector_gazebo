@@ -33,6 +33,7 @@
 
 #include <ros/ros.h>
 #include <geometry_msgs/Vector3Stamped.h>
+#include <sensor_msgs/MagneticField.h>
 #include <hector_gazebo_plugins/sensor_model.h>
 #include <hector_gazebo_plugins/update_timer.h>
 
@@ -62,7 +63,8 @@ private:
   ros::NodeHandle* node_handle_;
   ros::Publisher publisher_;
 
-  geometry_msgs::Vector3Stamped magnetic_field_;
+  bool use_magnetic_field_msgs_;
+
 #if (GAZEBO_MAJOR_VERSION >= 8)
   ignition::math::Vector3d magnetic_field_world_;
 #else
