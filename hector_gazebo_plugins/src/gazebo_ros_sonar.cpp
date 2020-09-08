@@ -86,8 +86,7 @@ void GazeboRosSonar::Load(sensors::SensorPtr _sensor, sdf::ElementPtr _sdf)
   frame_id_ = "/sonar_link";
 
   // load parameters
- if (_sdf->HasElement("useNamespaceFromScopedName")){
-     if (_sdf->GetElement("useNamespaceFromScopedName")){
+ if (_sdf->HasElement("useNamespaceFromScopedName") && _sdf->GetElement("useNamespaceFromScopedName")){
     	 std::vector<std::string> values;
     	 std::string scopedName = _sensor->ScopedName();
     	 boost::replace_all ( scopedName, "::", ",");
@@ -98,7 +97,8 @@ void GazeboRosSonar::Load(sensors::SensorPtr _sensor, sdf::ElementPtr _sdf)
     	   namespace_ = values[1];
    	 }
      }
-   }else if (_sdf->HasElement("robotNamespace")){
+   
+ if (_sdf->HasElement("robotNamespace")){
 	namespace_ = _sdf->GetElement("robotNamespace")->GetValue()->GetAsString();
    }
 
