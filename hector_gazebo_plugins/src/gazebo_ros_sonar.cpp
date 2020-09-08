@@ -86,20 +86,22 @@ void GazeboRosSonar::Load(sensors::SensorPtr _sensor, sdf::ElementPtr _sdf)
   frame_id_ = "/sonar_link";
 
   // load parameters
-  if (_sdf->HasElement("robotNamespace"))
-    namespace_ = _sdf->GetElement("robotNamespace")->GetValue()->GetAsString();
+ if (_sdf->HasElement("useNamespaceFromScopedName")){
+     if (_sdf->GetElement("useNamespaceFromScopedName")){
+    	 std::vector<std::string> values;
+    	 std::string scopedName = _sensor->ScopedName();
+    	 boost::replace_all ( scopedName, "::", ",");
+    	 boost::split ( values, scopedName, boost::is_any_of (","));
+    	 if ( values.size()<2){
+    	   namespace_ = "";
+    	 } else {
+    	   namespace_ = values[1];
+   	 }
+     }
+   }else if (_sdf->HasElement("robotNamespace")){
+	namespace_ = _sdf->GetElement("robotNamespace")->GetValue()->GetAsString();
+   }
 
-  if (namespace_ == "/"){
-    std::vector<std::string> values;
-    std::string scopedName = _sensor->ScopedName();
-    boost::replace_all ( scopedName, "::", ",");
-    boost::split ( values, scopedName, boost::is_any_of (","));
-    if ( values.size()<2){
-      namespace_ = "";
-    } else {
-      namespace_ = values[1];
-    }
-  }
 
   if (_sdf->HasElement("frameId"))
     frame_id_ = _sdf->GetElement("frameId")->GetValue()->GetAsString();
