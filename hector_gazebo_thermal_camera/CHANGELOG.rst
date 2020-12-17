@@ -2,6 +2,16 @@
 Changelog for package hector_gazebo_thermal_camera
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+Forthcoming
+-----------
+* Merge pull request `#64 <https://github.com/tu-darmstadt-ros-pkg/hector_gazebo/issues/64>`_ from ms-iot/upstream_windows_fix
+  [Windows][melodic-devel] Follow catkin guide to update the install path
+* fix install path. (`#1 <https://github.com/tu-darmstadt-ros-pkg/hector_gazebo/issues/1>`_)
+* Merge pull request `#53 <https://github.com/tu-darmstadt-ros-pkg/hector_gazebo/issues/53>`_ from enwaytech/ml/cmp0054_fix
+  add CMP0045 cmake policy before gazebo include in CMakeLists.txt
+* add CMP0045 cmake policy before gazebo include in CMakeLists.txt
+* Contributors: Johannes Meyer, Matthias Loebach, Sean Yen
+
 0.5.1 (2018-06-29)
 ------------------
 * Merge pull request `#44 <https://github.com/tu-darmstadt-ros-pkg/hector_gazebo/issues/44>`_ from esteve/gazebo8

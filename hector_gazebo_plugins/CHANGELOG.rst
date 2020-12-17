@@ -2,6 +2,38 @@
 Changelog for package hector_gazebo_plugins
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+Forthcoming
+-----------
+* Add case for rotating in place in odometry (`#75 <https://github.com/tu-darmstadt-ros-pkg/hector_gazebo/issues/75>`_)
+  * Add case for rotating in place in odometry
+  Odometry calculations were not taking in account the case of the robot rotating in place. This
+  would cause a division by zero and make the plugin return invalid data. This commit handles this
+  case by not using the arc method if the distance traveled by the robot is close to zero.
+  * Fix negative Y-axis motion bug
+  Only the displacement along X and the combined displacement were used to
+  calculate the angle between the X-axis and the robot drive direction.
+  This resulted in a positive angle whatever if the displacement along Y
+  was positive or negative. This commit addresses the issue by using both
+  displacements along X and Y to calculate the angle.
+* Allow publishing sensor_msgs/MagneticField (`#73 <https://github.com/tu-darmstadt-ros-pkg/hector_gazebo/issues/73>`_)
+  Add a new useMagneticFieldMsgs parameter to the magnetometer plugin, allowing the node to publish sensor_msgs/MagneticField messages instead of std_msgs/Vector3Stamped
+* Add support of holonomic robot by adding missing Y component in odometry (`#71 <https://github.com/tu-darmstadt-ros-pkg/hector_gazebo/issues/71>`_)
+  * Add support of holonomic robot by adding missing Y component in odometry
+  The odometry was only computed taking in account linear velocity on the x-axis and angular
+  velocity around the z-axis. The code is modified to include linear velocity on the y-axis for
+  support of holonomic robots. Odometry arc and radius are calculated the same way as before but
+  using the combined linear velocity instead. The end position is then rotated by the angle between
+  the combined velocity vector and the x-axis
+  * Change variable name
+  * Rename combined velocity angle variable
+* Merge pull request `#64 <https://github.com/tu-darmstadt-ros-pkg/hector_gazebo/issues/64>`_ from ms-iot/upstream_windows_fix
+  [Windows][melodic-devel] Follow catkin guide to update the install path
+* fix install path. (`#1 <https://github.com/tu-darmstadt-ros-pkg/hector_gazebo/issues/1>`_)
+* Merge pull request `#53 <https://github.com/tu-darmstadt-ros-pkg/hector_gazebo/issues/53>`_ from enwaytech/ml/cmp0054_fix
+  add CMP0045 cmake policy before gazebo include in CMakeLists.txt
+* add CMP0045 cmake policy before gazebo include in CMakeLists.txt
+* Contributors: Chris I-B, Johannes Meyer, Matthias Loebach, RobinB, Sean Yen, Stefan Fabian
+
 0.5.1 (2018-06-29)
 ------------------
 * Merge pull request `#44 <https://github.com/tu-darmstadt-ros-pkg/hector_gazebo/issues/44>`_ from esteve/gazebo8

@@ -2,6 +2,9 @@
 Changelog for package hector_sensors_gazebo
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+Forthcoming
+-----------
+
 0.5.1 (2018-06-29)
 ------------------
 
