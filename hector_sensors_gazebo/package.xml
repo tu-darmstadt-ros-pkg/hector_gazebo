@@ -1,6 +1,6 @@
 <package>
   <name>hector_sensors_gazebo</name>
-  <version>0.5.1</version>
+  <version>0.5.2</version>
   <description>hector_sensors_gazebo depends on the necessary plugins for using the sensors from the hector_models repository.</description>
   <maintainer email="johannes@intermodalics.eu">Johannes Meyer</maintainer>
 

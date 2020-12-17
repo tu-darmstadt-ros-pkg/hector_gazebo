@@ -2,8 +2,8 @@
 Changelog for package hector_gazebo_thermal_camera
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Forthcoming
------------
+0.5.2 (2020-12-17)
+------------------
 * Merge pull request `#64 <https://github.com/tu-darmstadt-ros-pkg/hector_gazebo/issues/64>`_ from ms-iot/upstream_windows_fix
   [Windows][melodic-devel] Follow catkin guide to update the install path
 * fix install path. (`#1 <https://github.com/tu-darmstadt-ros-pkg/hector_gazebo/issues/1>`_)

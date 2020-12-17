@@ -2,8 +2,8 @@
 Changelog for package hector_gazebo_plugins
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Forthcoming
------------
+0.5.2 (2020-12-17)
+------------------
 * Add case for rotating in place in odometry (`#75 <https://github.com/tu-darmstadt-ros-pkg/hector_gazebo/issues/75>`_)
   * Add case for rotating in place in odometry
   Odometry calculations were not taking in account the case of the robot rotating in place. This
