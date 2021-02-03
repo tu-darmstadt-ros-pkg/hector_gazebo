@@ -1,11 +1,12 @@
-<package>
+<?xml version="1.0"?>
+<package format="2">
   <name>hector_gazebo_plugins</name>
   <version>0.5.2</version>
   <description>hector_gazebo_plugins provides gazebo plugins from Team Hector.
      Currently it contains a 6wd differential drive plugin, an IMU sensor plugin,
      an earth magnetic field sensor plugin, a GPS sensor plugin and a
      sonar ranger plugin.</description>
-  <maintainer email="johannes@intermodalics.eu">Johannes Meyer</maintainer>
+  <maintainer email="fabian@sim.tu-darmstadt.de">Stefan Fabian</maintainer>
 
   <license>BSD</license>
 
@@ -30,15 +31,15 @@
   <build_depend>message_generation</build_depend>
 
   <!-- Dependencies needed after this package is compiled. -->
-  <run_depend>roscpp</run_depend>
-  <run_depend>gazebo</run_depend>
-  <run_depend>gazebo_ros</run_depend>
-  <run_depend>std_msgs</run_depend>
-  <run_depend>std_srvs</run_depend>
-  <run_depend>geometry_msgs</run_depend>
-  <run_depend>nav_msgs</run_depend>
-  <run_depend>tf</run_depend>
-  <run_depend>dynamic_reconfigure</run_depend>
-  <run_depend>message_runtime</run_depend>
+  <exec_depend>roscpp</exec_depend>
+  <exec_depend>gazebo</exec_depend>
+  <exec_depend>gazebo_ros</exec_depend>
+  <exec_depend>std_msgs</exec_depend>
+  <exec_depend>std_srvs</exec_depend>
+  <exec_depend>geometry_msgs</exec_depend>
+  <exec_depend>nav_msgs</exec_depend>
+  <exec_depend>tf</exec_depend>
+  <exec_depend>dynamic_reconfigure</exec_depend>
+  <exec_depend>message_runtime</exec_depend>
 
 </package>
