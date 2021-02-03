@@ -1,7 +1,7 @@
 <?xml version="1.0"?>
 <package format="2">
   <name>hector_gazebo</name>
-  <version>0.5.2</version>
+  <version>0.5.3</version>
   <description>hector_gazebo provides packages related to to simulation of robots using gazebo (gazebo plugins, world files etc.)</description>
   <maintainer email="fabian@sim.tu-darmstadt.de">Stefan Fabian</maintainer>
 

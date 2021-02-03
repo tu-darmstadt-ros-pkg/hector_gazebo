@@ -2,8 +2,8 @@
 Changelog for package hector_gazebo_plugins
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Forthcoming
------------
+0.5.3 (2021-02-03)
+------------------
 * Updated CMake version and fixed CMP0048 for non-metapackages.
 * Merge branch 'kinetic-devel' into melodic-devel
 * Adjust licenses to be consistent with cpp files and plugins used in gazebo_ros_pkgs
