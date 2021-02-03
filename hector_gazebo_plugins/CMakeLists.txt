@@ -1,5 +1,5 @@
-cmake_minimum_required(VERSION 2.8.3)
-project(hector_gazebo_plugins)
+cmake_minimum_required(VERSION 3.5)
+project(hector_gazebo_plugins VERSION 0.5.1)
 
 ## Find catkin macros and libraries
 ## if COMPONENTS list like find_package(catkin REQUIRED COMPONENTS xyz)
