@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.5)
-project(hector_gazebo_thermal_camera VERSION 0.5.1)
+project(hector_gazebo_thermal_camera VERSION 0.5.3)
 
 ## Find catkin macros and libraries
 ## if COMPONENTS list like find_package(catkin REQUIRED COMPONENTS xyz)

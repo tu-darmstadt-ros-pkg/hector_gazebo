@@ -2,6 +2,12 @@
 Changelog for package hector_gazebo_thermal_camera
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+Forthcoming
+-----------
+* Updated CMake version and fixed CMP0048 for non-metapackages.
+* Updated package format and maintainer information.
+* Contributors: Stefan Fabian
+
 0.5.2 (2020-12-17)
 ------------------
 * Merge pull request `#64 <https://github.com/tu-darmstadt-ros-pkg/hector_gazebo/issues/64>`_ from ms-iot/upstream_windows_fix

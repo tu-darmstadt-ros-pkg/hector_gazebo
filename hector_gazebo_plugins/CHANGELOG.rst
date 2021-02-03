@@ -2,6 +2,14 @@
 Changelog for package hector_gazebo_plugins
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+Forthcoming
+-----------
+* Updated CMake version and fixed CMP0048 for non-metapackages.
+* Merge branch 'kinetic-devel' into melodic-devel
+* Adjust licenses to be consistent with cpp files and plugins used in gazebo_ros_pkgs
+* Updated package format and maintainer information.
+* Contributors: Stefan Fabian, Stefan Kohlbrecher
+
 0.5.2 (2020-12-17)
 ------------------
 * Add case for rotating in place in odometry (`#75 <https://github.com/tu-darmstadt-ros-pkg/hector_gazebo/issues/75>`_)
