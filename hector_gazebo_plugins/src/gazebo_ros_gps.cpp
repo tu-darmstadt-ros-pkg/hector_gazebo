@@ -28,6 +28,7 @@
 
 #include <hector_gazebo_plugins/gazebo_ros_gps.h>
 #include <gazebo/physics/physics.hh>
+#include <gazebo/common/SphericalCoordinates.hh>
 
 // WGS84 constants
 static const double equatorial_radius = 6378137.0;
@@ -39,7 +40,6 @@ static const double DEFAULT_REFERENCE_LATITUDE  = 49.9;
 static const double DEFAULT_REFERENCE_LONGITUDE = 8.9;
 static const double DEFAULT_REFERENCE_HEADING   = 0.0;
 static const double DEFAULT_REFERENCE_ALTITUDE  = 0.0;
-
 namespace gazebo {
 
 GazeboRosGps::GazeboRosGps()
@@ -98,6 +98,20 @@ void GazeboRosGps::Load(physics::ModelPtr _model, sdf::ElementPtr _sdf)
   reference_heading_   = DEFAULT_REFERENCE_HEADING * M_PI/180.0;
   reference_altitude_  = DEFAULT_REFERENCE_ALTITUDE;
 
+  if (_sdf->HasElement("useWorldSphericalCoordinates"))
+  {
+    bool use_world_coords = false;
+    if (_sdf->GetElement("useWorldSphericalCoordinates")->GetValue()->Get(use_world_coords) && use_world_coords)
+    {
+      common::SphericalCoordinatesPtr spherical_coords = world->SphericalCoords();
+      reference_latitude_ = spherical_coords->LatitudeReference().Degree();
+      reference_longitude_ = spherical_coords->LongitudeReference().Degree();
+      // SDF specifies heading counter-clockwise from east, but here it's measured clockwise from north
+      reference_heading_ = (M_PI / 2.0) - spherical_coords->HeadingOffset().Radian();
+      reference_altitude_ = spherical_coords->GetElevationReference();
+    }
+  }
+  
   fix_.status.status  = sensor_msgs::NavSatStatus::STATUS_FIX;
   fix_.status.service = 0;
 
@@ -134,6 +148,7 @@ void GazeboRosGps::Load(physics::ModelPtr _model, sdf::ElementPtr _sdf)
     if (_sdf->GetElement("service")->GetValue()->Get(service))
       fix_.status.service = static_cast<sensor_msgs::NavSatStatus::_service_type>(service);
   }
+
 
   fix_.header.frame_id = frame_id_;
   velocity_.header.frame_id = frame_id_;
