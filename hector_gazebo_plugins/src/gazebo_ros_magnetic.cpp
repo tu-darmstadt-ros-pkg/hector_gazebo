@@ -32,6 +32,7 @@
 #include <gazebo/physics/physics.hh>
 
 static const double DEFAULT_MAGNITUDE           = 1.0;
+static const double DEFAULT_REFERENCE_HEADING   = 0.0;
 static const double DEFAULT_DECLINATION         = 0.0;
 static const double DEFAULT_INCLINATION         = 60.0;
 
@@ -88,15 +89,23 @@ void GazeboRosMagnetic::Load(physics::ModelPtr _model, sdf::ElementPtr _sdf)
     return;
   }
 
-  common::SphericalCoordinatesPtr spherical_coords = world->SphericalCoords();
-
   // default parameters
   frame_id_ = link_name_;
   magnitude_ = DEFAULT_MAGNITUDE;
-  // SDF specifies heading counter-clockwise from east, but here it's measured clockwise from north
-  reference_heading_ = (M_PI / 2.0) - spherical_coords->HeadingOffset().Radian();
+  reference_heading_ = DEFAULT_REFERENCE_HEADING * M_PI/180.0;
   declination_ = DEFAULT_DECLINATION * M_PI/180.0;
   inclination_ = DEFAULT_INCLINATION * M_PI/180.0;
+
+  if (_sdf->HasElement("useWorldSphericalCoordinates"))
+  {
+    bool use_world_coords = false;
+    if (_sdf->GetElement("useWorldSphericalCoordinates")->GetValue()->Get(use_world_coords) && use_world_coords)
+    {
+      common::SphericalCoordinatesPtr spherical_coords = world->SphericalCoords();
+      // SDF specifies heading counter-clockwise from east, but here it's measured clockwise from north
+      reference_heading_ = (M_PI / 2.0) - spherical_coords->HeadingOffset().Radian();
+    }
+  }
 
   if (_sdf->HasElement("frameId"))
     frame_id_ = _sdf->GetElement("frameId")->GetValue()->GetAsString();

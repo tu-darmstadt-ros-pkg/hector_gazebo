@@ -35,6 +35,11 @@ static const double equatorial_radius = 6378137.0;
 static const double flattening = 1.0/298.257223563;
 static const double excentrity2 = 2*flattening - flattening*flattening;
 
+// default reference position
+static const double DEFAULT_REFERENCE_LATITUDE  = 49.9;
+static const double DEFAULT_REFERENCE_LONGITUDE = 8.9;
+static const double DEFAULT_REFERENCE_HEADING   = 0.0;
+static const double DEFAULT_REFERENCE_ALTITUDE  = 0.0;
 namespace gazebo {
 
 GazeboRosGps::GazeboRosGps()
@@ -88,13 +93,25 @@ void GazeboRosGps::Load(physics::ModelPtr _model, sdf::ElementPtr _sdf)
   fix_topic_ = "fix";
   velocity_topic_ = "fix_velocity";
 
-  common::SphericalCoordinatesPtr spherical_coords = world->SphericalCoords();
-  reference_latitude_ = spherical_coords->LatitudeReference().Degree();
-  reference_longitude_ = spherical_coords->LongitudeReference().Degree();
-  // SDF specifies heading counter-clockwise from east, but here it's measured clockwise from north
-  reference_heading_ = (M_PI / 2.0) - spherical_coords->HeadingOffset().Radian();
-  reference_altitude_ = spherical_coords->GetElevationReference();
+  reference_latitude_  = DEFAULT_REFERENCE_LATITUDE;
+  reference_longitude_ = DEFAULT_REFERENCE_LONGITUDE;
+  reference_heading_   = DEFAULT_REFERENCE_HEADING * M_PI/180.0;
+  reference_altitude_  = DEFAULT_REFERENCE_ALTITUDE;
 
+  if (_sdf->HasElement("useWorldSphericalCoordinates"))
+  {
+    bool use_world_coords = false;
+    if (_sdf->GetElement("useWorldSphericalCoordinates")->GetValue()->Get(use_world_coords) && use_world_coords)
+    {
+      common::SphericalCoordinatesPtr spherical_coords = world->SphericalCoords();
+      reference_latitude_ = spherical_coords->LatitudeReference().Degree();
+      reference_longitude_ = spherical_coords->LongitudeReference().Degree();
+      // SDF specifies heading counter-clockwise from east, but here it's measured clockwise from north
+      reference_heading_ = (M_PI / 2.0) - spherical_coords->HeadingOffset().Radian();
+      reference_altitude_ = spherical_coords->GetElevationReference();
+    }
+  }
+  
   fix_.status.status  = sensor_msgs::NavSatStatus::STATUS_FIX;
   fix_.status.service = 0;
 
