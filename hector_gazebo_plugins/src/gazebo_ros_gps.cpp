@@ -88,7 +88,7 @@ void GazeboRosGps::Load(physics::ModelPtr _model, sdf::ElementPtr _sdf)
   fix_topic_ = "fix";
   velocity_topic_ = "fix_velocity";
 
-  common::SphericalCoordinatesPtr spherical_coords = world->GetSphericalCoordinates();
+  common::SphericalCoordinatesPtr spherical_coords = world->SphericalCoords();
   reference_latitude_ = spherical_coords->LatitudeReference().Degree();
   reference_longitude_ = spherical_coords->LongitudeReference().Degree();
   // SDF specifies heading counter-clockwise from east, but here it's measured clockwise from north

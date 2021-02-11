@@ -88,7 +88,7 @@ void GazeboRosMagnetic::Load(physics::ModelPtr _model, sdf::ElementPtr _sdf)
     return;
   }
 
-  common::SphericalCoordinatesPtr spherical_coords = world->GetSphericalCoordinates();
+  common::SphericalCoordinatesPtr spherical_coords = world->SphericalCoords();
 
   // default parameters
   frame_id_ = link_name_;
