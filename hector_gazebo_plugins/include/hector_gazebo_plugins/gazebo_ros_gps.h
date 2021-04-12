@@ -34,8 +34,10 @@
 #include <ros/ros.h>
 #include <sensor_msgs/NavSatFix.h>
 #include <geometry_msgs/Vector3Stamped.h>
+#include <hector_gazebo_plugins/SetReferenceGeoPose.h>
 #include <hector_gazebo_plugins/sensor_model.h>
 #include <hector_gazebo_plugins/update_timer.h>
+#include <tf/tf.h>
 
 #include <dynamic_reconfigure/server.h>
 #include <hector_gazebo_plugins/GNSSConfig.h>
@@ -58,6 +60,11 @@ protected:
   void dynamicReconfigureCallback(GNSSConfig &config, uint32_t level);
 
 private:
+
+  /// \brief Callback for the set_spherical_coordinates service
+  bool setGeoposeCb(hector_gazebo_plugins::SetReferenceGeoPose::Request& request,
+                    hector_gazebo_plugins::SetReferenceGeoPose::Response&);
+
   /// \brief The parent World
   physics::WorldPtr world;
 
@@ -67,6 +74,8 @@ private:
   ros::NodeHandle* node_handle_;
   ros::Publisher fix_publisher_;
   ros::Publisher velocity_publisher_;
+
+  ros::ServiceServer set_geopose_srv_;
 
   sensor_msgs::NavSatFix fix_;
   geometry_msgs::Vector3Stamped velocity_;

@@ -111,7 +111,7 @@ void GazeboRosGps::Load(physics::ModelPtr _model, sdf::ElementPtr _sdf)
       reference_altitude_ = spherical_coords->GetElevationReference();
     }
   }
-  
+
   fix_.status.status  = sensor_msgs::NavSatStatus::STATUS_FIX;
   fix_.status.service = 0;
 
@@ -174,6 +174,8 @@ void GazeboRosGps::Load(physics::ModelPtr _model, sdf::ElementPtr _sdf)
   fix_publisher_ = node_handle_->advertise<sensor_msgs::NavSatFix>(fix_topic_, 10);
   velocity_publisher_ = node_handle_->advertise<geometry_msgs::Vector3Stamped>(velocity_topic_, 10);
 
+  set_geopose_srv_ = node_handle_->advertiseService(fix_topic_ + "/set_reference_geopose", &GazeboRosGps::setGeoposeCb, this);
+
   // setup dynamic_reconfigure servers
   dynamic_reconfigure_server_position_.reset(new dynamic_reconfigure::Server<SensorModelConfig>(ros::NodeHandle(*node_handle_, fix_topic_ + "/position")));
   dynamic_reconfigure_server_velocity_.reset(new dynamic_reconfigure::Server<SensorModelConfig>(ros::NodeHandle(*node_handle_, fix_topic_ + "/velocity")));
@@ -188,6 +190,26 @@ void GazeboRosGps::Load(physics::ModelPtr _model, sdf::ElementPtr _sdf)
   updateTimer.setUpdateRate(4.0);
   updateTimer.Load(world, _sdf);
   updateConnection = updateTimer.Connect(boost::bind(&GazeboRosGps::Update, this));
+}
+
+bool GazeboRosGps::setGeoposeCb(hector_gazebo_plugins::SetReferenceGeoPose::Request& request,
+                               hector_gazebo_plugins::SetReferenceGeoPose::Response&)
+{
+  reference_latitude_ = request.geo_pose.position.latitude;
+  reference_longitude_ = request.geo_pose.position.longitude;
+  tf::Quaternion q(request.geo_pose.orientation.x,
+                   request.geo_pose.orientation.y,
+                   request.geo_pose.orientation.z,
+                   request.geo_pose.orientation.w);
+  tf::Matrix3x3 m(q);
+  tfScalar yaw, pitch, roll;
+  m.getEulerYPR(yaw, pitch, roll);
+  reference_heading_ = (M_PI / 2.0) - yaw;
+  reference_altitude_ = request.geo_pose.position.altitude;
+
+  Reset();
+
+  return true;
 }
 
 void GazeboRosGps::Reset()

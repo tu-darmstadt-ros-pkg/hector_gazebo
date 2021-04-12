@@ -4,7 +4,7 @@ project(hector_gazebo_plugins VERSION 0.5.3)
 ## Find catkin macros and libraries
 ## if COMPONENTS list like find_package(catkin REQUIRED COMPONENTS xyz)
 ## is used, also find other catkin packages
-find_package(catkin REQUIRED COMPONENTS roscpp std_msgs std_srvs geometry_msgs nav_msgs tf dynamic_reconfigure message_generation)
+find_package(catkin REQUIRED COMPONENTS roscpp std_msgs std_srvs geographic_msgs geometry_msgs nav_msgs tf dynamic_reconfigure message_generation)
 include_directories(include ${catkin_INCLUDE_DIRS})
 
 ## Find gazebo
@@ -30,14 +30,15 @@ include_directories(${Boost_INCLUDE_DIRS})
 # )
 
 ## Generate services in the 'srv' folder
-add_service_files(
+add_service_files(DIRECTORY srv
   FILES
-  SetBias.srv
+    SetBias.srv
+    SetReferenceGeoPose.srv
 )
 
 ## Generate added messages and services with any dependencies listed here
 generate_messages(
-  DEPENDENCIES geometry_msgs
+  DEPENDENCIES geographic_msgs geometry_msgs
 )
 
 #add dynamic reconfigure api
@@ -56,7 +57,7 @@ generate_dynamic_reconfigure_options(
 ## CATKIN_DEPENDS: catkin_packages dependent projects also need
 ## DEPENDS: system dependencies of this project that dependent projects also need
 catkin_package(
-    CATKIN_DEPENDS roscpp std_msgs geometry_msgs nav_msgs tf message_runtime
+    CATKIN_DEPENDS roscpp std_msgs geographic_msgs geometry_msgs nav_msgs tf message_runtime
     INCLUDE_DIRS include
     LIBRARIES
 )
