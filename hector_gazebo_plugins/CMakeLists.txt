@@ -88,7 +88,7 @@ add_dependencies(hector_gazebo_ros_magnetic ${PROJECT_NAME}_gencfg)
 
 add_library(hector_gazebo_ros_gps src/gazebo_ros_gps.cpp)
 target_link_libraries(hector_gazebo_ros_gps ${GAZEBO_LIBRARIES} ${catkin_LIBRARIES})
-add_dependencies(hector_gazebo_ros_gps ${PROJECT_NAME}_gencfg)
+add_dependencies(hector_gazebo_ros_gps ${PROJECT_NAME}_generate_messages_cpp ${PROJECT_NAME}_gencfg)
 
 add_library(hector_gazebo_ros_sonar src/gazebo_ros_sonar.cpp)
 target_link_libraries(hector_gazebo_ros_sonar ${GAZEBO_LIBRARIES} ${catkin_LIBRARIES})
