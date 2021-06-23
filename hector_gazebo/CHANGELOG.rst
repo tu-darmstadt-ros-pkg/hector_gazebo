@@ -2,6 +2,9 @@
 Changelog for package hector_gazebo
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+Forthcoming
+-----------
+
 0.5.3 (2021-02-03)
 ------------------
 * Updated CMake version and fixed CMP0048 for non-metapackages.

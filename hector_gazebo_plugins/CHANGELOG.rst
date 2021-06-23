@@ -2,6 +2,23 @@
 Changelog for package hector_gazebo_plugins
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+Forthcoming
+-----------
+* Added missing generate_message_cpp dependancy
+* Add service to gazebo gps sensor to set reference geopose
+* Add parameter to enable fetching the spherical coordinates from the world. (`#83 <https://github.com/tu-darmstadt-ros-pkg/hector_gazebo/issues/83>`_)
+  * Use worlds spherical_coordinates for GPS/magnetic reference
+  This modifies GPS and magnetic plugins to use the values from the spherical_coordinates element of the world SDF as default values for the latitude, longitude, altitude and heading references.
+  The optional parameters can still overwrite this values. However it is important to notice, that the heading in the world SDF is specified counter-clockwise from east whereas the reference_heading
+  parameter is specified is specified clockwise from north.
+  * Update spherical coordinates calls.
+  * Add parameter to enable fetching the spherical coordinates from the world.
+  This extends `#47 <https://github.com/tu-darmstadt-ros-pkg/hector_gazebo/issues/47>`_ with the addition of a "useWorldSphericalCoordinates" parameter
+  that must be present and set to true to allow using the world's coordinates.
+  This should solve `#15 <https://github.com/tu-darmstadt-ros-pkg/hector_gazebo/issues/15>`_ while addressing the concerns in `#47 <https://github.com/tu-darmstadt-ros-pkg/hector_gazebo/issues/47>`_.
+  Co-authored-by: Jacob Seibert <jacob.seibert@enway.ai>
+* Contributors: Ferry Schoenmakers, Roland Arsenault, h-wata
+
 0.5.3 (2021-02-03)
 ------------------
 * Updated CMake version and fixed CMP0048 for non-metapackages.
