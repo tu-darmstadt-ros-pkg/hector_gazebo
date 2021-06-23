@@ -2,8 +2,8 @@
 Changelog for package hector_gazebo_plugins
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Forthcoming
------------
+0.5.4 (2021-06-23)
+------------------
 * Added missing generate_message_cpp dependancy
 * Add service to gazebo gps sensor to set reference geopose
 * Add parameter to enable fetching the spherical coordinates from the world. (`#83 <https://github.com/tu-darmstadt-ros-pkg/hector_gazebo/issues/83>`_)

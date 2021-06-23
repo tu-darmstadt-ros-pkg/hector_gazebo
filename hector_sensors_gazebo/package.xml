@@ -1,7 +1,7 @@
 <?xml version="1.0"?>
 <package format="2">
   <name>hector_sensors_gazebo</name>
-  <version>0.5.3</version>
+  <version>0.5.4</version>
   <description>hector_sensors_gazebo depends on the necessary plugins for using the sensors from the hector_models repository.</description>
   <maintainer email="fabian@sim.tu-darmstadt.de">Stefan Fabian</maintainer>
 
