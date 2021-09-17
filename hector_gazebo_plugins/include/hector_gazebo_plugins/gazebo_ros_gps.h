@@ -31,16 +31,17 @@
 
 #include <gazebo/common/Plugin.hh>
 
-#include <ros/ros.h>
-#include <sensor_msgs/NavSatFix.h>
-#include <geometry_msgs/Vector3Stamped.h>
-#include <hector_gazebo_plugins/SetReferenceGeoPose.h>
+#include <rclcpp/rclcpp.hpp>
+#include <rclcpp/node.hpp>
+#include <sensor_msgs/msg/nav_sat_fix.hpp>
+#include <sensor_msgs/msg/nav_sat_status.hpp>
+#include <geometry_msgs/msg/vector3_stamped.hpp>
+#include <hector_gazebo_plugins/srv/set_reference_geo_pose.hpp>
 #include <hector_gazebo_plugins/sensor_model.h>
 #include <hector_gazebo_plugins/update_timer.h>
-#include <tf/tf.h>
+#include <hector_gazebo_plugins/gnss_config.h>
+#include <gazebo_ros/node.hpp>
 
-#include <dynamic_reconfigure/server.h>
-#include <hector_gazebo_plugins/GNSSConfig.h>
 
 namespace gazebo
 {
@@ -56,14 +57,14 @@ protected:
   virtual void Reset();
   virtual void Update();
 
-  typedef hector_gazebo_plugins::GNSSConfig GNSSConfig;
-  void dynamicReconfigureCallback(GNSSConfig &config, uint32_t level);
+  rcl_interfaces::msg::SetParametersResult parametersChangedCallback(const std::vector<rclcpp::Parameter> & parameters);
 
 private:
-
   /// \brief Callback for the set_spherical_coordinates service
-  bool setGeoposeCb(hector_gazebo_plugins::SetReferenceGeoPose::Request& request,
-                    hector_gazebo_plugins::SetReferenceGeoPose::Response&);
+  void setGeoposeCb(hector_gazebo_plugins::srv::SetReferenceGeoPose::Request::SharedPtr request,
+                    hector_gazebo_plugins::srv::SetReferenceGeoPose::Response::SharedPtr);
+
+  rcl_interfaces::msg::SetParametersResult checkStatusParameters(const std::vector<rclcpp::Parameter> & parameters);
 
   /// \brief The parent World
   physics::WorldPtr world;
@@ -71,14 +72,14 @@ private:
   /// \brief The link referred to by this plugin
   physics::LinkPtr link;
 
-  ros::NodeHandle* node_handle_;
-  ros::Publisher fix_publisher_;
-  ros::Publisher velocity_publisher_;
+  gazebo_ros::Node::SharedPtr node_;
+  rclcpp::Publisher<sensor_msgs::msg::NavSatFix>::SharedPtr fix_publisher_;
+  rclcpp::Publisher<geometry_msgs::msg::Vector3Stamped>::SharedPtr velocity_publisher_;
 
-  ros::ServiceServer set_geopose_srv_;
+  rclcpp::Service<hector_gazebo_plugins::srv::SetReferenceGeoPose>::SharedPtr set_geopose_srv_;
 
-  sensor_msgs::NavSatFix fix_;
-  geometry_msgs::Vector3Stamped velocity_;
+  sensor_msgs::msg::NavSatFix fix_;
+  geometry_msgs::msg::Vector3Stamped velocity_;
 
   std::string namespace_;
   std::string link_name_;
@@ -100,8 +101,8 @@ private:
   UpdateTimer updateTimer;
   event::ConnectionPtr updateConnection;
 
-  boost::shared_ptr<dynamic_reconfigure::Server<SensorModelConfig> > dynamic_reconfigure_server_position_, dynamic_reconfigure_server_velocity_;
-  boost::shared_ptr<dynamic_reconfigure::Server<GNSSConfig> > dynamic_reconfigure_server_status_;
+  std::shared_ptr<GNSSConfig> gnss_config;
+  rclcpp::Node::OnSetParametersCallbackHandle::SharedPtr callback_handle_;
 };
 
 } // namespace gazebo

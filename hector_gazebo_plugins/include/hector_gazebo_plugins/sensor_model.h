@@ -34,12 +34,15 @@
 #include <gazebo/math/Vector3.hh>
 #endif
 
-#include <hector_gazebo_plugins/SensorModelConfig.h>
+#include <rclcpp/rclcpp.hpp>
+#include <rclcpp/node.hpp>
+#include <gazebo_ros/node.hpp>
+
 #include <numeric>
+#include <map>
 
 namespace gazebo {
 
-using hector_gazebo_plugins::SensorModelConfig;
 
 template <typename T>
 class SensorModel_ {
@@ -47,7 +50,7 @@ public:
   SensorModel_();
   virtual ~SensorModel_();
 
-  virtual void Load(sdf::ElementPtr _sdf, const std::string& prefix = std::string());
+  virtual void Load(gazebo_ros::Node::SharedPtr _node, sdf::ElementPtr _sdf, const std::string& prefix = std::string());
 
   virtual T operator()(const T& value) const { return value * scale_error + current_error_; }
   virtual T operator()(const T& value, double dt) { return value * scale_error + update(dt); }
@@ -63,10 +66,14 @@ public:
 
   virtual void setCurrentDrift(const T& new_drift) { current_drift_ = new_drift; }
 
-  virtual void dynamicReconfigureCallback(SensorModelConfig &config, uint32_t level);
+  virtual rcl_interfaces::msg::SetParametersResult parametersChangedCallback(const std::vector<rclcpp::Parameter> & parameters);
 
 private:
   virtual bool LoadImpl(sdf::ElementPtr _element, T& _value);
+
+  virtual void initializeParameters(gazebo_ros::Node::SharedPtr _node, const std::string prefix);
+
+  rcl_interfaces::msg::SetParametersResult setValue(const std::vector<rclcpp::Parameter> & parameters);
 
 public:
   T offset;
@@ -78,6 +85,23 @@ public:
 private:
   T current_drift_;
   T current_error_;
+
+  std::string _offset, _drift, _drift_frequency, _gaussian_noise, _scale_error;
+
+  struct ConfigSettings {
+    ConfigSettings() {}
+    ConfigSettings(T* v, const double initial, const double min, const double max) :
+      v(v), initial(initial), min(min), max(max) 
+    {}
+
+    T* v;
+    double initial;  // The initial value
+    double min;
+    double max;
+  };
+
+  // List of references between node parameters and local variables
+  std::map<std::string, ConfigSettings> parameters_;
 };
 
 template <typename T>
@@ -89,6 +113,13 @@ SensorModel_<T>::SensorModel_()
 {
   drift_frequency = 1.0/3600.0; // time constant 1h
   scale_error = 1.0;
+
+  _offset = "offset";
+  _drift = "drift";
+  _drift_frequency = "driftFrequency";
+  _gaussian_noise = "gaussianNoise";
+  _scale_error = "scaleError";
+
   reset();
 }
 
@@ -98,10 +129,8 @@ SensorModel_<T>::~SensorModel_()
 }
 
 template <typename T>
-void SensorModel_<T>::Load(sdf::ElementPtr _sdf, const std::string& prefix)
+void SensorModel_<T>::Load(gazebo_ros::Node::SharedPtr _node, sdf::ElementPtr _sdf, const std::string& prefix)
 {
-  std::string _offset, _drift, _drift_frequency, _gaussian_noise, _scale_error;
-
   if (prefix.empty()) {
     _offset              = "offset";
     _drift               = "drift";
@@ -121,6 +150,15 @@ void SensorModel_<T>::Load(sdf::ElementPtr _sdf, const std::string& prefix)
   if (_sdf->HasElement(_drift_frequency))     LoadImpl(_sdf->GetElement(_drift_frequency), drift_frequency);
   if (_sdf->HasElement(_gaussian_noise))      LoadImpl(_sdf->GetElement(_gaussian_noise), gaussian_noise);
   if (_sdf->HasElement(_scale_error))         LoadImpl(_sdf->GetElement(_scale_error), scale_error);
+
+  // Initialize the links between the parameters and the local variables
+  parameters_[_offset] = ConfigSettings(&offset, 0.0, -10.0, 10.0);
+  parameters_[_drift] = ConfigSettings(&drift, 0.0, 0.0, 10.0);
+  parameters_[_drift_frequency] = ConfigSettings(&drift_frequency, 0.0, 0.0, 1.0);
+  parameters_[_gaussian_noise] = ConfigSettings(&gaussian_noise, 0.0, 0.0, 10.0);
+  parameters_[_scale_error] = ConfigSettings(&scale_error, 1.0, 0.0, 2.0);
+
+  initializeParameters(_node, prefix);
 
   reset();
 }
@@ -228,6 +266,75 @@ void SensorModel_<T>::reset(const T& value)
   current_error_ = T();
 }
 
+
+template <>
+void SensorModel_<double>::initializeParameters(gazebo_ros::Node::SharedPtr node, const std::string prefix)
+{
+  if (!node) {
+    return;
+  }
+  
+  // Declare the parameters
+  node->declare_parameter<double>(_offset, offset);
+  node->declare_parameter<double>(_drift, drift);
+  node->declare_parameter<double>(_drift_frequency, drift_frequency);
+  node->declare_parameter<double>(_gaussian_noise, gaussian_noise);
+  node->declare_parameter<double>(_scale_error, gaussian_noise);
+}
+
+#if (GAZEBO_MAJOR_VERSION >= 8)
+template <>
+void SensorModel_<ignition::math::Vector3d>::initializeParameters(gazebo_ros::Node::SharedPtr node, const std::string prefix)
+{
+  if (!node) {
+    return;
+  }
+  
+  // Declare the parameters
+  node->declare_parameter<double>(_offset + "/x", offset[0]);
+  node->declare_parameter<double>(_offset + "/y", offset[1]);
+  node->declare_parameter<double>(_offset + "/z", offset[2]);
+  node->declare_parameter<double>(_drift + "/x", drift[0]);
+  node->declare_parameter<double>(_drift + "/y", drift[1]);
+  node->declare_parameter<double>(_drift + "/z", drift[2]);
+  node->declare_parameter<double>(_drift_frequency + "/x", drift_frequency[0]);
+  node->declare_parameter<double>(_drift_frequency + "/y", drift_frequency[1]);
+  node->declare_parameter<double>(_drift_frequency + "/z", drift_frequency[2]);
+  node->declare_parameter<double>(_gaussian_noise + "/x", gaussian_noise[0]);
+  node->declare_parameter<double>(_gaussian_noise + "/y", gaussian_noise[1]);
+  node->declare_parameter<double>(_gaussian_noise + "/z", gaussian_noise[2]);
+  node->declare_parameter<double>(_scale_error + "/x", scale_error[0]);
+  node->declare_parameter<double>(_scale_error + "/y", scale_error[1]);
+  node->declare_parameter<double>(_scale_error + "/z", scale_error[2]);
+}
+#else
+template <>
+void SensorModel_<math::Vector3>::initializeParameters(gazebo_ros::Node::SharedPtr node, const std::string prefix)
+{
+  if (!node) {
+    return;
+  }
+
+  // Declare the parameters
+  node->declare_parameter<double>(_offset + "/x", offset[0]);
+  node->declare_parameter<double>(_offset + "/y", offset[1]);
+  node->declare_parameter<double>(_offset + "/z", offset[2]);
+  node->declare_parameter<double>(_drift + "/x", drift[0]);
+  node->declare_parameter<double>(_drift + "/y", drift[1]);
+  node->declare_parameter<double>(_drift + "/z", drift[2]);
+  node->declare_parameter<double>(_drift_frequency + "/x", drift_frequency[0]);
+  node->declare_parameter<double>(_drift_frequency + "/y", drift_frequency[1]);
+  node->declare_parameter<double>(_drift_frequency + "/z", drift_frequency[2]);
+  node->declare_parameter<double>(_gaussian_noise + "/x", gaussian_noise[0]);
+  node->declare_parameter<double>(_gaussian_noise + "/y", gaussian_noise[1]);
+  node->declare_parameter<double>(_gaussian_noise + "/z", gaussian_noise[2]);
+  node->declare_parameter<double>(_scale_error + "/x", scale_error[0]);
+  node->declare_parameter<double>(_scale_error + "/y", scale_error[1]);
+  node->declare_parameter<double>(_scale_error + "/z", scale_error[2]);
+}
+#endif
+
+
 namespace helpers {
   template <typename T> struct scalar_value { static double toDouble(const T &orig) { return orig; } };
   template <typename T> struct scalar_value<std::vector<T> > { static double toDouble(const std::vector<T> &orig) { return (double) std::accumulate(orig.begin(), orig.end()) / orig.size(); } };
@@ -238,22 +345,133 @@ namespace helpers {
 #endif
 }
 
-template <typename T>
-void SensorModel_<T>::dynamicReconfigureCallback(SensorModelConfig &config, uint32_t level)
+template <>
+rcl_interfaces::msg::SetParametersResult 
+SensorModel_<double>::setValue(const std::vector<rclcpp::Parameter> & parameters)
 {
-  if (level == 1) {
-    gaussian_noise  = config.gaussian_noise;
-    offset          = config.offset;
-    drift           = config.drift;
-    drift_frequency = config.drift_frequency;
-    scale_error     = config.scale_error;
-  } else {
-    config.gaussian_noise  = helpers::scalar_value<T>::toDouble(gaussian_noise);
-    config.offset          = helpers::scalar_value<T>::toDouble(offset);
-    config.drift           = helpers::scalar_value<T>::toDouble(drift);
-    config.drift_frequency = helpers::scalar_value<T>::toDouble(drift_frequency);
-    config.scale_error     = helpers::scalar_value<T>::toDouble(scale_error);
+  rcl_interfaces::msg::SetParametersResult result;
+  result.successful = true;
+  result.reason = "";
+
+  for (const auto & parameter : parameters) {
+    std::string name = parameter.get_name();
+
+    auto search = parameters_.find(name);
+    if (search != parameters_.end()) {
+      // Set the value in the local variable
+      if (parameter.as_double() >= search->second.min && 
+          parameter.as_double() <= search->second.max) 
+      {
+        *(search->second.v) = parameter.as_double();
+      } else {
+        result.successful = false;
+        result.reason = "Parameter outside range";
+        break;
+      }
+
+      break;
+    }
   }
+
+  return result;
+}
+
+#if (GAZEBO_MAJOR_VERSION >= 8)
+template <>
+rcl_interfaces::msg::SetParametersResult 
+SensorModel_<ignition::math::Vector3d>::setValue(const std::vector<rclcpp::Parameter> & parameters)
+{
+  rcl_interfaces::msg::SetParametersResult result;
+  result.successful = true;
+  result.reason = "";
+
+  for (const auto & parameter : parameters) {
+    std::string name = parameter.get_name();
+    std::string p = name.substr(0, name.size() - 2);
+    std::string v = name.substr(name.size() - 1, 1);
+
+    auto search = parameters_.find(p);
+    if (search != parameters_.end()) {
+      if (parameter.as_double() >= search->second.min && 
+          parameter.as_double() <= search->second.max) {
+
+        // Set the value in the local variable
+        ignition::math::Vector3d *ptr = search->second.v;
+
+        if (v == "x") {
+          ptr->operator[](0) = parameter.as_double(); 
+        } else if (v == "y") {
+          ptr->operator[](1) = parameter.as_double(); 
+        } else if (v == "z") {
+          ptr->operator[](2) = parameter.as_double(); 
+        } else {
+          result.successful = false;
+          result.reason = "Invalid parameter";
+          break;
+        }
+      } else {
+        result.successful = false;
+        result.reason = "Parameter out of range";
+      }
+    }
+  }
+
+  return result;
+}
+#else
+template <>
+rcl_interfaces::msg::SetParametersResult 
+SensorModel_<math::Vector3>::setValue(const std::vector<rclcpp::Parameter> & parameters)
+{
+  rcl_interfaces::msg::SetParametersResult result;
+  result.successful = true;
+  result.reason = "";
+
+  for (const auto & parameter : parameters) {
+    std::string name = parameter.get_name();
+    std::string p = name.substr(0, name.size() - 2);
+    std::string v = name.substr(name.size() - 1, 1);
+
+    auto search = parameters_.find(p);
+    if (search != parameters_.end()) {
+      if (parameter.as_double() >= search->second.min && 
+          parameter.as_double() <= search->second.max) {
+
+        // Set the value in the local variable
+        math::Vector3 *ptr = search->second.v;
+
+        if (v == "x") {
+          ptr->operator[](0) = parameter.as_double(); 
+        } else if (v == "y") {
+          ptr->operator[](1) = parameter.as_double(); 
+        } else if (v == "z") {
+          ptr->operator[](2) = parameter.as_double(); 
+        } else {
+          result.successful = false;
+          result.reason = "Invalid parameter";
+          break;
+        }
+      } else {
+        result.successful = false;
+        result.reason = "Parameter out of range";
+      }
+    }
+  }
+
+  return result;
+}
+#endif
+
+
+template <typename T>
+rcl_interfaces::msg::SetParametersResult 
+SensorModel_<T>::parametersChangedCallback(const std::vector<rclcpp::Parameter> & parameters)
+{
+  rcl_interfaces::msg::SetParametersResult result;
+
+  result = setValue(parameters);
+
+  return result;
 }
 
 typedef SensorModel_<double> SensorModel;

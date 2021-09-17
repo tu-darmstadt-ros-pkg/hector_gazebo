@@ -15,28 +15,47 @@ if(CMAKE_COMPILER_IS_GNUCXX OR CMAKE_CXX_COMPILER_ID MATCHES "Clang")
   add_compile_options(-Wall -Wextra -Wpedantic)
 endif()
 
-
 ## Find dependencies
 find_package(ament_cmake REQUIRED)
+find_package(rclcpp REQUIRED)
+find_package(std_msgs REQUIRED)
+find_package(std_srvs REQUIRED)
 find_package(geographic_msgs REQUIRED)
 find_package(geometry_msgs REQUIRED)
+find_package(nav_msgs REQUIRED)
+find_package(sensor_msgs REQUIRED)
+find_package(tf2 REQUIRED)
 find_package(rosidl_default_generators REQUIRED)
-
-# find_package(catkin REQUIRED COMPONENTS roscpp std_msgs std_srvs geographic_msgs geometry_msgs nav_msgs tf dynamic_reconfigure message_generation)
-# include_directories(include ${catkin_INCLUDE_DIRS})
+find_package(rmw_implementation_cmake REQUIRED)
 
 ## Find gazebo
-# if(POLICY CMP0054)
-#   cmake_policy(SET CMP0054 NEW)
-# endif()
-# find_package(gazebo REQUIRED)
-# set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${GAZEBO_CXX_FLAGS}")
-# include_directories(${GAZEBO_INCLUDE_DIRS})
-# link_directories(${GAZEBO_LIBRARY_DIRS})
+if(POLICY CMP0054)
+  cmake_policy(SET CMP0054 NEW)
+endif()
+find_package(gazebo REQUIRED)
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${GAZEBO_CXX_FLAGS}")
+include_directories(${GAZEBO_INCLUDE_DIRS})
+link_directories(${GAZEBO_LIBRARY_DIRS})
 
 ## Find Boost
 # find_package(Boost REQUIRED COMPONENTS thread)
 # include_directories(${Boost_INCLUDE_DIRS})
+
+## Set includes
+set(INCLUDE_DIRS include 
+    ${sensor_msgs_INCLUDE_DIRS}
+    ${rclcpp_INCLUDE_DIRS}
+    ${CMAKE_CURRENT_BINARY_DIR}/srv
+)
+include_directories(${INCLUDE_DIRS})
+
+set(LIBS
+    geographic_msgs 
+    geometry_msgs
+    sensor_msgs
+    std_msgs
+    rclcpp
+)
 
 #######################################
 ## Declare ROS messages and services ##
@@ -50,30 +69,11 @@ rosidl_generate_interfaces(${PROJECT_NAME}
 )
 
 
-# #add dynamic reconfigure api
-# generate_dynamic_reconfigure_options(
-#   cfg/SensorModel.cfg
-#   cfg/GNSS.cfg
-# )
-
-###################################
-## catkin specific configuration ##
-###################################
-## The catkin_package macro generates cmake config files for your package
-## Declare things to be passed to dependent projects
-## INCLUDE_DIRS: uncomment this if you package contains header files
-## LIBRARIES: libraries you create in this project that dependent projects also need
-## CATKIN_DEPENDS: catkin_packages dependent projects also need
-## DEPENDS: system dependencies of this project that dependent projects also need
-# catkin_package(
-#     CATKIN_DEPENDS roscpp std_msgs geographic_msgs geometry_msgs nav_msgs tf message_runtime
-#     INCLUDE_DIRS include
-#     LIBRARIES
-# )
-
 ###########
 ## Build ##
 ###########
+
+set(HECTOR_GAZEBO_ROS_PLUGINS_LIST "")
 
 # add_library(diffdrive_plugin_6w src/diffdrive_plugin_6w.cpp)
 # target_link_libraries(diffdrive_plugin_6w ${Boost_LIBRARIES} ${GAZEBO_LIBRARIES} ${catkin_LIBRARIES})
@@ -95,9 +95,10 @@ rosidl_generate_interfaces(${PROJECT_NAME}
 # target_link_libraries(hector_gazebo_ros_magnetic ${GAZEBO_LIBRARIES} ${catkin_LIBRARIES})
 # add_dependencies(hector_gazebo_ros_magnetic ${PROJECT_NAME}_gencfg)
 
-# add_library(hector_gazebo_ros_gps src/gazebo_ros_gps.cpp)
-# target_link_libraries(hector_gazebo_ros_gps ${GAZEBO_LIBRARIES} ${catkin_LIBRARIES})
-# add_dependencies(hector_gazebo_ros_gps ${PROJECT_NAME}_generate_messages_cpp ${PROJECT_NAME}_gencfg)
+add_library(hector_gazebo_ros_gps src/gazebo_ros_gps.cpp)
+target_link_libraries(hector_gazebo_ros_gps ${GAZEBO_LIBRARIES})
+list(APPEND HECTOR_GAZEBO_ROS_PLUGINS_LIST hector_gazebo_ros_gps)
+ament_target_dependencies(hector_gazebo_ros_gps ${LIBS})
 
 # add_library(hector_gazebo_ros_sonar src/gazebo_ros_sonar.cpp)
 # target_link_libraries(hector_gazebo_ros_sonar ${GAZEBO_LIBRARIES} ${catkin_LIBRARIES})
@@ -106,18 +107,31 @@ rosidl_generate_interfaces(${PROJECT_NAME}
 # add_library(hector_servo_plugin src/servo_plugin.cpp)
 # target_link_libraries(hector_servo_plugin ${Boost_LIBRARIES} ${GAZEBO_LIBRARIES} ${catkin_LIBRARIES})
 
+
+# Connect targets with locally defined messages
+get_available_rmw_implementations(rmw_implementations2)
+foreach(rmw_implementation ${rmw_implementations2})
+  find_package("${rmw_implementation}" REQUIRED)
+  get_rmw_typesupport(typesupport_impls "${rmw_implementation}" LANGUAGE "cpp")
+  foreach(typesupport_impl ${typesupport_impls})
+    rosidl_target_interfaces(hector_gazebo_ros_gps ${PROJECT_NAME} ${typesupport_impl})
+  endforeach()
+endforeach()
+
 # #############
 # ## Install ##
 # #############
 
-# # all install targets should use catkin DESTINATION variables
-# # See http://ros.org/doc/api/catkin/html/adv_user_guide/variables.html
+install(DIRECTORY include/${PROJECT_NAME}/
+  DESTINATION include
+  FILES_MATCHING PATTERN "*.h"
+  PATTERN ".svn" EXCLUDE
+)
 
-# install(DIRECTORY include/${PROJECT_NAME}/
-#   DESTINATION ${CATKIN_PACKAGE_INCLUDE_DESTINATION}
-#   FILES_MATCHING PATTERN "*.h"
-#   PATTERN ".svn" EXCLUDE
-# )
+install(TARGETS ${HECTOR_GAZEBO_ROS_PLUGINS_LIST}
+  DESTINATION lib/${PROJECT_NAME}
+  LIBRARY DESTINATION lib
+)
 
 # install(TARGETS
 #   diffdrive_plugin_6w
