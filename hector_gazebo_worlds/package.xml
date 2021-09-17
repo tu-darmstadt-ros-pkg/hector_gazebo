@@ -1,5 +1,5 @@
 <?xml version="1.0"?>
-<package format="2">
+<package format="3">
   <name>hector_gazebo_worlds</name>
   <version>0.5.4</version>
   <description>hector_gazebo_worlds provides gazebo scenarios used by Team Hector Darmstadt</description>
@@ -13,7 +13,7 @@
   <author email="kohlbrecher@sim.tu-darmstadt.de">Stefan Kohlbrecher</author>
 
   <!-- Dependencies which this package needs to build itself. -->
-  <buildtool_depend>catkin</buildtool_depend>
+  <buildtool_depend>ament_cmake</buildtool_depend>
 
   <!-- Dependencies needed to compile this package. -->
 
@@ -26,6 +26,7 @@
   <!-- <test_depend>hector_gazebo_plugins</test_depend> -->
 
 <export>
+    <build_type>ament_cmake</build_type>
     <gazebo_ros gazebo_media_path="${prefix}"/>
 </export>
 
