@@ -84,8 +84,10 @@ set(HECTOR_GAZEBO_ROS_PLUGINS_LIST "")
 # add_library(gazebo_ros_force_based_move src/gazebo_ros_force_based_move.cpp)
 # target_link_libraries(gazebo_ros_force_based_move ${Boost_LIBRARIES} ${GAZEBO_LIBRARIES} ${catkin_LIBRARIES})
 
-# add_library(hector_gazebo_reset_plugin src/reset_plugin.cpp)
-# target_link_libraries(hector_gazebo_reset_plugin ${GAZEBO_LIBRARIES} ${catkin_LIBRARIES})
+add_library(hector_gazebo_reset_plugin src/reset_plugin.cpp)
+target_link_libraries(hector_gazebo_reset_plugin ${GAZEBO_LIBRARIES})
+list(APPEND HECTOR_GAZEBO_ROS_PLUGINS_LIST hector_gazebo_reset_plugin)
+ament_target_dependencies(hector_gazebo_reset_plugin ${LIBS})
 
 add_library(hector_gazebo_ros_imu src/gazebo_ros_imu.cpp)
 target_link_libraries(hector_gazebo_ros_imu ${Boost_LIBRARIES} ${GAZEBO_LIBRARIES})

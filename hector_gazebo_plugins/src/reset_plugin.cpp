@@ -29,7 +29,6 @@
 #include <hector_gazebo_plugins/reset_plugin.h>
 #include <gazebo/common/Events.hh>
 
-#include <std_msgs/String.h>
 
 namespace gazebo {
 
@@ -41,33 +40,32 @@ GazeboResetPlugin::GazeboResetPlugin()
 // Destructor
 GazeboResetPlugin::~GazeboResetPlugin()
 {
-  node_handle_->shutdown();
-  delete node_handle_;
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 // Load the controller
 void GazeboResetPlugin::Load(physics::ModelPtr _model, sdf::ElementPtr _sdf)
 {
+  node_ = gazebo_ros::Node::Get(_sdf);
+
   // Make sure the ROS node for Gazebo has already been initialized
-  if (!ros::isInitialized())
+  if (!rclcpp::ok())
   {
-    ROS_FATAL_STREAM("A ROS node for Gazebo has not been initialized, unable to load plugin. "
+    RCLCPP_FATAL_STREAM(node_->get_logger(), "A ROS node for Gazebo has not been initialized, unable to load plugin. "
       << "Load the Gazebo system plugin 'libgazebo_ros_api_plugin.so' in the gazebo_ros package)");
     return;
   }
 
-  node_handle_ = new ros::NodeHandle;
-  publisher_ = node_handle_->advertise<std_msgs::String>("/syscommand", 1);
+  publisher_ = node_->create_publisher<std_msgs::msg::String>("/syscommand", 1);
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 // Reset the controller
 void GazeboResetPlugin::Reset()
 {
-  std_msgs::String command;
+  std_msgs::msg::String command;
   command.data = "reset";
-  publisher_.publish(command);
+  publisher_->publish(command);
 }
 
 // Register this plugin with the simulator
