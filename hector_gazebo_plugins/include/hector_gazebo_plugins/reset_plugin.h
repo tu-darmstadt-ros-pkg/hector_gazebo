@@ -30,7 +30,10 @@
 #define HECTOR_GAZEBO_PLUGINS_RESET_PLUGIN_H
 
 #include <gazebo/common/Plugin.hh>
-#include <ros/ros.h>
+#include <gazebo_ros/node.hpp>
+#include <rclcpp/rclcpp.hpp>
+#include <rclcpp/node.hpp>
+#include <std_msgs/msg/string.hpp>
 
 namespace gazebo
 {
@@ -46,8 +49,8 @@ protected:
   virtual void Reset();
 
 private:
-  ros::NodeHandle* node_handle_;
-  ros::Publisher publisher_;
+  gazebo_ros::Node::SharedPtr node_;
+  rclcpp::Publisher<std_msgs::msg::String>::SharedPtr publisher_;
 };
 
 } // namespace gazebo
