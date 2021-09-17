@@ -29,23 +29,24 @@
 #ifndef HECTOR_GAZEBO_PLUGINS_GAZEBO_ROS_IMU_H
 #define HECTOR_GAZEBO_PLUGINS_GAZEBO_ROS_IMU_H
 
+// NOTE: Porting of CBQ functionality to ROS 2 is still pending.
 // #define USE_CBQ
-#ifdef USE_CBQ
-#include <ros/callback_queue.h>
-#include <ros/advertise_options.h>
-#endif
+// #ifdef USE_CBQ
+// #include <ros/callback_queue.h>
+// #include <ros/advertise_options.h>
+// #endif
 
 #include <gazebo/common/Plugin.hh>
+#include <gazebo_ros/node.hpp>
 
-#include <ros/ros.h>
+#include <rclcpp/rclcpp.hpp>
 #include <boost/thread/mutex.hpp>
-#include <sensor_msgs/Imu.h>
-#include <std_srvs/Empty.h>
-#include <hector_gazebo_plugins/SetBias.h>
+#include <sensor_msgs/msg/imu.hpp>
+#include <std_srvs/srv/empty.hpp>
+#include <hector_gazebo_plugins/srv/set_bias.hpp>
 #include <hector_gazebo_plugins/sensor_model.h>
 #include <hector_gazebo_plugins/update_timer.h>
 
-#include <dynamic_reconfigure/server.h>
 
 namespace gazebo
 {
@@ -63,6 +64,8 @@ namespace gazebo
       virtual void Reset();
       virtual void Update();
 
+      rcl_interfaces::msg::SetParametersResult parametersChangedCallback(const std::vector<rclcpp::Parameter> & parameters);
+
    private:
       /// \brief The parent World
       physics::WorldPtr world;
@@ -71,13 +74,13 @@ namespace gazebo
       physics::LinkPtr link;
 
       /// \brief pointer to ros node
-      ros::NodeHandle* node_handle_;
-      ros::Publisher pub_;
-      ros::Publisher bias_pub_;
+      gazebo_ros::Node::SharedPtr node_;
+      rclcpp::Publisher<sensor_msgs::msg::Imu>::SharedPtr pub_;
+      rclcpp::Publisher<sensor_msgs::msg::Imu>::SharedPtr bias_pub_;
 
       /// \brief ros message
-      sensor_msgs::Imu imuMsg;
-      sensor_msgs::Imu biasMsg;
+      sensor_msgs::msg::Imu imuMsg;
+      sensor_msgs::msg::Imu biasMsg;
 
       /// \brief store link name
       std::string link_name_;
@@ -126,27 +129,32 @@ namespace gazebo
       std::string namespace_;
 
       /// \brief call back when using service
-      bool ServiceCallback(std_srvs::Empty::Request &req,
-                                    std_srvs::Empty::Response &res);
-      ros::ServiceServer srv_;
+      bool ServiceCallback(const std::shared_ptr<std_srvs::srv::Empty::Request> req,
+                           std::shared_ptr<std_srvs::srv::Empty::Response> res);
+
+      rclcpp::Service<std_srvs::srv::Empty>::SharedPtr srv_;
       std::string serviceName;
 
       /// \brief Bias service callbacks
-      bool SetAccelBiasCallback(hector_gazebo_plugins::SetBias::Request &req, hector_gazebo_plugins::SetBias::Response &res);
-      bool SetRateBiasCallback(hector_gazebo_plugins::SetBias::Request &req, hector_gazebo_plugins::SetBias::Response &res);
-      ros::ServiceServer accelBiasService;
-      ros::ServiceServer rateBiasService;
+      bool SetAccelBiasCallback(const std::shared_ptr<hector_gazebo_plugins::srv::SetBias::Request> req,
+                                std::shared_ptr<hector_gazebo_plugins::srv::SetBias::Response> res);
+      bool SetRateBiasCallback(const std::shared_ptr<hector_gazebo_plugins::srv::SetBias::Request> req,
+                               std::shared_ptr<hector_gazebo_plugins::srv::SetBias::Response> res);
+      rclcpp::Service<hector_gazebo_plugins::srv::SetBias>::SharedPtr accelBiasService;
+      rclcpp::Service<hector_gazebo_plugins::srv::SetBias>::SharedPtr rateBiasService;
 
-#ifdef USE_CBQ
-      ros::CallbackQueue callback_queue_;
-      void CallbackQueueThread();
-      boost::thread callback_queue_thread_;
-#endif
+/// \note Porting of CBQ functionality to ROS 2 is still pending.
+// #ifdef USE_CBQ
+//       ros::CallbackQueue callback_queue_;
+//       void CallbackQueueThread();
+//       boost::thread callback_queue_thread_;
+// #endif
 
       UpdateTimer updateTimer;
       event::ConnectionPtr updateConnection;
 
-      boost::shared_ptr<dynamic_reconfigure::Server<SensorModelConfig> > dynamic_reconfigure_server_accel_, dynamic_reconfigure_server_rate_, dynamic_reconfigure_server_yaw_;
+      /// \brief Parameter changes callback
+      rclcpp::Node::OnSetParametersCallbackHandle::SharedPtr callback_handle_;
    };
 }
 
