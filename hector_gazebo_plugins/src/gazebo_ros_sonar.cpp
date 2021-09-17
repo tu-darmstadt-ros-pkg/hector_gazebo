@@ -47,17 +47,14 @@ GazeboRosSonar::~GazeboRosSonar()
 {
   updateTimer.Disconnect(updateConnection);
   sensor_->SetActive(false);
-
-  dynamic_reconfigure_server_.reset();
-
-  node_handle_->shutdown();
-  delete node_handle_;
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 // Load the controller
 void GazeboRosSonar::Load(sensors::SensorPtr _sensor, sdf::ElementPtr _sdf)
 {
+    node_ = gazebo_ros::Node::Get(_sdf);
+
   // Get then name of the parent sensor
 #if (GAZEBO_MAJOR_VERSION > 6)
   sensor_ = std::dynamic_pointer_cast<sensors::RaySensor>(_sensor);
@@ -93,10 +90,10 @@ void GazeboRosSonar::Load(sensors::SensorPtr _sensor, sdf::ElementPtr _sdf)
   if (_sdf->HasElement("topicName"))
     topic_ = _sdf->GetElement("topicName")->GetValue()->GetAsString();
 
-  sensor_model_.Load(_sdf);
+  sensor_model_.Load(node_, _sdf);
 
   range_.header.frame_id = frame_id_;
-  range_.radiation_type = sensor_msgs::Range::ULTRASOUND;
+  range_.radiation_type = sensor_msgs::msg::Range::ULTRASOUND;
 #if (GAZEBO_MAJOR_VERSION > 6)
   range_.field_of_view = std::min(fabs((sensor_->AngleMax() - sensor_->AngleMin()).Radian()), fabs((sensor_->VerticalAngleMax() - sensor_->VerticalAngleMin()).Radian()));
   range_.max_range = sensor_->RangeMax();
@@ -108,19 +105,17 @@ void GazeboRosSonar::Load(sensors::SensorPtr _sensor, sdf::ElementPtr _sdf)
 #endif
 
   // Make sure the ROS node for Gazebo has already been initialized
-  if (!ros::isInitialized())
+  if (!rclcpp::ok())
   {
-    ROS_FATAL_STREAM("A ROS node for Gazebo has not been initialized, unable to load plugin. "
+    RCLCPP_FATAL_STREAM(node_->get_logger(), "A ROS node for Gazebo has not been initialized, unable to load plugin. "
       << "Load the Gazebo system plugin 'libgazebo_ros_api_plugin.so' in the gazebo_ros package)");
     return;
   }
 
-  node_handle_ = new ros::NodeHandle(namespace_);
-  publisher_ = node_handle_->advertise<sensor_msgs::Range>(topic_, 1);
+  publisher_ = node_->create_publisher<sensor_msgs::msg::Range>(topic_, 1);
 
-  // setup dynamic_reconfigure server
-  dynamic_reconfigure_server_.reset(new dynamic_reconfigure::Server<SensorModelConfig>(ros::NodeHandle(*node_handle_, topic_)));
-  dynamic_reconfigure_server_->setCallback(boost::bind(&SensorModel::dynamicReconfigureCallback, &sensor_model_, _1, _2));
+  // Setup the parameters handler
+  callback_handle_ = node_->add_on_set_parameters_callback(std::bind(&SensorModel::parametersChangedCallback, &sensor_model_, std::placeholders::_1));
 
   Reset();
 
@@ -153,16 +148,10 @@ void GazeboRosSonar::Update()
   // activate RaySensor if it is not yet active
   if (!sensor_->IsActive()) sensor_->SetActive(true);
 
-#if (GAZEBO_MAJOR_VERSION >= 8)
-  range_.header.stamp.sec  = (world->SimTime()).sec;
-  range_.header.stamp.nsec = (world->SimTime()).nsec;
-#else
-  range_.header.stamp.sec  = (world->GetSimTime()).sec;
-  range_.header.stamp.nsec = (world->GetSimTime()).nsec;
-#endif
+  range_.header.stamp = rclcpp::Time(sim_time.sec, sim_time.nsec);
 
   // find ray with minimal range
-  range_.range = std::numeric_limits<sensor_msgs::Range::_range_type>::max();
+  range_.range = std::numeric_limits<sensor_msgs::msg::Range::_range_type>::max();
 #if (GAZEBO_MAJOR_VERSION > 6)
   int num_ranges = sensor_->LaserShape()->GetSampleCount() * sensor_->LaserShape()->GetVerticalSampleCount();
 #else
@@ -184,7 +173,7 @@ void GazeboRosSonar::Update()
     if (range_.range > range_.max_range) range_.range = range_.max_range;
   }
 
-  publisher_.publish(range_);
+  publisher_->publish(range_);
 }
 
 // Register this plugin with the simulator
