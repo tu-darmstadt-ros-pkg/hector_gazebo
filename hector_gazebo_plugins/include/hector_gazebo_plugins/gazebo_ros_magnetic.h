@@ -31,13 +31,14 @@
 
 #include <gazebo/common/Plugin.hh>
 
-#include <ros/ros.h>
-#include <geometry_msgs/Vector3Stamped.h>
-#include <sensor_msgs/MagneticField.h>
+#include <gazebo_ros/node.hpp>
+#include <rclcpp/rclcpp.hpp>
+#include <rclcpp/node.hpp>
+#include <geometry_msgs/msg/vector3_stamped.hpp>
+#include <sensor_msgs/msg/magnetic_field.hpp>
 #include <hector_gazebo_plugins/sensor_model.h>
 #include <hector_gazebo_plugins/update_timer.h>
 
-#include <dynamic_reconfigure/server.h>
 
 namespace gazebo
 {
@@ -60,8 +61,10 @@ private:
   /// \brief The link referred to by this plugin
   physics::LinkPtr link;
 
-  ros::NodeHandle* node_handle_;
-  ros::Publisher publisher_;
+  gazebo_ros::Node::SharedPtr node_;
+  rclcpp::Publisher<sensor_msgs::msg::MagneticField>::SharedPtr pub_magnetic_field_;
+  rclcpp::Publisher<geometry_msgs::msg::Vector3Stamped>::SharedPtr pub_vector3_;
+  rclcpp::Node::OnSetParametersCallbackHandle::SharedPtr callback_handle_;
 
   bool use_magnetic_field_msgs_;
 
@@ -85,8 +88,6 @@ private:
 
   UpdateTimer updateTimer;
   event::ConnectionPtr updateConnection;
-
-  boost::shared_ptr<dynamic_reconfigure::Server<SensorModelConfig> > dynamic_reconfigure_server_;
 };
 
 } // namespace gazebo

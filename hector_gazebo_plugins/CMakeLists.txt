@@ -94,9 +94,10 @@ target_link_libraries(hector_gazebo_ros_imu ${Boost_LIBRARIES} ${GAZEBO_LIBRARIE
 list(APPEND HECTOR_GAZEBO_ROS_PLUGINS_LIST hector_gazebo_ros_imu)
 ament_target_dependencies(hector_gazebo_ros_imu ${LIBS})
 
-# add_library(hector_gazebo_ros_magnetic src/gazebo_ros_magnetic.cpp)
-# target_link_libraries(hector_gazebo_ros_magnetic ${GAZEBO_LIBRARIES} ${catkin_LIBRARIES})
-# add_dependencies(hector_gazebo_ros_magnetic ${PROJECT_NAME}_gencfg)
+add_library(hector_gazebo_ros_magnetic src/gazebo_ros_magnetic.cpp)
+target_link_libraries(hector_gazebo_ros_magnetic ${GAZEBO_LIBRARIES})
+list(APPEND HECTOR_GAZEBO_ROS_PLUGINS_LIST hector_gazebo_ros_magnetic)
+ament_target_dependencies(hector_gazebo_ros_magnetic ${LIBS})
 
 add_library(hector_gazebo_ros_gps src/gazebo_ros_gps.cpp)
 target_link_libraries(hector_gazebo_ros_gps ${GAZEBO_LIBRARIES})

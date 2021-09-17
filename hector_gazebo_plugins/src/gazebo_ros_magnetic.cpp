@@ -47,11 +47,6 @@ GazeboRosMagnetic::GazeboRosMagnetic()
 GazeboRosMagnetic::~GazeboRosMagnetic()
 {
   updateTimer.Disconnect(updateConnection);
-
-  dynamic_reconfigure_server_.reset();
-
-  node_handle_->shutdown();
-  delete node_handle_;
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -59,6 +54,7 @@ GazeboRosMagnetic::~GazeboRosMagnetic()
 void GazeboRosMagnetic::Load(physics::ModelPtr _model, sdf::ElementPtr _sdf)
 {
   world = _model->GetWorld();
+  node_ = gazebo_ros::Node::Get(_sdf);
 
   // load parameters
   if (_sdf->HasElement("robotNamespace"))
@@ -85,7 +81,7 @@ void GazeboRosMagnetic::Load(physics::ModelPtr _model, sdf::ElementPtr _sdf)
 
   if (!link)
   {
-    ROS_FATAL("GazeboRosMagnetic plugin error: bodyName: %s does not exist\n", link_name_.c_str());
+    RCLCPP_FATAL(node_->get_logger(), "GazeboRosMagnetic plugin error: bodyName: %s does not exist\n", link_name_.c_str());
     return;
   }
 
@@ -141,25 +137,23 @@ void GazeboRosMagnetic::Load(physics::ModelPtr _model, sdf::ElementPtr _sdf)
   magnetic_field_world_.z = magnitude_ * -sin(inclination_);
 #endif
 
-  sensor_model_.Load(_sdf);
+  sensor_model_.Load(node_, _sdf);
 
   // start ros node
-  if (!ros::isInitialized())
+  if (!rclcpp::ok())
   {
-    int argc = 0;
-    char** argv = NULL;
-    ros::init(argc,argv,"gazebo",ros::init_options::NoSigintHandler|ros::init_options::AnonymousName);
+    RCLCPP_FATAL_STREAM(node_->get_logger(), "A ROS node for Gazebo has not been initialized, unable to load plugin. "
+      << "Load the Gazebo system plugin 'libgazebo_ros_api_plugin.so' in the gazebo_ros package)");
+    return;
   }
 
-  node_handle_ = new ros::NodeHandle(namespace_);
   if (use_magnetic_field_msgs_)
-    publisher_ = node_handle_->advertise<sensor_msgs::MagneticField>(topic_, 1);
+    pub_magnetic_field_ = node_->create_publisher<sensor_msgs::msg::MagneticField>(topic_, 1);
   else
-    publisher_ = node_handle_->advertise<geometry_msgs::Vector3Stamped>(topic_, 1);
+    pub_vector3_ = node_->create_publisher<geometry_msgs::msg::Vector3Stamped>(topic_, 1);
 
-  // setup dynamic_reconfigure server
-  dynamic_reconfigure_server_.reset(new dynamic_reconfigure::Server<SensorModelConfig>(ros::NodeHandle(*node_handle_, topic_)));
-  dynamic_reconfigure_server_->setCallback(boost::bind(&SensorModel3::dynamicReconfigureCallback, &sensor_model_, _1, _2));
+  // Setup the parameters handler
+  callback_handle_ = node_->add_on_set_parameters_callback(std::bind(&SensorModel3::parametersChangedCallback, &sensor_model_, std::placeholders::_1));
 
   Reset();
 
@@ -193,9 +187,9 @@ void GazeboRosMagnetic::Update()
 
   if (use_magnetic_field_msgs_)
   {
-    sensor_msgs::MagneticField magnetic_field;
+    sensor_msgs::msg::MagneticField magnetic_field;
 
-    magnetic_field.header.stamp = ros::Time(sim_time.sec, sim_time.nsec);
+    magnetic_field.header.stamp = rclcpp::Time(sim_time.sec, sim_time.nsec);
     magnetic_field.header.frame_id = frame_id_;
 #if (GAZEBO_MAJOR_VERSION >= 8)
     magnetic_field.magnetic_field.x = field.X();
@@ -211,13 +205,13 @@ void GazeboRosMagnetic::Update()
     // e.g. magnetic_field_new_.magnetic_field_covariance = [...]
     // by leaving it alone it'll be all-zeros, indicating "unknown" which is fine
 
-    publisher_.publish(magnetic_field);
+    pub_magnetic_field_->publish(magnetic_field);
   }
   else
   {
-    geometry_msgs::Vector3Stamped magnetic_field;
+    geometry_msgs::msg::Vector3Stamped magnetic_field;
 
-    magnetic_field.header.stamp = ros::Time(sim_time.sec, sim_time.nsec);
+    magnetic_field.header.stamp = rclcpp::Time(sim_time.sec, sim_time.nsec);
     magnetic_field.header.frame_id = frame_id_;
 #if (GAZEBO_MAJOR_VERSION >= 8)
     magnetic_field.vector.x = field.X();
@@ -229,7 +223,7 @@ void GazeboRosMagnetic::Update()
     magnetic_field.vector.z = field.z;
 #endif
 
-    publisher_.publish(magnetic_field);
+    pub_vector3_->publish(magnetic_field);
   }
 }
 
