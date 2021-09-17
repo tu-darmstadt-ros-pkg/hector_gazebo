@@ -31,14 +31,12 @@
 
 #include <gazebo/common/Plugin.hh>
 
-#include <ros/callback_queue.h>
-#include <ros/ros.h>
-
-#include <sensor_msgs/Range.h>
+#include <gazebo_ros/node.hpp>
+#include <rclcpp/rclcpp.hpp>
+#include <rclcpp/node.hpp>
+#include <sensor_msgs/msg/range.hpp>
 #include <hector_gazebo_plugins/sensor_model.h>
 #include <hector_gazebo_plugins/update_timer.h>
-
-#include <dynamic_reconfigure/server.h>
 
 namespace gazebo
 {
@@ -60,10 +58,10 @@ private:
 
   sensors::RaySensorPtr sensor_;
 
-  ros::NodeHandle* node_handle_;
-  ros::Publisher publisher_;
+  gazebo_ros::Node::SharedPtr node_;
+  rclcpp::Publisher<sensor_msgs::msg::Range>::SharedPtr publisher_;
 
-  sensor_msgs::Range range_;
+  sensor_msgs::msg::Range range_;
 
   std::string namespace_;
   std::string topic_;
@@ -74,7 +72,7 @@ private:
   UpdateTimer updateTimer;
   event::ConnectionPtr updateConnection;
 
-  boost::shared_ptr<dynamic_reconfigure::Server<SensorModelConfig> > dynamic_reconfigure_server_;
+  rclcpp::Node::OnSetParametersCallbackHandle::SharedPtr callback_handle_;
 };
 
 } // namespace gazebo

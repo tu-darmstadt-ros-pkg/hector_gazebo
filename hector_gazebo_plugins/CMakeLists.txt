@@ -104,9 +104,10 @@ target_link_libraries(hector_gazebo_ros_gps ${GAZEBO_LIBRARIES})
 list(APPEND HECTOR_GAZEBO_ROS_PLUGINS_LIST hector_gazebo_ros_gps)
 ament_target_dependencies(hector_gazebo_ros_gps ${LIBS})
 
-# add_library(hector_gazebo_ros_sonar src/gazebo_ros_sonar.cpp)
-# target_link_libraries(hector_gazebo_ros_sonar ${GAZEBO_LIBRARIES} ${catkin_LIBRARIES})
-# add_dependencies(hector_gazebo_ros_sonar ${PROJECT_NAME}_gencfg)
+add_library(hector_gazebo_ros_sonar src/gazebo_ros_sonar.cpp)
+target_link_libraries(hector_gazebo_ros_sonar ${GAZEBO_LIBRARIES})
+list(APPEND HECTOR_GAZEBO_ROS_PLUGINS_LIST hector_gazebo_ros_sonar)
+ament_target_dependencies(hector_gazebo_ros_sonar ${LIBS})
 
 # add_library(hector_servo_plugin src/servo_plugin.cpp)
 # target_link_libraries(hector_servo_plugin ${Boost_LIBRARIES} ${GAZEBO_LIBRARIES} ${catkin_LIBRARIES})
