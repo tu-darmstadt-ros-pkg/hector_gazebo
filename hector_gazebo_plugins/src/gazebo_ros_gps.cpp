@@ -30,6 +30,10 @@
 #include <gazebo/physics/physics.hh>
 #include <gazebo/common/SphericalCoordinates.hh>
 
+#include <tf2/LinearMath/Transform.h>
+
+#include <iostream>
+
 // WGS84 constants
 static const double equatorial_radius = 6378137.0;
 static const double flattening = 1.0/298.257223563;
@@ -51,13 +55,6 @@ GazeboRosGps::GazeboRosGps()
 GazeboRosGps::~GazeboRosGps()
 {
   updateTimer.Disconnect(updateConnection);
-
-  dynamic_reconfigure_server_position_.reset();
-  dynamic_reconfigure_server_velocity_.reset();
-  dynamic_reconfigure_server_status_.reset();
-
-  node_handle_->shutdown();
-  delete node_handle_;
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -65,6 +62,8 @@ GazeboRosGps::~GazeboRosGps()
 void GazeboRosGps::Load(physics::ModelPtr _model, sdf::ElementPtr _sdf)
 {
   world = _model->GetWorld();
+
+  node_ = gazebo_ros::Node::Get(_sdf);
 
   // load parameters
   if (!_sdf->HasElement("robotNamespace"))
@@ -84,7 +83,7 @@ void GazeboRosGps::Load(physics::ModelPtr _model, sdf::ElementPtr _sdf)
 
   if (!link)
   {
-    ROS_FATAL("GazeboRosGps plugin error: bodyName: %s does not exist\n", link_name_.c_str());
+    RCLCPP_FATAL(this->node_->get_logger(), "GazeboRosGps plugin error: bodyName: %s does not exist\n", link_name_.c_str());
     return;
   }
 
@@ -112,7 +111,7 @@ void GazeboRosGps::Load(physics::ModelPtr _model, sdf::ElementPtr _sdf)
     }
   }
 
-  fix_.status.status  = sensor_msgs::NavSatStatus::STATUS_FIX;
+  fix_.status.status  = sensor_msgs::msg::NavSatStatus::STATUS_FIX;
   fix_.status.service = 0;
 
   if (_sdf->HasElement("frameId"))
@@ -140,21 +139,21 @@ void GazeboRosGps::Load(physics::ModelPtr _model, sdf::ElementPtr _sdf)
   if (_sdf->HasElement("status")) {
     int status = fix_.status.status;
     if (_sdf->GetElement("status")->GetValue()->Get(status))
-      fix_.status.status = static_cast<sensor_msgs::NavSatStatus::_status_type>(status);
+      fix_.status.status = static_cast<sensor_msgs::msg::NavSatStatus::_status_type>(status);
   }
 
   if (_sdf->HasElement("service")) {
     unsigned int service = fix_.status.service;
     if (_sdf->GetElement("service")->GetValue()->Get(service))
-      fix_.status.service = static_cast<sensor_msgs::NavSatStatus::_service_type>(service);
+      fix_.status.service = static_cast<sensor_msgs::msg::NavSatStatus::_service_type>(service);
   }
 
 
   fix_.header.frame_id = frame_id_;
   velocity_.header.frame_id = frame_id_;
 
-  position_error_model_.Load(_sdf);
-  velocity_error_model_.Load(_sdf, "velocity");
+  position_error_model_.Load(node_, _sdf);
+  velocity_error_model_.Load(node_, _sdf, "velocity");
 
   // calculate earth radii
   double temp = 1.0 / (1.0 - excentrity2 * sin(reference_latitude_ * M_PI/180.0) * sin(reference_latitude_ * M_PI/180.0));
@@ -163,26 +162,25 @@ void GazeboRosGps::Load(physics::ModelPtr _model, sdf::ElementPtr _sdf)
   radius_east_  = prime_vertical_radius * cos(reference_latitude_ * M_PI/180.0);
 
   // Make sure the ROS node for Gazebo has already been initialized
-  if (!ros::isInitialized())
+  if (!rclcpp::ok())
   {
-    ROS_FATAL_STREAM("A ROS node for Gazebo has not been initialized, unable to load plugin. "
-      << "Load the Gazebo system plugin 'libgazebo_ros_api_plugin.so' in the gazebo_ros package)");
+    RCLCPP_FATAL_STREAM(node_->get_logger(), 
+        "A ROS node for Gazebo has not been initialized, unable to load plugin. "
+        << "Load the Gazebo system plugin 'libgazebo_ros_api_plugin.so' in the gazebo_ros package)");
     return;
   }
 
-  node_handle_ = new ros::NodeHandle(namespace_);
-  fix_publisher_ = node_handle_->advertise<sensor_msgs::NavSatFix>(fix_topic_, 10);
-  velocity_publisher_ = node_handle_->advertise<geometry_msgs::Vector3Stamped>(velocity_topic_, 10);
+  fix_publisher_ = node_->create_publisher<sensor_msgs::msg::NavSatFix>(fix_topic_, 10);
+  velocity_publisher_ = node_->create_publisher<geometry_msgs::msg::Vector3Stamped>(velocity_topic_, 10);
 
-  set_geopose_srv_ = node_handle_->advertiseService(fix_topic_ + "/set_reference_geopose", &GazeboRosGps::setGeoposeCb, this);
+  set_geopose_srv_ = node_->create_service<hector_gazebo_plugins::srv::SetReferenceGeoPose>(fix_topic_ + "/set_reference_geopose",
+        std::bind(&GazeboRosGps::setGeoposeCb, this, std::placeholders::_1, std::placeholders::_2));
 
-  // setup dynamic_reconfigure servers
-  dynamic_reconfigure_server_position_.reset(new dynamic_reconfigure::Server<SensorModelConfig>(ros::NodeHandle(*node_handle_, fix_topic_ + "/position")));
-  dynamic_reconfigure_server_velocity_.reset(new dynamic_reconfigure::Server<SensorModelConfig>(ros::NodeHandle(*node_handle_, fix_topic_ + "/velocity")));
-  dynamic_reconfigure_server_status_.reset(new dynamic_reconfigure::Server<GNSSConfig>(ros::NodeHandle(*node_handle_, fix_topic_ + "/status")));
-  dynamic_reconfigure_server_position_->setCallback(boost::bind(&SensorModel3::dynamicReconfigureCallback, &position_error_model_, _1, _2));
-  dynamic_reconfigure_server_velocity_->setCallback(boost::bind(&SensorModel3::dynamicReconfigureCallback, &velocity_error_model_, _1, _2));
-  dynamic_reconfigure_server_status_->setCallback(boost::bind(&GazeboRosGps::dynamicReconfigureCallback, this, _1, _2));
+  // Setup the GNSS parameters
+  gnss_config = std::make_shared<GNSSConfig>(node_);
+
+  // Setup the parameters handler
+  callback_handle_ = node_->add_on_set_parameters_callback(std::bind(&GazeboRosGps::parametersChangedCallback, this, std::placeholders::_1));
 
   Reset();
 
@@ -192,24 +190,22 @@ void GazeboRosGps::Load(physics::ModelPtr _model, sdf::ElementPtr _sdf)
   updateConnection = updateTimer.Connect(boost::bind(&GazeboRosGps::Update, this));
 }
 
-bool GazeboRosGps::setGeoposeCb(hector_gazebo_plugins::SetReferenceGeoPose::Request& request,
-                               hector_gazebo_plugins::SetReferenceGeoPose::Response&)
+void GazeboRosGps::setGeoposeCb(hector_gazebo_plugins::srv::SetReferenceGeoPose::Request::SharedPtr request,
+                                hector_gazebo_plugins::srv::SetReferenceGeoPose::Response::SharedPtr)
 {
-  reference_latitude_ = request.geo_pose.position.latitude;
-  reference_longitude_ = request.geo_pose.position.longitude;
-  tf::Quaternion q(request.geo_pose.orientation.x,
-                   request.geo_pose.orientation.y,
-                   request.geo_pose.orientation.z,
-                   request.geo_pose.orientation.w);
-  tf::Matrix3x3 m(q);
-  tfScalar yaw, pitch, roll;
+  reference_latitude_ = request->geo_pose.position.latitude;
+  reference_longitude_ = request->geo_pose.position.longitude;
+  tf2::Quaternion q(request->geo_pose.orientation.x,
+                    request->geo_pose.orientation.y,
+                    request->geo_pose.orientation.z,
+                    request->geo_pose.orientation.w);
+  tf2::Matrix3x3 m(q);
+  tf2Scalar yaw, pitch, roll;
   m.getEulerYPR(yaw, pitch, roll);
   reference_heading_ = (M_PI / 2.0) - yaw;
-  reference_altitude_ = request.geo_pose.position.altitude;
+  reference_altitude_ = request->geo_pose.position.altitude;
 
   Reset();
-
-  return true;
 }
 
 void GazeboRosGps::Reset()
@@ -219,28 +215,91 @@ void GazeboRosGps::Reset()
   velocity_error_model_.reset();
 }
 
-void GazeboRosGps::dynamicReconfigureCallback(GazeboRosGps::GNSSConfig &config, uint32_t level)
+rcl_interfaces::msg::SetParametersResult GazeboRosGps::checkStatusParameters(const std::vector<rclcpp::Parameter> & parameters)
 {
-  using sensor_msgs::NavSatStatus;
-  if (level == 1) {
-    if (!config.STATUS_FIX) {
-      fix_.status.status = NavSatStatus::STATUS_NO_FIX;
-    } else {
-      fix_.status.status = (config.STATUS_SBAS_FIX ? NavSatStatus::STATUS_SBAS_FIX : 0) |
-                           (config.STATUS_GBAS_FIX ? NavSatStatus::STATUS_GBAS_FIX : 0);
+  using sensor_msgs::msg::NavSatStatus;
+
+  rcl_interfaces::msg::SetParametersResult result;
+  result.successful = true;
+  result.reason = "";
+
+  // result.successful = false;
+  // result.reason = "Parameter not found";
+
+  for (const auto & parameter : parameters) {
+    std::string name = parameter.get_name();
+
+    if (name == "status_fix" ||
+        name == "status_sbas_fix" ||
+        name == "status_gbas_fix" ||
+        name == "service_gps" ||
+        name == "service_glonass" ||
+        name == "service_compass" ||
+        name == "service_galileo")
+    {
+      result.successful = true;
+      result.reason = "";
+
+      bool status_fix(false);
+      bool status_sbas_fix(false);
+      bool status_gbas_fix(false);
+      bool service_gps(false);
+      bool service_glonass(false);
+      bool service_compass(false);
+      bool service_galileo(false);
+
+      node_->get_parameter("status_fix", status_fix);
+      node_->get_parameter("status_sbas_fix", status_sbas_fix);
+      node_->get_parameter("status_gbas_fix", status_gbas_fix);
+      node_->get_parameter("service_gps", service_gps);
+      node_->get_parameter("service_glonass", service_glonass);
+      node_->get_parameter("service_compass", service_compass);
+      node_->get_parameter("service_galileo", service_galileo);
+
+      RCLCPP_INFO(node_->get_logger(), "Fix status paramter changed");
+    
+      if (!status_fix)
+      {
+        fix_.status.status = NavSatStatus::STATUS_NO_FIX;
+      }
+      else
+      {
+        fix_.status.status = (status_sbas_fix ? NavSatStatus::STATUS_SBAS_FIX : 0) |
+                            (status_gbas_fix ? NavSatStatus::STATUS_GBAS_FIX : 0);
+      }
+
+      fix_.status.service = (service_gps ? NavSatStatus::SERVICE_GPS : 0) |
+                            (service_glonass ? NavSatStatus::SERVICE_GLONASS : 0) |
+                            (service_compass ? NavSatStatus::SERVICE_COMPASS : 0) |
+                            (service_galileo ? NavSatStatus::SERVICE_GALILEO : 0);
     }
-    fix_.status.service = (config.SERVICE_GPS     ? NavSatStatus::SERVICE_GPS : 0) |
-                          (config.SERVICE_GLONASS ? NavSatStatus::SERVICE_GLONASS : 0) |
-                          (config.SERVICE_COMPASS ? NavSatStatus::SERVICE_COMPASS : 0) |
-                          (config.SERVICE_GALILEO ? NavSatStatus::SERVICE_GALILEO : 0);
+  }
+
+  return result;
+}
+
+rcl_interfaces::msg::SetParametersResult GazeboRosGps::parametersChangedCallback(const std::vector<rclcpp::Parameter> & parameters)
+{
+  rcl_interfaces::msg::SetParametersResult result_status, result_pos, result_vel;
+
+  result_status = checkStatusParameters(parameters);
+  result_pos = position_error_model_.parametersChangedCallback(parameters);
+  result_vel = velocity_error_model_.parametersChangedCallback(parameters);
+
+  // Return the final result
+  if (result_status.successful && result_pos.successful && result_vel.successful) {
+    rcl_interfaces::msg::SetParametersResult result;
+    result.successful = true;
+    result.reason = "";
+    return result;
   } else {
-    config.STATUS_FIX      = (fix_.status.status != NavSatStatus::STATUS_NO_FIX);
-    config.STATUS_SBAS_FIX = (fix_.status.status & NavSatStatus::STATUS_SBAS_FIX);
-    config.STATUS_GBAS_FIX = (fix_.status.status & NavSatStatus::STATUS_GBAS_FIX);
-    config.SERVICE_GPS     = (fix_.status.service & NavSatStatus::SERVICE_GPS);
-    config.SERVICE_GLONASS = (fix_.status.service & NavSatStatus::SERVICE_GLONASS);
-    config.SERVICE_COMPASS = (fix_.status.service & NavSatStatus::SERVICE_COMPASS);
-    config.SERVICE_GALILEO = (fix_.status.service & NavSatStatus::SERVICE_GALILEO);
+    if (!result_status.successful) {
+      return result_status;
+    } else if (!result_pos.successful) {
+      return result_pos;
+    } else {
+      return result_vel;
+    }
   }
 }
 
@@ -270,7 +329,7 @@ void GazeboRosGps::Update()
   // Note: Usually GNSS receivers have almost no drift in the velocity signal.
   position_error_model_.setCurrentDrift(position_error_model_.getCurrentDrift() + dt * velocity_error_model_.getCurrentDrift());
 
-  fix_.header.stamp = ros::Time(sim_time.sec, sim_time.nsec);
+  fix_.header.stamp = rclcpp::Time(sim_time.sec, sim_time.nsec);
   velocity_.header.stamp = fix_.header.stamp;
 
 #if (GAZEBO_MAJOR_VERSION >= 8)
@@ -281,7 +340,7 @@ void GazeboRosGps::Update()
   velocity_.vector.y = -sin(reference_heading_) * velocity.X() + cos(reference_heading_) * velocity.Y();
   velocity_.vector.z = velocity.Z();
 
-  fix_.position_covariance_type = sensor_msgs::NavSatFix::COVARIANCE_TYPE_DIAGONAL_KNOWN;
+  fix_.position_covariance_type = sensor_msgs::msg::NavSatFix::COVARIANCE_TYPE_DIAGONAL_KNOWN;
   fix_.position_covariance[0] = position_error_model_.drift.X()*position_error_model_.drift.X() + position_error_model_.gaussian_noise.X()*position_error_model_.gaussian_noise.X();
   fix_.position_covariance[4] = position_error_model_.drift.Y()*position_error_model_.drift.Y() + position_error_model_.gaussian_noise.Y()*position_error_model_.gaussian_noise.Y();
   fix_.position_covariance[8] = position_error_model_.drift.Z()*position_error_model_.drift.Z() + position_error_model_.gaussian_noise.Z()*position_error_model_.gaussian_noise.Z();
@@ -293,14 +352,14 @@ void GazeboRosGps::Update()
   velocity_.vector.y = -sin(reference_heading_) * velocity.x + cos(reference_heading_) * velocity.y;
   velocity_.vector.z = velocity.z;
 
-  fix_.position_covariance_type = sensor_msgs::NavSatFix::COVARIANCE_TYPE_DIAGONAL_KNOWN;
+  fix_.position_covariance_type = sensor_msgs::msg::NavSatFix::COVARIANCE_TYPE_DIAGONAL_KNOWN;
   fix_.position_covariance[0] = position_error_model_.drift.x*position_error_model_.drift.x + position_error_model_.gaussian_noise.x*position_error_model_.gaussian_noise.x;
   fix_.position_covariance[4] = position_error_model_.drift.y*position_error_model_.drift.y + position_error_model_.gaussian_noise.y*position_error_model_.gaussian_noise.y;
   fix_.position_covariance[8] = position_error_model_.drift.z*position_error_model_.drift.z + position_error_model_.gaussian_noise.z*position_error_model_.gaussian_noise.z;
 #endif
 
-  fix_publisher_.publish(fix_);
-  velocity_publisher_.publish(velocity_);
+  fix_publisher_->publish(fix_);
+  velocity_publisher_->publish(velocity_);
 }
 
 // Register this plugin with the simulator
