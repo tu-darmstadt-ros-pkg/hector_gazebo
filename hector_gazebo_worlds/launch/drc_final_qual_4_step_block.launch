@@ -4,9 +4,9 @@
   
   <arg name="args" default=""/>
   
-  <include file="$(find hector_gazebo_worlds)/launch/start.launch">
-    <arg name="world" value="$(find hector_gazebo_worlds)/worlds/drc_final_qual_4_step_block.world"/>
-    <arg name="args" default="$(arg args)"/>
+  <include file="$(find-pkg-share hector_gazebo_worlds)/launch/start.launch">
+    <arg name="world" value="$(find-pkg-share hector_gazebo_worlds)/worlds/drc_final_qual_4_step_block.world"/>
+    <arg name="args" value="$(var args)"/>
   </include>
 
 </launch>

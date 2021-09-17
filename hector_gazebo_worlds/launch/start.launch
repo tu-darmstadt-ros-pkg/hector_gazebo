@@ -2,17 +2,14 @@
 
 <launch>
   <arg name="world" default="worlds/empty.world"/>
-  <arg name="gui" default="true"/>
+  <arg name="gui" default="true"/>  
   <arg name="args" default=""/>
+    
+  <include file="$(find-pkg-share gazebo_ros)/launch/gazebo.launch.py">
+    <arg name="world"             value="$(var world)"/>
+    <arg name="use_sim_time"      value="true"/>
+    <arg name="gui"               value="$(var gui)" />
+    <arg name="extra_gazebo_args" value="$(var args)"/>
+  </include>
   
-  <param name="/use_sim_time" value="true" />
-
-  <node name="gazebo" pkg="gazebo_ros" type="gzserver" args="$(arg world) $(arg args)" respawn="false" output="screen"/>
-  
-    <!-- start gui -->
-  <group if="$(arg gui)">
-    <node name="gazebo_gui" pkg="gazebo_ros" type="gzclient" respawn="false" output="screen"/>
-  </group>
-
-
 </launch>
