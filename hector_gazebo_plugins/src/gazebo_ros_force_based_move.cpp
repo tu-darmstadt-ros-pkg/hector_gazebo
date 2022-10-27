@@ -142,6 +142,22 @@ namespace gazebo
     } else {
       this->publish_odometry_tf_ = sdf->GetElement("publishOdometryTf")->Get<bool>();
     }
+    
+    this->allow_lateral_motion_ = true;
+    if (!sdf->HasElement("allowLateralMotion")) {
+      ROS_WARN("PlanarMovePlugin Plugin (ns = %s) missing <allowLateralMotion>, defaults to %s",
+               this->robot_namespace_.c_str(), this->allow_lateral_motion_ ? "true" : "false");
+    } else {
+      this->allow_lateral_motion_ = sdf->GetElement("allowLateralMotion")->Get<bool>();
+    }
+    
+    this->commandTimeoutDuration_ = 0.0;
+    if (!sdf->HasElement("commandTimeoutDuration")) {
+      ROS_WARN("PlanarMovePlugin Plugin (ns = %s) missing <commandTimeoutDuration>, defaults to %f",
+               this->robot_namespace_.c_str(), this->commandTimeoutDuration_);
+    } else {
+      this->commandTimeoutDuration_ = sdf->GetElement("commandTimeoutDuration")->Get<double>();
+    }
  
 #if (GAZEBO_MAJOR_VERSION >= 8)
     last_odom_publish_time_ = parent_->GetWorld()->SimTime();
@@ -203,7 +219,9 @@ namespace gazebo
   {
     boost::mutex::scoped_lock scoped_lock(lock);
     
-    if ((ros::Time::now() - last_cmd_time_) > ros::Duration(0.5)){
+    if ((this->commandTimeoutDuration_ != 0.0) &&
+        (ros::Time::now() - last_cmd_time_) > ros::Duration(this->commandTimeoutDuration_))
+    {
       x_ = 0.0;
       y_ = 0.0;
       rot_ = 0.0;
@@ -277,9 +295,13 @@ namespace gazebo
       const geometry_msgs::Twist::ConstPtr& cmd_msg) 
   {
     boost::mutex::scoped_lock scoped_lock(lock);
+    
     x_ = cmd_msg->linear.x;
-    y_ = cmd_msg->linear.y;
     rot_ = cmd_msg->angular.z;
+    
+    if (this->allow_lateral_motion_){
+      y_ = cmd_msg->linear.y;
+    }
     
     last_cmd_time_ = ros::Time::now();
   }

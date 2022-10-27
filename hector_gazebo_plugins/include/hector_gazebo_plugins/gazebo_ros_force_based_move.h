@@ -101,6 +101,10 @@ namespace gazebo {
       double x_;
       double y_;
       double rot_;
+      
+      bool allow_lateral_motion_;
+      double commandTimeoutDuration_;
+      
       bool alive_;
       common::Time last_odom_publish_time_;
 #if (GAZEBO_MAJOR_VERSION >= 8)
