@@ -167,6 +167,8 @@ namespace gazebo
       return;
     }
     rosnode_.reset(new ros::NodeHandle(robot_namespace_));
+    
+    last_cmd_time_ = ros::Time(0);
 
     ROS_DEBUG("OCPlugin (%s) has started!", 
         robot_namespace_.c_str());
@@ -200,6 +202,13 @@ namespace gazebo
   void GazeboRosForceBasedMove::UpdateChild()
   {
     boost::mutex::scoped_lock scoped_lock(lock);
+    
+    if ((ros::Time::now() - last_cmd_time_) > ros::Duration(0.5)){
+      x_ = 0.0;
+      y_ = 0.0;
+      rot_ = 0.0;
+    }
+    
 #if (GAZEBO_MAJOR_VERSION >= 8)
     ignition::math::Pose3d pose = parent_->WorldPose();
 
@@ -271,6 +280,8 @@ namespace gazebo
     x_ = cmd_msg->linear.x;
     y_ = cmd_msg->linear.y;
     rot_ = cmd_msg->angular.z;
+    
+    last_cmd_time_ = ros::Time::now();
   }
 
   void GazeboRosForceBasedMove::QueueThread()

@@ -93,6 +93,7 @@ namespace gazebo {
       ros::CallbackQueue queue_;
       boost::thread callback_queue_thread_;
       void QueueThread();
+      ros::Time last_cmd_time_;
 
       // command velocity callback
       void cmdVelCallback(const geometry_msgs::Twist::ConstPtr& cmd_msg);
