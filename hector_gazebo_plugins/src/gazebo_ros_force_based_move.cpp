@@ -229,6 +229,12 @@ namespace gazebo
     
 #if (GAZEBO_MAJOR_VERSION >= 8)
     ignition::math::Pose3d pose = parent_->WorldPose();
+    
+    if (x_ == 0.0 && y_ == 0.0 && rot_ == 0.0){
+            link_->AddForce(ignition::math::Vector3d((last_odom_pose_.Pos().X() - pose.Pos().X()) * force_x_velocity_p_gain_,
+                                    (last_odom_pose_.Pos().Y() - pose.Pos().Y()) * force_y_velocity_p_gain_,
+                                     0.0));
+    }else{
 
     ignition::math::Vector3d angular_vel = parent_->WorldAngularVel();
 
@@ -243,6 +249,8 @@ namespace gazebo
     link_->AddRelativeForce(ignition::math::Vector3d((x_ - linear_vel.X())* force_x_velocity_p_gain_,
                                                      (y_ - linear_vel.Y())* force_y_velocity_p_gain_,
                                                      0.0));
+    
+    }
 #else
     math::Pose pose = parent_->GetWorldPose();
 
@@ -301,6 +309,20 @@ namespace gazebo
     
     if (this->allow_lateral_motion_){
       y_ = cmd_msg->linear.y;
+    }
+    
+    if (x_ == 0.0 && y_ == 0.0 && rot_ == 0.0){
+      if (switch_to_zero_cmd){
+        
+#if (GAZEBO_MAJOR_VERSION >= 8)
+        last_odom_pose_ = parent_->WorldPose();
+#else
+        last_odom_pose_ = parent_->GetWorldPose();
+#endif
+        switch_to_zero_cmd = false;
+      }
+    }else{
+      switch_to_zero_cmd = true;
     }
     
     last_cmd_time_ = ros::Time::now();

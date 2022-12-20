@@ -107,6 +107,9 @@ namespace gazebo {
       
       bool alive_;
       common::Time last_odom_publish_time_;
+      
+      bool switch_to_zero_cmd;
+
 #if (GAZEBO_MAJOR_VERSION >= 8)
       ignition::math::Pose3d last_odom_pose_;
 #else
