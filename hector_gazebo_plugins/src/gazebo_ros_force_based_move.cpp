@@ -230,11 +230,25 @@ namespace gazebo
 #if (GAZEBO_MAJOR_VERSION >= 8)
     ignition::math::Pose3d pose = parent_->WorldPose();
     
+    ignition::math::Pose3d pose_diff = last_odom_pose_ - pose;
+    
+    double yaw_diff = pose_diff.Rot().Yaw();
+    double x_diff = pose_diff.Pos().X();
+    double y_diff = pose_diff.Pos().Y();
+    
+    //std::cout << "diff yaw " << yaw_diff << " x " << x_diff << " y " << y_diff << "\n";
+    double hold_pos_gain = 10.1;
+    
     if (x_ == 0.0 && y_ == 0.0 && rot_ == 0.0){
-            link_->AddForce(ignition::math::Vector3d((last_odom_pose_.Pos().X() - pose.Pos().X()) * force_x_velocity_p_gain_,
-                                    (last_odom_pose_.Pos().Y() - pose.Pos().Y()) * force_y_velocity_p_gain_,
+      
+      if (pose_diff.Pos().Length() < 0.1){    
+        link_->AddForce(ignition::math::Vector3d((last_odom_pose_.Pos().X() - pose.Pos().X()) * hold_pos_gain,
+                                    (last_odom_pose_.Pos().Y() - pose.Pos().Y()) * hold_pos_gain,
                                      0.0));
-    }else{
+            
+        link_->AddTorque(ignition::math::Vector3d(0.0, 0.0, pose_diff.Rot().Yaw() * hold_pos_gain));
+      }
+    }
 
     ignition::math::Vector3d angular_vel = parent_->WorldAngularVel();
 
@@ -250,7 +264,6 @@ namespace gazebo
                                                      (y_ - linear_vel.Y())* force_y_velocity_p_gain_,
                                                      0.0));
     
-    }
 #else
     math::Pose pose = parent_->GetWorldPose();
 
