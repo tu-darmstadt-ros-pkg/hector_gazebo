@@ -20,6 +20,7 @@ find_package(ament_cmake REQUIRED)
 find_package(rclcpp REQUIRED)
 find_package(std_msgs REQUIRED)
 find_package(std_srvs REQUIRED)
+find_package(gazebo_ros REQUIRED)
 find_package(geographic_msgs REQUIRED)
 find_package(geometry_msgs REQUIRED)
 find_package(nav_msgs REQUIRED)
@@ -50,11 +51,14 @@ set(INCLUDE_DIRS include
 include_directories(${INCLUDE_DIRS})
 
 set(LIBS
+    gazebo_ros
     geographic_msgs 
     geometry_msgs
     sensor_msgs
-    std_msgs
     rclcpp
+    std_msgs
+    std_srvs
+    tf2
 )
 
 #######################################
@@ -73,6 +77,17 @@ rosidl_generate_interfaces(${PROJECT_NAME}
 ## Build ##
 ###########
 
+# Connect targets with locally defined messages
+get_available_rmw_implementations(rmw_implementations2)
+foreach(rmw_implementation ${rmw_implementations2})
+  find_package("${rmw_implementation}" REQUIRED)
+  get_rmw_typesupport(typesupport_impls "${rmw_implementation}" LANGUAGE "cpp")
+  foreach(typesupport_impl ${typesupport_impls})
+    rosidl_get_typesupport_target(hector_gazebo_ros_imu_typesupport_target "${PROJECT_NAME}" "rosidl_typesupport_cpp")
+    rosidl_get_typesupport_target(hector_gazebo_ros_gps_typesupport_target "${PROJECT_NAME}" "rosidl_typesupport_cpp")
+  endforeach()
+endforeach()
+
 set(HECTOR_GAZEBO_ROS_PLUGINS_LIST "")
 
 # add_library(diffdrive_plugin_6w SHARED src/diffdrive_plugin_6w.cpp)
@@ -90,7 +105,7 @@ list(APPEND HECTOR_GAZEBO_ROS_PLUGINS_LIST hector_gazebo_reset_plugin)
 ament_target_dependencies(hector_gazebo_reset_plugin ${LIBS})
 
 add_library(hector_gazebo_ros_imu SHARED src/gazebo_ros_imu.cpp)
-target_link_libraries(hector_gazebo_ros_imu ${Boost_LIBRARIES} ${GAZEBO_LIBRARIES})
+target_link_libraries(hector_gazebo_ros_imu ${Boost_LIBRARIES} ${GAZEBO_LIBRARIES} ${hector_gazebo_ros_imu_typesupport_target})
 list(APPEND HECTOR_GAZEBO_ROS_PLUGINS_LIST hector_gazebo_ros_imu)
 ament_target_dependencies(hector_gazebo_ros_imu ${LIBS})
 
@@ -100,7 +115,7 @@ list(APPEND HECTOR_GAZEBO_ROS_PLUGINS_LIST hector_gazebo_ros_magnetic)
 ament_target_dependencies(hector_gazebo_ros_magnetic ${LIBS})
 
 add_library(hector_gazebo_ros_gps SHARED src/gazebo_ros_gps.cpp)
-target_link_libraries(hector_gazebo_ros_gps ${GAZEBO_LIBRARIES})
+target_link_libraries(hector_gazebo_ros_gps ${GAZEBO_LIBRARIES} ${hector_gazebo_ros_gps_typesupport_target})
 list(APPEND HECTOR_GAZEBO_ROS_PLUGINS_LIST hector_gazebo_ros_gps)
 ament_target_dependencies(hector_gazebo_ros_gps ${LIBS})
 
@@ -113,16 +128,6 @@ ament_target_dependencies(hector_gazebo_ros_sonar ${LIBS})
 # target_link_libraries(hector_servo_plugin ${Boost_LIBRARIES} ${GAZEBO_LIBRARIES} ${catkin_LIBRARIES})
 
 
-# Connect targets with locally defined messages
-get_available_rmw_implementations(rmw_implementations2)
-foreach(rmw_implementation ${rmw_implementations2})
-  find_package("${rmw_implementation}" REQUIRED)
-  get_rmw_typesupport(typesupport_impls "${rmw_implementation}" LANGUAGE "cpp")
-  foreach(typesupport_impl ${typesupport_impls})
-    rosidl_target_interfaces(hector_gazebo_ros_imu ${PROJECT_NAME} ${typesupport_impl})
-    rosidl_target_interfaces(hector_gazebo_ros_gps ${PROJECT_NAME} ${typesupport_impl})
-  endforeach()
-endforeach()
 
 # #############
 # ## Install ##
